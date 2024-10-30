@@ -1,0 +1,27 @@
+/* Contêiner da tabela */
+#produtos-grid-container {
+    overflow-x: auto;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Tabela */
+#produtos-grid {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#produtos-grid th,
+#produtos-grid td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+#produtos-grid th {
+    background-color: #f4f4f4;
+}
+
+#produtos-grid td#button-action {
+    text-align: center;
+}

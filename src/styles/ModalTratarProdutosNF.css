@@ -1,0 +1,9 @@
+#produto-vinculado {
+    display: inline;
+    grid-template-columns: 1fr 1fr;
+    /* Duas colunas */
+    gap: 20px;
+    /* Espaçamento entre os elementos */
+    width: 100%;
+    position: relative;
+}

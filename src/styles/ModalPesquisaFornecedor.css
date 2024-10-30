@@ -1,0 +1,43 @@
+
+
+h2 {
+  margin-top: 0;
+}
+
+.fornecedores-list{
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+  max-height: 200px; /* Limite de altura para a lista */
+  overflow-y: auto; /* Barra de rolagem quando a lista ultrapassa o limite */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.fornecedor-item {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #ddd;
+}
+
+.fornecedor-item:hover {
+  background-color: #f0f0f0;
+}
+
+.input-pesquisa-fornecedor {
+  padding: 6px; /* Diminuir o padding */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%; /* Ocupa toda a largura disponível */
+  font-size: 14px; /* Ajustar o tamanho da fonte */
+}
+
+#pesquisa-fornecedor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  /* Duas colunas */
+  gap: 20px;
+  /* Espaçamento entre os elementos */
+  width: 100%;
+  position: relative;
+}

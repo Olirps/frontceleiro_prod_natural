@@ -1,0 +1,98 @@
+/* Contêiner da tabela */
+#notas-fiscais-grid-container {
+  overflow-x: auto; /* Adiciona rolagem horizontal se necessário */
+  max-width: 1200px;
+  margin: 0 auto;
+  
+}
+
+/* Tabela */
+#notas-fiscais-grid {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#notas-fiscais-grid th, #notas-fiscais-grid td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+#notas-fiscais-grid th {
+  background-color: #f4f4f4;
+}
+
+#notas-fiscais-grid td#button-action {
+  text-align: center;
+}
+
+
+/* Botões */
+#edit-button-nf {
+  margin: 0 5px;
+  padding: 5px 10px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#edit-button-nf:hover {
+  background-color: #0056b3;
+}
+
+/* Estilização da tabela */
+#table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#table th, table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+#table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+/* Estilização do cabeçalho da tabela */
+#table th {
+  background-color: #ececec; /* Cor de fundo do cabeçalho */
+  color: rgb(0, 0, 0); /* Cor do texto do cabeçalho */
+  text-transform: uppercase; /* Letras maiúsculas */
+  font-weight: bold; /* Texto em negrito */
+  border-bottom: 2px solid #ddd; /* Borda inferior mais grossa para destaque */
+}
+
+/* Botões */
+.lancto-prod-button {
+  margin: 0 5px;
+  padding: 5px 10px;
+  border: none;
+  background-color: #dfbb59;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.lancto-prod-button:hover {
+  background-color: #68582b;
+}
+
+.detalhes-button {
+  background-color: #04a10c;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  padding: 10px 20px;
+  margin: 4px;
+  /* Espaço em todos os lados */
+}
+
+.detalhes-button:hover {
+  background-color: #0056b3;
+}

@@ -1,0 +1,204 @@
+/* ModalProdutosNF.css */
+
+
+
+/* Estilos para o conteúdo do modal */
+.modal-content-nf {
+  position: relative;
+  /* Para o posicionamento absoluto do botão de fechar */
+  background: #fff;
+  /* Cor de fundo do modal */
+  padding: 20px;
+  border-radius: 8px;
+  width: 80%;
+  /* A modal pode expandir até 80% da largura da tela */
+  max-width: 900px;
+  /* Aumentei o max-width para expandir mais, ajuste conforme necessário */
+  height: auto;
+  /* A altura será automática */
+  max-height: 90vh;
+  /* Limita a altura do modal a 90% da altura da tela */
+  overflow-y: auto;
+  /* Adiciona rolagem vertical se o conteúdo ultrapassar o limite */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  /* Sombra para um efeito de elevação */
+}
+
+/* Estilos para a tabela */
+#produtos-grid {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#produtos-grid th,
+#produtos-grid td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+#produtos-grid th {
+  background-color: #f4f4f4;
+}
+
+/* Estilos para a área de produtos em grid */
+.products-grid {
+  margin-top: 20px;
+}
+
+/* Estilo específico para a coluna de descrição */
+#produtos-grid td.descricao-col {
+  max-width: 550px;
+  /* Limite de largura para a coluna de descrição */
+  white-space: nowrap;
+  /* Impede quebra de linha */
+  overflow: hidden;
+  /* Oculta o texto que excede o limite */
+  text-overflow: ellipsis;
+  /* Adiciona reticências ao texto que excede o limite */
+  resize: horizontal;
+  /* Permite o redimensionamento horizontal */
+  overflow: auto;
+  /* Adiciona barra de rolagem se necessário */
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.highlight-red {
+  background-color: #ffdddd !important;
+  /* Cor de fundo vermelho claro para destacar */
+}
+
+/* Adicione estilos para a paginação */
+.pagination {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.pagination button {
+  margin: 0 5px;
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  background: #f4f4f4;
+  cursor: pointer;
+}
+
+.pagination button.active {
+  background: #ddd;
+  font-weight: bold;
+}
+
+.pagination button:hover {
+  background: #ddd;
+}
+
+/* Estilização do botão "Editar" */
+.edit-button-prod-nf {
+  background-color: #dfbb59;
+  /* Cor verde */
+  color: white;
+  /* Cor do texto */
+  border: none;
+  /* Remove a borda padrão */
+  text-transform: uppercase;
+  /* Letras maiúsculas */
+  cursor: pointer;
+  /* Cursor de mão */
+  transition: background-color 0.3s ease;
+  /* Transição suave */
+  border-radius: 4px;
+  /* Cantos arredondados */
+}
+
+.edit-button-prod-nf:hover {
+  background-color: #68582b;
+  /* Cor ao passar o mouse */
+}
+
+.button-cad {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 10px;
+
+}
+
+.button-cad:hover {
+  background-color: #0056b3;
+}
+
+.acao-prod-container {
+  display: flex;           /* Usar flexbox */
+  align-items: center;      /* Alinha itens verticalmente ao centro */
+  gap: 10px;                /* Espaço entre o botão e a imagem (opcional, ajuste conforme necessário) */
+}
+
+.lixeira-icon {
+  width: 20px;              /* Defina a largura do ícone */
+  height: 20px;             /* Defina a altura do ícone */
+  cursor: pointer;          /* Ícone clicável */
+}
+
+.button-fec {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  background-color: #04a10c;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 10px;
+
+}
+
+.button-fec:hover {
+  background-color: rgb(3, 71, 9);
+}
+
+.lixeira-icon {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+#lancto-prod-nf {
+  display: contents;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+#lancto-prod-nf > div:first-child {
+  margin-left: auto; /* Empurra o botão "Cadastrar Produtos" para a direita */
+}
+
+#vincula-prod {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Espaço entre os elementos */
+}
+
+.button-lancto-prod {
+  display: flex;
+  gap: 10px; /* Espaçamento entre os botões */
+}
+
+#lancto-prod-nf input {
+  width: 25%;
+}
+
+.label-prod{
+  color: #8884849c;
+}
+
+.error-message {
+  color: red;
+  font-size: 0.875rem;
+  margin-top: 5px;
+}

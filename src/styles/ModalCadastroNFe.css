@@ -1,0 +1,72 @@
+.modal-cadastra-nf {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 85%;
+  width: 100%;
+  position: relative; /* Importante para o posicionamento absoluto do botão */
+}
+
+.input-cadastra-nf {
+  padding: 6px;
+  /* Diminuir o padding */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 85%;
+  /* Ocupa toda a largura disponível */
+  font-size: 14px;
+  /* Ajustar o tamanho da fonte */
+}
+
+#itens-nota-fiscal {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Duas colunas */
+  gap: 20px; /* Espaçamento entre os elementos */
+}
+
+#itens-nota-fiscal div {
+  display: flex;
+  flex-direction: column;
+}
+#pesquisa_fornecedor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* Espaçamento entre os elementos */
+}
+
+#pesquisa_fornecedor>button {
+  width: 50%;
+  justify-content: center;
+  /* Alinha os botões ao centro */
+
+  /* Espaçamento entre os elementos */
+}
+
+#cadastro-nf {
+  display: grid;
+
+  /* Duas colunas */
+  gap: 20px;
+  /* Espaçamento entre os elementos */
+  width: 85%;
+  position: relative;
+}
+
+#cadastro-nf div {
+  flex-direction: column;
+}
+
+#cadastro-nf input {
+  width: 100%;
+  /* Ou o tamanho desejado */
+  box-sizing: border-box;
+  /* Garante que o padding seja incluído no tamanho total */
+}
+
+#cadastro-nf button {
+  width: 25%;
+  /* Ou o tamanho desejado */
+  box-sizing: border-box;
+  /* Garante que o padding seja incluído no tamanho total */
+}

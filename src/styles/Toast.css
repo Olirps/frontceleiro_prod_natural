@@ -1,0 +1,21 @@
+/* src/styles/Toast.css */
+.toast {
+    position: fixed;
+    top: 20px; /* Ajuste conforme necessário */
+    right: 20px; /* Ajuste conforme necessário */
+    padding: 15px;
+    border-radius: 5px;
+    color: #fff;
+    font-size: 14px;
+    z-index: 2000; /* Ajuste para garantir que o toast esteja acima do modal */
+    transition: opacity 0.5s ease-in-out;
+  }
+  
+  .toast.success {
+    background-color: #28a745; /* Verde para sucesso */
+  }
+  
+  .toast.error {
+    background-color: #dc3545; /* Vermelho para erro */
+  }
+  

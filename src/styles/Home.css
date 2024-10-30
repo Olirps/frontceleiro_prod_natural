@@ -1,0 +1,82 @@
+/* src/styles/Home.css */
+
+#header {
+    display: flex;
+    justify-content: flex-start; /* Alinha os itens à esquerda */
+    align-items: center;
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  }
+/* Container para pesquisa */
+.homeCenter {
+  justify-content: center;
+}
+
+  
+  #logo {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-right: 20px; /* Espaçamento entre o logo e o menu */
+  }
+  
+  #menu {
+    display: flex;
+    gap: 20px;
+  }
+  
+  .menu-item {
+    position: relative;
+    padding: 10px;
+    font-size: 1em;
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  
+  .menu-item:hover {
+    background-color: #0056b3;
+    border-radius: 4px;
+  }
+  
+  #cadastros-submenu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #007bff;
+    padding: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    z-index: 1000;
+  }
+  
+  .submenu-item {
+    padding: 10px;
+    color: #fff;
+    text-decoration: none;
+    display: block;
+  }
+  
+  .submenu-item:hover {
+    background-color: #0056b3;
+    border-radius: 4px;
+  }
+  
+  #cadastros:hover #cadastros-submenu {
+    display: block;
+  }
+  
+  @media (max-width: 768px) {
+    #header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    #menu {
+      flex-direction: column;
+      margin-top: 10px; /* Adiciona espaço acima do menu em telas menores */
+    }
+  }
+  

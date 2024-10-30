@@ -1,0 +1,183 @@
+/* src/styles/Layout.css */
+
+/* Estilos gerais para a versão web */
+#header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #007bff;
+  color: #fff;
+  padding: 10px 20px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#header-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+#logo {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-right: 20px;
+}
+
+#menu {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-grow: 1;
+}
+
+.menu-item {
+  position: relative;
+  padding: 10px;
+  font-size: 1em;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background-color: #0056b3;
+  border-radius: 4px;
+}
+
+#cadastros-submenu, #movimentacao-submenu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #007bff;
+  padding: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  z-index: 1000;
+}
+
+.submenu-item {
+  padding: 10px;
+  color: #fff;
+  text-decoration: none;
+  display: block;
+}
+
+.submenu-item:hover {
+  background-color: #0056b3;
+  border-radius: 4px;
+}
+
+/* Exibe os submenus ao passar o mouse sobre o item pai */
+#cadastros:hover #cadastros-submenu,
+#movimentacao:hover #movimentacao-submenu {
+  display: block;
+}
+
+/* Estilos específicos para a versão móvel */
+@media (max-width: 768px) {
+  #header {
+      flex-direction: column;
+      align-items: flex-start;
+  }
+
+  #header-content {
+      width: 100%;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+  }
+
+  #menu {
+      display: none; /* Oculta o menu padrão em dispositivos móveis */
+      flex-direction: column;
+      width: 100%;
+      background-color: #007bff;
+      position: absolute;
+      top: 60px; /* Ajusta a posição conforme necessário */
+      left: 0;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  #menu-button {
+    display: block; /* Mostra o botão apenas em dispositivos móveis */
+    padding: 10px;
+    background-color: #0056b3;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: center;
+    width: 100%;
+  }
+
+  #menu-button:hover {
+    background-color: #003d7a;
+  }
+
+  #menu.show {
+    display: flex; /* Exibe o menu quando ativado */
+  }
+
+  .menu-item {
+    width: 100%;
+    text-align: left;
+    padding-left: 20px;
+  }
+
+  .submenu-item {
+    padding: 10px;
+    color: #fff;
+    text-decoration: none;
+    display: block;
+    text-align: left;
+  }
+
+  .submenu-item:hover {
+    background-color: #0056b3;
+    border-radius: 4px;
+  }
+
+  #cadastros-submenu, #movimentacao-submenu {
+    display: none;
+    position: static; /* Remove o posicionamento absoluto */
+    background-color: #007bff;
+    padding: 10px;
+    box-shadow: none; /* Remove a sombra */
+    border-radius: 0;
+  }
+
+  #user-info {
+    width: 100%;
+    justify-content: flex-start;
+    display: flex;
+    flex-direction: column; /* Alinha itens na vertical */
+    gap: 10px; /* Espaçamento entre itens */
+    padding: 10px; /* Adiciona algum espaço ao redor */
+    box-sizing: border-box; /* Garante que padding não afete a largura total */
+  }
+
+  #user-text, #username, #logout-button {
+    text-align: left;
+    width: 100%; /* Garante que os itens ocupem toda a largura disponível */
+  }
+
+  #logout-button {
+    padding: 10px;
+    background-color: #ff4b4b;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  #logout-button:hover {
+    background-color: #ff1f1f;
+  }
+}
+
+@media (min-width: 769px) {
+  #menu-button {
+    display: none; /* Oculta o botão de menu em dispositivos maiores */
+  }
+}
