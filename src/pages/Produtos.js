@@ -261,7 +261,7 @@ function Produtos() {
                     produto={selectedProduto}
                 />
             )}
-        </div>
+        </div> 
     );
 }
 
