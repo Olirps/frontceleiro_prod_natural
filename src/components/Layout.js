@@ -49,6 +49,8 @@ function Layout() {
               <span>Cadastros</span>
               <div id="cadastros-submenu" className={isCadastrosOpen ? 'submenu' : ''}>
                 <a href="/fornecedores" className="submenu-item">Fornecedores</a>
+                <a href="/grupoproduto" className="submenu-item">Grupo Produto</a>
+                <a href="/subgrupoproduto" className="submenu-item">SubGrupo Produto</a>
                 <a href="/produtos" className="submenu-item">Produtos</a>
                 <a href="/carros" className="submenu-item">Carros</a>
               </div>
