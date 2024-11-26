@@ -20,10 +20,6 @@ function Produtos() {
     const [isEdit, setIsEdit] = useState(false);
     const [importSuccess, setCadastroSuccess] = useState(false);
 
-
-
-
-
     useEffect(() => {
         const fetchProdutos = async () => {
             try {
@@ -81,7 +77,8 @@ function Produtos() {
             cEAN: e.cEAN,
             qtdMinima: e.qtdMinima,
             qCom:e.qCom,
-            valor_unit: e.valor_unit
+            vUnCom: e.vUnCom,
+            vlrVenda: e.vlrVenda
         };
 
         try {
@@ -116,7 +113,9 @@ function Produtos() {
             xProd:e.xProd,
             cEAN: e.cEAN,
             qtdMinima: e.qtdMinima,
-            qCom:e.qCom
+            qCom:e.qCom,
+            vUnCom: e.vUnCom,
+            vlrVenda: e.vlrVenda
         };
 
         try {

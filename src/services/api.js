@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Crie uma instância do axios com a URL base
 const api = axios.create({
-  baseURL: 'http://3.21.134.65:3001/api',
+  baseURL: 'http://18.188.73.46:3001/api',
 });
 
 // Função para definir o token de autenticação no header

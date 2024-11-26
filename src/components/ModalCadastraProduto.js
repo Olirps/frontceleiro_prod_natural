@@ -10,7 +10,8 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
   const [cEAN, setcEAN] = useState('');
   const [qtdMinima, setqtdMinima] = useState('');
   const [qCom, setqCom] = useState('');
-  const [valor_unit, setUnit] = useState('');
+  const [vUnCom, setvUnCom] = useState('');
+  const [vlrVenda, setVlrVenda] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   /*********** */
@@ -30,14 +31,16 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
       setcEAN(produto.cEAN || '');
       setqtdMinima(produto.qtdMinima || '');
       setqCom(produto.qCom || '');
-      setUnit(produto.valor_unit || '');
+      setvUnCom(produto.vUnCom || '');
+      setVlrVenda(produto.vlrVenda || '');
     } else {
       // Limpar os campos quando não há pessoa selecionada
       setxProd('');
       setcEAN('');
       setqtdMinima('');
       setqCom('');
-      setUnit('');
+      setvUnCom('');
+      setVlrVenda('');
 
     }
   }, [produto]);
@@ -63,8 +66,11 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
     setqCom(e.target.value); // Atualiza o estado do nome
   };
 
-  const handlevalorUnitChange = (e) => {
-    setqCom(e.target.value); // Atualiza o estado do nome
+  const handlevUnComChange = (e) => {
+    setvUnCom(e.target.value); // Atualiza o estado do nome
+  };
+  const handlevlrVendaChange = (e) => {
+    setVlrVenda(e.target.value); // Atualiza o estado do nome
   };
 
   const closeCadastraProdutoModal = () => {
@@ -85,7 +91,8 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
         cEAN: formData.get('cEAN'),
         qtdMinima: formData.get('qtdMinima'),
         qCom: formData.get('qCom'),
-        vUnCom: formData.get('valor_unit'),           //valor_unit: formData.get('valor_unit'),  ajustado para tratar produtos cadastrados manual na nf 24/09/2024
+        vUnCom: formData.get('vUnCom'),           //valor_unit: formData.get('valor_unit'),  ajustado para tratar produtos cadastrados manual na nf 24/09/2024
+        vlrVenda: formData.get('vlrVenda'),           //valor de venda: formData.get('valor_unit'),  ajustado para tratar produtos cadastrados manual na nf 24/09/2024
         nota_id: prod?.id
       };
 
@@ -101,7 +108,8 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
         cEAN,
         qtdMinima,
         qCom,
-        valor_unit
+        vUnCom,
+        vlrVenda
       });// Continua com o comportamento original se prod.nNF for nulo
     }
   };
@@ -178,6 +186,32 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 name="qCom"
                 value={qCom}
                 onChange={handleqComChange} // Adiciona o onChange para atualizar o estado
+                maxLength="150"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="vUnCom">Valor de Custo</label>
+              <input
+                className='input-geral'
+                type="text"
+                id="vUnCom"
+                name="vUnCom"
+                value={vUnCom}
+                onChange={handlevUnComChange} // Adiciona o onChange para atualizar o estado
+                maxLength="150"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="vlrVenda">Valor de Venda</label>
+              <input
+                className='input-geral'
+                type="text"
+                id="vlrVenda"
+                name="vlrVenda"
+                value={vlrVenda}
+                onChange={handlevlrVendaChange} // Adiciona o onChange para atualizar o estado
                 maxLength="150"
                 required
               />
