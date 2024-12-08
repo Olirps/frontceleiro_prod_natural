@@ -12,6 +12,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
   const [qCom, setqCom] = useState('');
   const [vUnCom, setvUnCom] = useState('');
   const [vlrVenda, setVlrVenda] = useState('');
+  const [margemSobreVlrCusto, setmargemSobreVlrCusto] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   /*********** */
@@ -33,6 +34,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
       setqCom(produto.qCom || '');
       setvUnCom(produto.vUnCom || '');
       setVlrVenda(produto.vlrVenda || '');
+      setmargemSobreVlrCusto(produto.margemSobreVlrCusto || '');
     } else {
       // Limpar os campos quando não há pessoa selecionada
       setxProd('');
@@ -41,6 +43,8 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
       setqCom('');
       setvUnCom('');
       setVlrVenda('');
+      setmargemSobreVlrCusto('');
+
 
     }
   }, [produto]);
@@ -68,9 +72,15 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
 
   const handlevUnComChange = (e) => {
     setvUnCom(e.target.value); // Atualiza o estado do nome
+    setmargemSobreVlrCusto(((vlrVenda / e.target.value) * 100).toFixed(4))
   };
   const handlevlrVendaChange = (e) => {
     setVlrVenda(e.target.value); // Atualiza o estado do nome
+    setmargemSobreVlrCusto(((e.target.value / vUnCom) * 100).toFixed(4))
+  };
+
+  const handlemargemSobreVlrCustoChange = (e) => {
+    setmargemSobreVlrCusto(e.target.value); // Atualiza o estado do nome
   };
 
   const closeCadastraProdutoModal = () => {
@@ -214,6 +224,19 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 onChange={handlevlrVendaChange} // Adiciona o onChange para atualizar o estado
                 maxLength="150"
                 required
+              />
+            </div>
+            <div>
+              <label htmlFor="margemSobreVlrCusto">Percentual do Vlr de Venda/Vlr Custo</label>
+              <input
+                className='input-geral'
+                type="text"
+                id="margemSobreVlrCusto"
+                name="margemSobreVlrCusto"
+                value={margemSobreVlrCusto}
+                onChange={handlemargemSobreVlrCustoChange} // Adiciona o onChange para atualizar o estado
+                maxLength="150"
+                disabled
               />
             </div>
             {/* Campos adicionais */}
