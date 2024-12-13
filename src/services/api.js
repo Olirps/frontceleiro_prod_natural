@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Crie uma instância do axios com a URL base
 const api = axios.create({
-  baseURL: 'http://3.143.233.203:3001/api',
+  baseURL: 'http://localhost:3001/api',
 });
 
 // Função para definir o token de autenticação no header
@@ -51,6 +51,31 @@ export const updateFornecedor = async (id, pessoa) => {
 
 export const getFornecedorById = async (id) => {
   return api.get(`/fornecedores/${id}`);
+};
+
+
+// Funções para gerenciar Clientes
+
+export const getClientes = async (filters = {}) => {
+  try {
+    const response = await api.get('/clientes', { params: filters });
+    return response;
+  } catch (error) {
+    console.error('Erro ao buscar clientes:', error);
+    throw error; // Repassa o erro para tratamento
+  }
+};
+
+export const addCliente = async (cliente) => {
+  return api.post('/clientes', cliente);
+};
+
+export const updateCliente = async (id, cliente) => {
+  return api.put(`/clientes/${id}`, cliente);
+};
+
+export const getClienteById = async (id) => {
+  return api.get(`/clientes/${id}`);
 };
 
 // Funções para gerenciar carros
@@ -153,6 +178,10 @@ export const getUfs =async () => {
 };
 
 export const getMunicipios = async(id) => {
+  return api.get(`/municipios/${id}`);
+};
+
+export const getMunicipiosUfId = async(id) => {
   return api.get(`/municipios/${id}`);
 };
 
