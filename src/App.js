@@ -6,6 +6,7 @@ import Clientes from './pages/Clientes';
 import Produtos from './pages/Produtos';
 import Carros from './pages/Carros';
 import LancaNFe from './pages/LancaNFe';
+import Vendas from './pages/Vendas';
 import Locacoes from './pages/Locacoes';
 import Layout from './components/Layout'; // Importar o novo componente Layout
 import { useAuth } from './context/AuthContext'; // Importe o hook useAuth
@@ -25,6 +26,7 @@ function App() {
           <Route path="/produtos" element={isAuthenticated ? <Produtos /> : <Navigate to="/login" />} />
           <Route path="/carros" element={isAuthenticated ? <Carros /> : <Navigate to="/login" />} />
           <Route path="/notafiscal" element={isAuthenticated ? <LancaNFe /> : <Navigate to="/login" />} />
+          <Route path="/vendas" element={isAuthenticated ? <Vendas /> : <Navigate to="/login" />} />
           <Route path="/locacao" element={isAuthenticated ? <Locacoes /> : <Navigate to="/login" />} />
         </Route>
       </Routes>

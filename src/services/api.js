@@ -192,3 +192,9 @@ export const getMunicipiosIBGE = async (id, codMunIBGE) => {
 export const getUFIBGE = async (id, codIBGE) => {
   return api.get(`/uf/uf/${id}`, codIBGE);
 };
+
+
+// UFs e Municípios
+export const getVendas =async () => {
+  return api.get('/vendas');
+};

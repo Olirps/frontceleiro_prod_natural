@@ -57,6 +57,7 @@ function Layout() {
               <span>Movimentação</span>
               <div id="movimentacao-submenu" className={isMovimentacaoOpen ? 'submenu' : ''}>
                 <a href="/notafiscal" className="submenu-item">Lançar NF-e</a>
+                <a href="/vendas" className="submenu-item">Gestão de Vendas</a>
               </div>
             </div>
           </nav>
