@@ -188,7 +188,6 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente ,edit}) => {
                                 value={nomeFantasia}
                                 onChange={handleNomeFantasiaChange} // Adiciona o onChange para atualizar o estado
                                 maxLength="150"
-                                required
                             />
                         </div>
                         <div>
@@ -265,19 +264,6 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente ,edit}) => {
                                 required
                             />
                         </div>
-                        <div>
-                            <label htmlFor="municipio">Município</label>
-                            <input
-                                className='input-geral'
-                                type="text"
-                                id="municipio"
-                                name="municipio"
-                                value={municipio}
-                                onChange={handleMunicipioChange}
-                                required
-                            />
-                        </div>
-
                         <div>
                             <label htmlFor="cep">CEP</label>
                             <input

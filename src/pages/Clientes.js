@@ -80,10 +80,9 @@ function Clientes() {
       logradouro: formData.get('logradouro'),
       numero: formData.get('numero'),
       bairro: formData.get('bairro'),
-      municipio_id: formData.get('municipio_id'),
-      uf_id: formData.get('uf_id'),
+      municipio_id: formData.get('municipio'),
+      uf_id: formData.get('uf'),
       cep: formData.get('cep').replace(/\D/g, ''),
-      uf_id: 1
     };
 
     try {
@@ -114,6 +113,7 @@ function Clientes() {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    console.log('Atributos do form:', Object.entries(e.target));
     const updatedCliente = {
       nome: formData.get('nome'),
       nomeFantasia: formData.get('nomeFantasia'),
@@ -123,8 +123,8 @@ function Clientes() {
       logradouro: formData.get('logradouro'),
       numero: formData.get('numero'),
       bairro: formData.get('bairro'),
-      municipio_id: formData.get('municipio_id'),
-      uf_id: formData.get('uf_id'),
+      municipio_id: formData.get('municipio'),
+      uf_id: formData.get('uf'),
       cep: formData.get('cep').replace(/\D/g, '')
     };
 
