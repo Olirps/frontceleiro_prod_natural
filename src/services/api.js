@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Crie uma instância do axios com a URL base
 const api = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  baseURL: 'http://3.143.233.203:3001/api',
 });
 
 // Função para definir o token de autenticação no header
