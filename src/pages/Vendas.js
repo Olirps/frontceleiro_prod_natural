@@ -47,13 +47,15 @@ function Vendas() {
   const handleSearch = () => {
     const lowerNome = nome.toLowerCase();
     const lowerCpf = removeMaks(cpfCnpj.toLowerCase());
-    const dataInicial = new Date(dataVendaInicial);
-    const dataFinal = new Date(dataVendaFinal);
+    const dataInicial = new Date(dataVendaInicial).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+    const dataFinal = new Date(dataVendaFinal).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 
     const results = vendas.filter(venda => {
       const vendaNome = venda.cliente?.toLowerCase() || '';
       const vendaCpf = removeMaks(venda.cpfCnpj || '');
-      const vendaData = new Date(venda.dataVenda);
+
+      let vendaData = new Date(venda.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
+      vendaData = vendaData.replace(",", "");
 
       return (
         (lowerNome ? vendaNome.includes(lowerNome) : true) &&
@@ -265,7 +267,7 @@ function Vendas() {
                       </td>
                       <td>{venda.totalQuantity}</td>
                       <td>{venda.formaPagamento}</td>
-                      <td>{new Date(venda.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
+                      <td>{new Date(venda.dataVenda).toLocaleString('pt-BR', { timeZone: 'UTC' }).replace(",", "")}</td>
                       <td>
                         <button className="edit-button">Editar</button>
                       </td>
