@@ -54,7 +54,7 @@ function Vendas() {
       const vendaNome = venda.cliente?.toLowerCase() || '';
       const vendaCpf = removeMaks(venda.cpfCnpj || '');
 
-      let vendaData = new Date(venda.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
+      let vendaData = new Date(venda.dataVenda).toLocaleDateString()
       vendaData = vendaData.replace(",", "");
 
       return (
@@ -267,7 +267,7 @@ function Vendas() {
                       </td>
                       <td>{venda.totalQuantity}</td>
                       <td>{venda.formaPagamento}</td>
-                      <td>{new Date(venda.dataVenda).toLocaleString('pt-BR', { timeZone: 'UTC' }).replace(",", "")}</td>
+                      <td>{new Date(venda.dataVenda).toLocaleString().replace(",", "")}</td>
                       <td>
                         <button className="edit-button">Editar</button>
                       </td>
