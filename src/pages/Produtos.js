@@ -77,8 +77,10 @@ function Produtos() {
             cEAN: e.cEAN,
             qtdMinima: e.qtdMinima,
             qCom:e.qCom,
+            NCM:e.ncm,
             vUnCom: e.vUnCom,
-            vlrVenda: e.vlrVenda
+            vlrVenda: e.vlrVenda,
+            vlrVendaAtacado: e.vlrVendaAtacado
         };
 
         try {
@@ -115,7 +117,9 @@ function Produtos() {
             qtdMinima: e.qtdMinima,
             qCom:e.qCom,
             vUnCom: e.vUnCom,
-            vlrVenda: e.vlrVenda
+            NCM: e.ncm,
+            vlrVenda: e.vlrVenda,
+            vlrVendaAtacado: e.vlrVendaAtacado
         };
 
         try {

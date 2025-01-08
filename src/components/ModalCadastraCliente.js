@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import '../styles/ModalCadastraCliente.css'; // Certifique-se de criar este CSS também
 import { cpfCnpjMask } from './utils';
 import { getUfs, getMunicipiosUfId, getMunicipiosIBGE } from '../services/api';
+import Toast from '../components/Toast';
 
 
-const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente ,edit}) => {
+const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
     const [nome, setNome] = useState('');
     const [nomeFantasia, setNomeFantasia] = useState('');
     const [cpfCnpj, setCpf] = useState('');
@@ -18,6 +19,8 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente ,edit}) => {
     const [cep, setCep] = useState('');
     const [ufs, setUfs] = useState([]); // Estado para armazenar os UFs
     const [municipios, setMunicipios] = useState([]); // Estado para armazenar os municípios
+    const [toast, setToast] = useState({ message: '', type: '' });
+
 
 
     useEffect(() => {
@@ -68,27 +71,35 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente ,edit}) => {
             try {
                 let munsUf;
                 const ufsData = await getUfs(); // Supõe-se que isso retorna o JSON fornecido
-                if(edit){
-                    munsUf = await getMunicipiosUfId(cliente.uf_id)
+
+                if (edit) {
+                    munsUf = await getMunicipiosUfId(cliente.uf_id);
                 }
-                
+
                 if (Array.isArray(ufsData.data)) {
                     setUfs(ufsData.data);
                 } else {
                     console.error("O retorno de getUfs não é um array:", JSON.stringify(ufsData.data));
                 }
-                if(edit){
+
+                if (edit) {
                     if (Array.isArray(munsUf.data)) {
                         setMunicipios(munsUf.data);
                     }
                 }
-                
-
             } catch (error) {
                 console.error("Erro ao buscar UFs:", error);
                 setUfs([]); // Define como um array vazio em caso de erro
+
+                // Adicionando o toast de erro
+                setToast({
+                    message: "Erro ao buscar as UFs. Tente novamente.",
+                    type: "error", // Tipo de mensagem: pode ser "success", "error", etc.
+                    duration: 3000, // Duração do toast em milissegundos
+                });
             }
         };
+
 
         fetchUfs();
     }, [getUfs]);
@@ -305,7 +316,7 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente ,edit}) => {
                                 required
                             >
                                 <option value="">Selecione um município</option>
-                               
+
                                 {Array.isArray(municipios) &&
                                     municipios.map((mun) => (
                                         <option key={mun.id} value={mun.codMunIBGE}>
@@ -322,6 +333,13 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente ,edit}) => {
                         </div>
                     </div>
                 </form>
+                {toast.message && (
+                    <Toast
+                        type={toast.type}
+                        message={toast.message}
+                        onClose={() => setToast({ message: '', type: '' })}
+                    />
+                )}
             </div>
         </div>
     );

@@ -24,16 +24,48 @@ function Vendas() {
   const [currentPage, setCurrentPage] = useState(1);
   const [toast, setToast] = useState({ message: '', type: '' });
 
+  ///
+  const [pagamentosDetalhados, setPagamentosDetalhados] = useState([]);
+  let [filteredPagamentos, setFilteredPagamentos] = useState([]);
+  const [tipoPagamento, setTipoPagamento] = useState('');
+  const [tiposPagamento, setTiposPagamento] = useState([]);
+
+
+
+
   useEffect(() => {
     const fetchVendas = async () => {
       try {
         const response = await getVendas();
+        //novo
+        const data = response.data;
+
+        // Transformar vendas em uma lista detalhada de pagamentos
+        const pagamentos = data.flatMap((venda) =>
+          venda.formasPagamento.map((pagamento) => ({
+            vendaId: venda.vendaId,
+            clienteId: venda.clienteId,
+            cliente: venda.cliente,
+            dataVenda: venda.dataVenda,
+            formaPagamento: pagamento.formaPagamento,
+            valorPago: parseFloat(pagamento.vlrPago),
+          }))
+        );
+        setPagamentosDetalhados(pagamentos);
+        setFilteredPagamentos(pagamentos);
+
+        ///novo////
+
+
         setVendas(response.data);
         setFilteredVendas(response.data);
 
         // Extrair tipos de venda únicos
-        const tipos = Array.from(new Set(response.data.map(venda => venda.formaPagamento)));
-        setTiposVenda(tipos);
+        //const tipos = Array.from(new Set(response.data.map(venda => venda.formaPagamento)));
+        ///setTiposVenda(tipos);
+
+        const tipos = Array.from(new Set(pagamentos.map((p) => p.formaPagamento)));
+        setTiposPagamento(tipos);
       } catch (err) {
         console.error('Erro ao buscar Vendas', err);
       } finally {
@@ -50,7 +82,7 @@ function Vendas() {
     const dataInicial = new Date(dataVendaInicial).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
     const dataFinal = new Date(dataVendaFinal).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 
-    const results = vendas.filter(venda => {
+    const results = pagamentosDetalhados.filter(venda => {
       const vendaNome = venda.cliente?.toLowerCase() || '';
       const vendaCpf = removeMaks(venda.cpfCnpj || '');
 
@@ -65,8 +97,8 @@ function Vendas() {
         (tipoVenda ? venda.formaPagamento === tipoVenda : true)
       );
     });
+    setFilteredPagamentos(results);
 
-    setFilteredVendas(results);
     setCurrentPage(1); // Resetar para a primeira página após a busca
   };
 
@@ -76,7 +108,7 @@ function Vendas() {
     setdataVendaFinal('');
     setCpf('');
     setTipoVenda('');
-    setFilteredVendas(vendas);
+    setFilteredPagamentos(pagamentosDetalhados)
     setCurrentPage(1); // Resetar para a primeira página ao limpar a busca
   };
 
@@ -97,9 +129,12 @@ function Vendas() {
     }
   }, [toast]);
 
-  const totalPages = Math.ceil(filteredVendas.length / rowsPerPage);
+  const totalPreco = filteredPagamentos.reduce((sum, venda) => sum + parseFloat(venda.valorPago), 0);
+
+
+  const totalPages = Math.ceil(filteredPagamentos.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const currentVendas = filteredVendas.slice(startIndex, startIndex + rowsPerPage);
+  filteredPagamentos = filteredPagamentos.slice(startIndex, startIndex + rowsPerPage);
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
@@ -113,8 +148,6 @@ function Vendas() {
     }
   };
   // Calcula as somas de desconto e totalPrice
-  const totalDesconto = filteredVendas.reduce((sum, venda) => sum + parseFloat(venda.desconto), 0);
-  const totalPreco = filteredVendas.reduce((sum, venda) => sum + parseFloat(venda.totalPrice), 0);
 
   const handlePrint = () => {
     const doc = new jsPDF();
@@ -126,22 +159,15 @@ function Vendas() {
     const tableColumn = [
       'ID',
       'Cliente',
-      'Desconto',
       'Total',
-      'Quantidade',
-      'Forma de Pagamento',
+      'Forma de Movimentação',
       'Data de Criação'
     ];
 
-    console.log('Total Desconto: ' + totalDesconto);
-    console.log('Total Venda: ' + totalPreco);
-
-    const tableRows = filteredVendas.map(venda => [
-      venda.id,
+    const tableRows = filteredPagamentos.map(venda => [
+      venda.vendaId,
       venda.cliente || 'Não Informado',
-      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(venda.desconto),
-      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(venda.totalPrice),
-      venda.totalQuantity,
+      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(venda.valorPago),
       venda.formaPagamento,
       new Date(venda.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
     ]);
@@ -150,7 +176,6 @@ function Vendas() {
     tableRows.push([
       'Totais:',
       '', // Cliente (vazio)
-      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalDesconto),
       new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPreco),
       '', // Quantidade (vazio)
       '', // Forma de Pagamento (vazio)
@@ -216,8 +241,10 @@ function Vendas() {
                   onChange={(e) => setTipoVenda(e.target.value)}
                 >
                   <option value="">Todos</option>
-                  {tiposVenda.map(tipo => (
-                    <option key={tipo} value={tipo}>{tipo}</option>
+                  {tiposPagamento.map((tipo) => (
+                    <option key={tipo} value={tipo}>
+                      {tipo}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -240,32 +267,23 @@ function Vendas() {
                   <tr>
                     <th>ID</th>
                     <th>Cliente</th>
-                    <th>Desconto</th>
                     <th>Total</th>
-                    <th>Quantidade</th>
-                    <th>Forma de Pagamento</th>
-                    <th>Data de Criação</th>
+                    <th>Forma de Movimentação</th>
+                    <th>Data do Lançamento</th>
                     <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentVendas.map((venda) => (
+                  {filteredPagamentos.map((venda) => (
                     <tr key={venda.id}>
-                      <td>{venda.id}</td>
+                      <td>{venda.vendaId}</td>
                       <td>{venda.cliente || 'Não Informado'}</td>
                       <td>
                         {new Intl.NumberFormat('pt-BR', {
                           style: 'currency',
                           currency: 'BRL',
-                        }).format(venda.desconto)}
+                        }).format(venda.valorPago)}
                       </td>
-                      <td>
-                        {new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        }).format(venda.totalPrice)}
-                      </td>
-                      <td>{venda.totalQuantity}</td>
                       <td>{venda.formaPagamento}</td>
                       <td>{new Date(venda.dataVenda).toLocaleString().replace(",", "")}</td>
                       <td>
@@ -278,18 +296,14 @@ function Vendas() {
                   <tfoot>
                     <tr>
                       <td colSpan="2"><strong>Total</strong></td>
-                      <td><strong>
-                        {new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        }).format(totalDesconto)}</strong>
-                      </td>
+                      
                       <td><strong>
                         {new Intl.NumberFormat('pt-BR', {
                           style: 'currency',
                           currency: 'BRL',
                         }).format(totalPreco)}</strong>
                       </td>
+                      <td colSpan="3"></td>
                     </tr>
                   </tfoot>
                 )}

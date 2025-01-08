@@ -11,8 +11,11 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
   const [qtdMinima, setqtdMinima] = useState('');
   const [qCom, setqCom] = useState('');
   const [vUnCom, setvUnCom] = useState('');
+  const [ncm, setNcm] = useState('');
   const [vlrVenda, setVlrVenda] = useState('');
+  const [vlrVendaAtacado, setvlrVendaAtacado] = useState('');
   const [margemSobreVlrCusto, setmargemSobreVlrCusto] = useState('');
+  const [margemSobreVlrCustoAtacado, setmargemSobreVlrCustoAtacado] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   /*********** */
@@ -33,8 +36,11 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
       setqtdMinima(produto.qtdMinima || '');
       setqCom(produto.qCom || '');
       setvUnCom(produto.vUnCom || '');
+      setNcm(produto.NCM || '');
       setVlrVenda(produto.vlrVenda || '');
+      setvlrVendaAtacado(produto.vlrVendaAtacado || '');
       setmargemSobreVlrCusto(produto.margemSobreVlrCusto || '');
+      setmargemSobreVlrCustoAtacado(produto.margemSobreVlrCustoAtacado || '');
     } else {
       // Limpar os campos quando não há pessoa selecionada
       setxProd('');
@@ -42,10 +48,11 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
       setqtdMinima('');
       setqCom('');
       setvUnCom('');
+      setNcm('');
       setVlrVenda('');
+      setvlrVendaAtacado('');      
       setmargemSobreVlrCusto('');
-
-
+      setmargemSobreVlrCustoAtacado('');
     }
   }, [produto]);
 
@@ -74,13 +81,24 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
     setvUnCom(e.target.value); // Atualiza o estado do nome
     setmargemSobreVlrCusto(((vlrVenda / e.target.value) * 100).toFixed(4))
   };
+  const handleNcmChange = (e) => {
+    setNcm(e.target.value); // Atualiza o estado do nome
+  };
   const handlevlrVendaChange = (e) => {
     setVlrVenda(e.target.value); // Atualiza o estado do nome
     setmargemSobreVlrCusto(((e.target.value / vUnCom) * 100).toFixed(4))
   };
+  const handlevlrVendaAtacadoChange = (e) => {
+    setvlrVendaAtacado(e.target.value); // Atualiza o estado do nome
+    setmargemSobreVlrCustoAtacado(((e.target.value / vUnCom) * 100).toFixed(4))
+  };
 
   const handlemargemSobreVlrCustoChange = (e) => {
     setmargemSobreVlrCusto(e.target.value); // Atualiza o estado do nome
+  };
+  
+  const handlemargemSobreVlrCustoAtacadoChange = (e) => {
+    setmargemSobreVlrCustoAtacado(e.target.value); // Atualiza o estado do nome
   };
 
   const closeCadastraProdutoModal = () => {
@@ -119,7 +137,11 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
         qtdMinima,
         qCom,
         vUnCom,
-        vlrVenda
+        vlrVenda,
+        margemSobreVlrCusto,
+        ncm,
+        vlrVendaAtacado,
+        margemSobreVlrCustoAtacado
       });// Continua com o comportamento original se prod.nNF for nulo
     }
   };
@@ -201,13 +223,26 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
               />
             </div>
             <div>
+              <label htmlFor="ncm">NCM</label>
+              <input
+                className='input-geral'
+                type="text"
+                id="ncm"
+                name="ncm"
+                value={ncm}
+                onChange={handleNcmChange} // Adiciona o onChange para atualizar o estado
+                maxLength="150"
+                required
+              />
+            </div>
+            <div>
               <label htmlFor="vUnCom">Valor de Custo</label>
               <input
                 className='input-geral'
                 type="text"
                 id="vUnCom"
                 name="vUnCom"
-                value={vUnCom}
+                value={vUnCom.replace(',', '.')}
                 onChange={handlevUnComChange} // Adiciona o onChange para atualizar o estado
                 maxLength="150"
                 required
@@ -220,7 +255,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 type="text"
                 id="vlrVenda"
                 name="vlrVenda"
-                value={vlrVenda}
+                value={vlrVenda.replace(',', '.')}
                 onChange={handlevlrVendaChange} // Adiciona o onChange para atualizar o estado
                 maxLength="150"
                 required
@@ -235,6 +270,32 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 name="margemSobreVlrCusto"
                 value={margemSobreVlrCusto}
                 onChange={handlemargemSobreVlrCustoChange} // Adiciona o onChange para atualizar o estado
+                maxLength="150"
+                disabled
+              />
+            </div>
+            <div>
+              <label htmlFor="vlrVendaAtacado">Valor de Venda Atacado</label>
+              <input
+                className='input-geral'
+                type="text"
+                id="vlrVendaAtacado"
+                name="vlrVendaAtacado"
+                value={vlrVendaAtacado.replace(',', '.')}
+                onChange={handlevlrVendaAtacadoChange} // Adiciona o onChange para atualizar o estado
+                maxLength="150"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="margemSobreVlrCustoAtacado">Percentual do Vlr de Venda Atacado/Vlr Custo</label>
+              <input
+                className='input-geral'
+                type="text"
+                id="margemSobreVlrCustoAtacado"
+                name="margemSobreVlrCustoAtacado"
+                value={margemSobreVlrCustoAtacado}
+                onChange={handlemargemSobreVlrCustoAtacadoChange} // Adiciona o onChange para atualizar o estado
                 maxLength="150"
                 disabled
               />
@@ -255,9 +316,9 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
             </div>
           </div>
         </form>
-      </div>
-      {toast.message && <Toast type={toast.type} message={toast.message} />}
+        {toast.message && <Toast type={toast.type} message={toast.message} />}
 
+      </div>
     </div>
   );
 };
