@@ -131,10 +131,59 @@ function Vendas() {
 
   const totalPreco = filteredPagamentos.reduce((sum, venda) => sum + parseFloat(venda.valorPago), 0);
 
+  const handlePrint = () => {
+    const doc = new jsPDF();
+  
+    // Adiciona um título
+    doc.text('Relatório de Vendas', 14, 20);
+  
+    // Configura as colunas e os dados da tabela
+    const tableColumn = [
+      'ID',
+      'Cliente',
+      'Total',
+      'Forma de Movimentação',
+      'Data de Criação'
+    ];
+  
+    // Use filteredPagamentos diretamente para incluir todos os registros filtrados
+    const tableRows = filteredPagamentos.map(venda => [
+      venda.vendaId,
+      venda.cliente || 'Não Informado',
+      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(venda.valorPago),
+      venda.formaPagamento,
+      new Date(venda.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
+    ]);
+  
+    // Adiciona uma linha de rodapé com os totais
+    const totalPrecoFiltrado = filteredPagamentos.reduce(
+      (sum, venda) => sum + parseFloat(venda.valorPago),
+      0
+    );
+  
+    tableRows.push([
+      'Totais:',
+      '', // Cliente (vazio)
+      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPrecoFiltrado),
+      '', // Forma de Pagamento (vazio)
+      '' // Data de Criação (vazio)
+    ]);
+  
+    // Adiciona a tabela ao PDF
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 30, // Posição inicial da tabela
+    });
+  
+    // Salva o PDF
+    doc.save('relatorio_vendas.pdf');
+  };
+  
 
   const totalPages = Math.ceil(filteredPagamentos.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  filteredPagamentos = filteredPagamentos.slice(startIndex, startIndex + rowsPerPage);
+  const pagamentosPaginaAtual = filteredPagamentos.slice(startIndex, startIndex + rowsPerPage);
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
@@ -149,49 +198,7 @@ function Vendas() {
   };
   // Calcula as somas de desconto e totalPrice
 
-  const handlePrint = () => {
-    const doc = new jsPDF();
 
-    // Adiciona um título
-    doc.text('Relatório de Vendas', 14, 20);
-
-    // Configura as colunas e os dados da tabela
-    const tableColumn = [
-      'ID',
-      'Cliente',
-      'Total',
-      'Forma de Movimentação',
-      'Data de Criação'
-    ];
-
-    const tableRows = filteredPagamentos.map(venda => [
-      venda.vendaId,
-      venda.cliente || 'Não Informado',
-      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(venda.valorPago),
-      venda.formaPagamento,
-      new Date(venda.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
-    ]);
-
-    // Adiciona uma linha de rodapé com os totais
-    tableRows.push([
-      'Totais:',
-      '', // Cliente (vazio)
-      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPreco),
-      '', // Quantidade (vazio)
-      '', // Forma de Pagamento (vazio)
-      '' // Data de Criação (vazio)
-    ]);
-
-    // Adiciona a tabela ao PDF
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 30, // Posição inicial da tabela
-    });
-
-    // Salva o PDF
-    doc.save('relatorio_vendas.pdf');
-  };
 
   return (
     <div id="vendas-container">
@@ -274,7 +281,7 @@ function Vendas() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPagamentos.map((venda) => (
+                  {pagamentosPaginaAtual.map((venda) => (
                     <tr key={venda.id}>
                       <td>{venda.vendaId}</td>
                       <td>{venda.cliente || 'Não Informado'}</td>
@@ -296,7 +303,7 @@ function Vendas() {
                   <tfoot>
                     <tr>
                       <td colSpan="2"><strong>Total</strong></td>
-                      
+
                       <td><strong>
                         {new Intl.NumberFormat('pt-BR', {
                           style: 'currency',
