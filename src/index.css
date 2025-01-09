@@ -294,3 +294,14 @@ code {
 #btnsalvar:hover {
   background-color: #0056b3;
 }
+
+/* Responsividade */
+@media (max-width: 768px) {
+  #separator-bar {
+    border-top: 1px solid #007bff; /* Espessura reduzida */
+    margin: 10px 0; /* Menor espaçamento em telas pequenas */
+  }
+  #results-container {
+    padding: 8px; /* Reduz o padding para maximizar o espaço útil */
+  }
+}

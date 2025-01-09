@@ -37,33 +37,43 @@ function Vendas() {
     const fetchVendas = async () => {
       try {
         const response = await getVendas();
-        //novo
-        const data = response.data;
+        const data = response.data.transacoes;
 
-        // Transformar vendas em uma lista detalhada de pagamentos
-        const pagamentos = data.flatMap((venda) =>
-          venda.formasPagamento.map((pagamento) => ({
-            vendaId: venda.vendaId,
-            clienteId: venda.clienteId,
-            cliente: venda.cliente,
-            dataVenda: venda.dataVenda,
-            formaPagamento: pagamento.formaPagamento,
-            valorPago: parseFloat(pagamento.vlrPago),
-          }))
-        );
+        if (!data || !Array.isArray(data)) {
+          throw new Error('A estrutura de dados das transações está incorreta');
+        }
+
+        // Processar todas as transações
+        const pagamentos = data.flatMap((venda) => {
+          // Caso tenha formasPagamento, processa normalmente
+          if (venda.formasPagamento) {
+            return venda.formasPagamento.map((pagamento) => ({
+              vendaId: venda.id,
+              clienteId: venda.cliente,
+              cliente: venda.cliente || 'Não Informado',
+              dataVenda: venda.data,
+              formaPagamento: pagamento.formaPagamento,
+              valorPago: parseFloat(pagamento.vlrPago),
+            }));
+          }
+
+          // Caso seja débito ou crédito, processa separadamente
+          return {
+            vendaId: venda.id,
+            clienteId: venda.cliente || null,
+            cliente: venda.cliente || venda.descricao || 'Não Informado',
+            dataVenda: venda.data,
+            formaPagamento: venda.tipo, // Aqui o tipo será "débito" ou "crédito"
+            valorPago: parseFloat(venda.valor || 0), // Usa o valor diretamente
+          };
+        });
+
         setPagamentosDetalhados(pagamentos);
         setFilteredPagamentos(pagamentos);
-
-        ///novo////
-
-
         setVendas(response.data);
         setFilteredVendas(response.data);
 
-        // Extrair tipos de venda únicos
-        //const tipos = Array.from(new Set(response.data.map(venda => venda.formaPagamento)));
-        ///setTiposVenda(tipos);
-
+        // Extrair tipos únicos, incluindo "débito" e "crédito"
         const tipos = Array.from(new Set(pagamentos.map((p) => p.formaPagamento)));
         setTiposPagamento(tipos);
       } catch (err) {
@@ -72,6 +82,7 @@ function Vendas() {
         setLoading(false);
       }
     };
+
 
     fetchVendas();
   }, []);
@@ -133,10 +144,10 @@ function Vendas() {
 
   const handlePrint = () => {
     const doc = new jsPDF();
-  
+
     // Adiciona um título
     doc.text('Relatório de Vendas', 14, 20);
-  
+
     // Configura as colunas e os dados da tabela
     const tableColumn = [
       'ID',
@@ -145,22 +156,22 @@ function Vendas() {
       'Forma de Movimentação',
       'Data de Criação'
     ];
-  
+
     // Use filteredPagamentos diretamente para incluir todos os registros filtrados
     const tableRows = filteredPagamentos.map(venda => [
       venda.vendaId,
-      venda.cliente || 'Não Informado',
+      venda.cliente || venda.descricao || 'Não Informado',
       new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(venda.valorPago),
       venda.formaPagamento,
       new Date(venda.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
     ]);
-  
+
     // Adiciona uma linha de rodapé com os totais
     const totalPrecoFiltrado = filteredPagamentos.reduce(
       (sum, venda) => sum + parseFloat(venda.valorPago),
       0
     );
-  
+
     tableRows.push([
       'Totais:',
       '', // Cliente (vazio)
@@ -168,18 +179,18 @@ function Vendas() {
       '', // Forma de Pagamento (vazio)
       '' // Data de Criação (vazio)
     ]);
-  
+
     // Adiciona a tabela ao PDF
     doc.autoTable({
       head: [tableColumn],
       body: tableRows,
       startY: 30, // Posição inicial da tabela
     });
-  
+
     // Salva o PDF
     doc.save('relatorio_vendas.pdf');
   };
-  
+
 
   const totalPages = Math.ceil(filteredPagamentos.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
@@ -208,62 +219,71 @@ function Vendas() {
           <div className="spinner"></div>
         </div>) : (
         <>
-          <div id="search-container">
-            <div id="search-fields">
-              <div>
-                <label htmlFor="cliente">Cliente</label>
-                <input className="input-geral"
-                  type="text"
-                  id="cliente"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  maxLength="150"
-                />
-                <label htmlFor="dataVendaInicial">Data Inicial</label>
-                <input className="input-geral"
-                  type="date"
-                  id="dataVendaInicial"
-                  value={dataVendaInicial}
-                  onChange={(e) => setdataVendaInicial(e.target.value)}
-                />
-                <label htmlFor="dataVendaFinal">Data Final</label>
-                <input className="input-geral"
-                  type="date"
-                  id="dataVendaFinal"
-                  value={dataVendaFinal}
-                  onChange={(e) => setdataVendaFinal(e.target.value)}
-                />
-                <label htmlFor="cpf">CPF/CNPJ</label>
-                <input className="input-geral"
-                  type="text"
-                  id="cpf"
-                  value={cpfCnpj}
-                  onChange={handleCpfChange}
-                />
-                <label htmlFor="tipoVenda">Tipo de Venda</label>
-                <select
-                  className="input-geral"
-                  id="tipoVenda"
-                  value={tipoVenda}
-                  onChange={(e) => setTipoVenda(e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  {tiposPagamento.map((tipo) => (
-                    <option key={tipo} value={tipo}>
-                      {tipo}
-                    </option>
-                  ))}
-                </select>
+          <div id="search-vendas">
+            <div id="search-fields-vendas">
+              <div className="field-group">
+                <div className="field-line">
+                  <label htmlFor="cliente">Cliente</label>
+                  <input
+                    className="input-consulta-vendas"
+                    type="text"
+                    id="cliente"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    maxLength="150"
+                  />
+                  <label htmlFor="cpf">CPF/CNPJ</label>
+                  <input
+                    className="input-consulta-vendas"
+                    type="text"
+                    id="cpf"
+                    value={cpfCnpj}
+                    onChange={handleCpfChange}
+                  />
+                </div>
+                <div className="field-line">
+                  <label htmlFor="dataVendaInicial">Data Inicial</label>
+                  <input
+                    className="input-consulta-vendas"
+                    type="date"
+                    id="dataVendaInicial"
+                    value={dataVendaInicial}
+                    onChange={(e) => setdataVendaInicial(e.target.value)}
+                  />
+                  <label htmlFor="dataVendaFinal">Data Final</label>
+                  <input
+                    className="input-consulta-vendas"
+                    type="date"
+                    id="dataVendaFinal"
+                    value={dataVendaFinal}
+                    onChange={(e) => setdataVendaFinal(e.target.value)}
+                  />
+                </div>
+                <div className="field-line">
+                  <label htmlFor="tipoVenda">Tipo de Venda</label>
+                  <select
+                    className="input-consulta-vendas"
+                    id="tipoVenda"
+                    value={tipoVenda}
+                    onChange={(e) => setTipoVenda(e.target.value)}
+                  >
+                    <option value="">Todos</option>
+                    {tiposPagamento.map((tipo) => (
+                      <option key={tipo} value={tipo}>
+                        {tipo}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
-            <div>
-              <div id="button-group">
-                <button onClick={handleSearch} className="button">Pesquisar</button>
-                <button onClick={handleClear} className="button">Limpar</button>
-                <button onClick={handlePrint} className="button">Imprimir</button>
-              </div>
+            <div id="button-vendas-group">
+              <button onClick={handleSearch} className="button-vendas">Pesquisar</button>
+              <button onClick={handleClear} className="button-vendas">Limpar</button>
+              <button onClick={handlePrint} className="button-vendas">Imprimir</button>
             </div>
           </div>
+
 
           <div id="separator-bar"></div>
 
@@ -284,20 +304,23 @@ function Vendas() {
                   {pagamentosPaginaAtual.map((venda) => (
                     <tr key={venda.id}>
                       <td>{venda.vendaId}</td>
-                      <td>{venda.cliente || 'Não Informado'}</td>
+                      <td>{venda.cliente || venda.descricao || 'Não Informado'}</td>
                       <td>
                         {new Intl.NumberFormat('pt-BR', {
                           style: 'currency',
                           currency: 'BRL',
                         }).format(venda.valorPago)}
                       </td>
-                      <td>{venda.formaPagamento}</td>
+                      <td>
+                        {venda.formaPagamento} {/* Aqui pode ser exibido o tipo de pagamento */}
+                      </td>
                       <td>{new Date(venda.dataVenda).toLocaleString().replace(",", "")}</td>
                       <td>
                         <button className="edit-button">Editar</button>
                       </td>
                     </tr>
                   ))}
+
                 </tbody>
                 {currentPage === totalPages && (
                   <tfoot>
