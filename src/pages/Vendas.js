@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getVendas } from '../services/api';
+import { getVendas, cancelaVenda } from '../services/api';
 import '../styles/Vendas.css';
 import ModalCliente from '../components/ModalCadastraCliente';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
@@ -7,12 +7,14 @@ import Toast from '../components/Toast';
 
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import ModalCancelaVenda from '../components/ModalCancelaVenda';
 
 
 
 function Vendas() {
   const [loading, setLoading] = useState(true);
   const [vendas, setVendas] = useState([]);
+  const [idVenda, setIdVenda] = useState('');
   const [filteredVendas, setFilteredVendas] = useState([]);
   const [nome, setNome] = useState('');
   const [cpfCnpj, setCpf] = useState('');
@@ -29,61 +31,62 @@ function Vendas() {
   let [filteredPagamentos, setFilteredPagamentos] = useState([]);
   const [tipoPagamento, setTipoPagamento] = useState('');
   const [tiposPagamento, setTiposPagamento] = useState([]);
+  const [isModalModalCancelaVendaOpen, setIsModalCancelaVendaOpen] = useState(false);
 
 
 
 
-  useEffect(() => {
-    const fetchVendas = async () => {
-      try {
-        const response = await getVendas();
-        const data = response.data.transacoes;
+  const fetchVendas = async () => {
+    try {
+      const response = await getVendas();
+      const data = response.data.transacoes;
 
-        if (!data || !Array.isArray(data)) {
-          throw new Error('A estrutura de dados das transações está incorreta');
+      if (!data || !Array.isArray(data)) {
+        throw new Error('A estrutura de dados das transações está incorreta');
+      }
+
+      // Processar todas as transações
+      const pagamentos = data.flatMap((venda) => {
+        // Caso tenha formasPagamento, processa normalmente
+        if (venda.formasPagamento) {
+          return venda.formasPagamento.map((pagamento) => ({
+            vendaId: venda.id,
+            clienteId: venda.cliente,
+            cliente: venda.cliente || 'Não Informado',
+            tipo: venda.tipo,
+            dataVenda: venda.data,
+            formaPagamento: pagamento.formaPagamento,
+            valorPago: parseFloat(pagamento.vlrPago),
+          }));
         }
 
-        // Processar todas as transações
-        const pagamentos = data.flatMap((venda) => {
-          // Caso tenha formasPagamento, processa normalmente
-          if (venda.formasPagamento) {
-            return venda.formasPagamento.map((pagamento) => ({
-              vendaId: venda.id,
-              clienteId: venda.cliente,
-              cliente: venda.cliente || 'Não Informado',
-              dataVenda: venda.data,
-              formaPagamento: pagamento.formaPagamento,
-              valorPago: parseFloat(pagamento.vlrPago),
-            }));
-          }
+        // Caso seja débito ou crédito, processa separadamente
+        return {
+          vendaId: venda.id,
+          clienteId: venda.cliente || null,
+          cliente: venda.cliente || venda.descricao || 'Não Informado',
+          dataVenda: venda.data,
+          formaPagamento: venda.tipo, // Aqui o tipo será "débito" ou "crédito"
+          valorPago: parseFloat(venda.valor || 0), // Usa o valor diretamente
+        };
+      });
 
-          // Caso seja débito ou crédito, processa separadamente
-          return {
-            vendaId: venda.id,
-            clienteId: venda.cliente || null,
-            cliente: venda.cliente || venda.descricao || 'Não Informado',
-            dataVenda: venda.data,
-            formaPagamento: venda.tipo, // Aqui o tipo será "débito" ou "crédito"
-            valorPago: parseFloat(venda.valor || 0), // Usa o valor diretamente
-          };
-        });
+      setPagamentosDetalhados(pagamentos);
+      setFilteredPagamentos(pagamentos);
+      setVendas(response.data);
+      setFilteredVendas(response.data);
 
-        setPagamentosDetalhados(pagamentos);
-        setFilteredPagamentos(pagamentos);
-        setVendas(response.data);
-        setFilteredVendas(response.data);
+      // Extrair tipos únicos, incluindo "débito" e "crédito"
+      const tipos = Array.from(new Set(pagamentos.map((p) => p.formaPagamento)));
+      setTiposPagamento(tipos);
+    } catch (err) {
+      console.error('Erro ao buscar Vendas', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        // Extrair tipos únicos, incluindo "débito" e "crédito"
-        const tipos = Array.from(new Set(pagamentos.map((p) => p.formaPagamento)));
-        setTiposPagamento(tipos);
-      } catch (err) {
-        console.error('Erro ao buscar Vendas', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-
+  useEffect(() => {
     fetchVendas();
   }, []);
 
@@ -209,6 +212,52 @@ function Vendas() {
   };
   // Calcula as somas de desconto e totalPrice
 
+  const handleOpenModalCancelaVenda = (venda) => {
+    setIdVenda(venda);
+    setIsModalCancelaVendaOpen(true);
+  };
+
+
+  const handleCloseModalCancelaVenda = () => {
+    setIsModalCancelaVendaOpen(false);
+  };
+
+  const handleSubmitLancamento = async (formElements) => {
+    let dataHoje = new Date().toLocaleString().replace(',', '');
+    let dataAjustada = converterData(dataHoje)
+    // Extrai os valores dos elementos do formulário
+    const motivo_cancelamento = formElements.motivo.value;
+    const vendaId = formElements.idVenda;
+    const lancamentoData = {
+      motivo_cancelamento: motivo_cancelamento,
+      dataCancelamento: dataAjustada
+    };
+
+    try {
+      const response = await cancelaVenda(vendaId, lancamentoData);
+      if (response.status === 200) {
+        setToast({ message: 'Registrado(s) cancelado(s) com sucesso!', type: 'success' });
+        setIsModalCancelaVendaOpen(false);
+        fetchVendas();
+        console.log("Lançamento registrado com sucesso:", lancamentoData);
+      }
+    } catch (error) {
+      setToast({ message: 'Erro ao cancelar venda!', type: 'error' });
+      console.error("Erro ao registrar lançamento:", error);
+    }
+  };
+
+  function converterData(dataString) {
+    const partes = dataString.split(/[\/ :]/); // Divide a string em dia, mês, ano, hora, minuto e segundo
+    const dia = partes[0];
+    const mes = partes[1];
+    const ano = partes[2];
+    const hora = partes[3];
+    const minuto = partes[4];
+    const segundo = partes[5];
+
+    return `${ano}-${mes}-${dia} ${hora}:${minuto}:${segundo}`; // Usa template literals para formatar
+  }
 
 
   return (
@@ -315,9 +364,13 @@ function Vendas() {
                         {venda.formaPagamento} {/* Aqui pode ser exibido o tipo de pagamento */}
                       </td>
                       <td>{new Date(venda.dataVenda).toLocaleString().replace(",", "")}</td>
-                      <td>
-                        <button className="edit-button">Editar</button>
-                      </td>
+                      {venda.tipo === "Venda" ? (
+                        <td>
+                          <button className="cancela-button" onClick={() => handleOpenModalCancelaVenda(venda.vendaId)}>Cancelar</button>
+                        </td>
+                      ) : (
+                        <td></td>
+                      )}
                     </tr>
                   ))}
 
@@ -360,6 +413,14 @@ function Vendas() {
               <label htmlFor="rows-select">por página</label>
             </div>
           </div>
+          {isModalModalCancelaVendaOpen && (
+            <ModalCancelaVenda
+              isOpen={isModalModalCancelaVendaOpen}
+              onClose={handleCloseModalCancelaVenda}
+              onSubmit={handleSubmitLancamento}
+              idVenda={idVenda}
+            />
+          )}
 
         </>
       )}

@@ -49,8 +49,13 @@
   border-collapse: collapse;
 }
 
+#vendas-grid tbody tr:hover {
+  background-color: #f0f0f0; /* Cor de fundo ao passar o mouse */
+  cursor: pointer; /* Opcional: indica que a linha é interativa */
+}
+
 #vendas-grid th,
-#clientes-grid td {
+#vendas-grid td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: left;
@@ -147,4 +152,19 @@
 
 .button-vendas:hover {
   background: #0056b3;
+}
+
+.cancela-button {
+  background-color: #cf5858;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  padding: 10px 20px;
+  margin: 4px;
+  /* Espaço em todos os lados */
+}
+
+.cancela-button:hover {
+  background-color: #ff0000;
 }

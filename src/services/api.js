@@ -194,7 +194,11 @@ export const getUFIBGE = async (id, codIBGE) => {
 };
 
 
-// UFs e Municípios
+// Vendas
 export const getVendas =async () => {
   return api.get('/vendasdetalhes');
+};
+
+export const cancelaVenda = (id, venda) => {
+  return api.put(`/cancelavenda/${id}`, venda);
 };
