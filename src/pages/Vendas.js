@@ -93,28 +93,31 @@ function Vendas() {
   const handleSearch = () => {
     const lowerNome = nome.toLowerCase();
     const lowerCpf = removeMaks(cpfCnpj.toLowerCase());
-    const dataInicial = new Date(dataVendaInicial).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-    const dataFinal = new Date(dataVendaFinal).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+
+    // Certificar que as datas estão no formato correto para comparação
+    const dataInicial = dataVendaInicial ? new Date(dataVendaInicial).toISOString().split('T')[0] : null;
+    const dataFinal = dataVendaFinal ? new Date(dataVendaFinal).toISOString().split('T')[0] : null;
 
     const results = pagamentosDetalhados.filter(venda => {
       const vendaNome = venda.cliente?.toLowerCase() || '';
       const vendaCpf = removeMaks(venda.cpfCnpj || '');
 
-      let vendaData = new Date(venda.dataVenda).toLocaleDateString()
-      vendaData = vendaData.replace(",", "");
+      // Garantir que a data da venda esteja no formato correto
+      const vendaData = new Date(venda.dataVenda).toISOString().split('T')[0];
 
       return (
         (lowerNome ? vendaNome.includes(lowerNome) : true) &&
         (lowerCpf ? vendaCpf.includes(lowerCpf) : true) &&
-        (dataVendaInicial ? vendaData >= dataInicial : true) &&
-        (dataVendaFinal ? vendaData <= dataFinal : true) &&
+        (dataInicial ? vendaData >= dataInicial : true) &&
+        (dataFinal ? vendaData <= dataFinal : true) &&
         (tipoVenda ? venda.formaPagamento === tipoVenda : true)
       );
     });
-    setFilteredPagamentos(results);
 
+    setFilteredPagamentos(results);
     setCurrentPage(1); // Resetar para a primeira página após a busca
   };
+
 
   const handleClear = () => {
     setNome('');
