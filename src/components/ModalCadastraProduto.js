@@ -8,6 +8,7 @@ import Toast from '../components/Toast';
 const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additionalFields = [] }) => {
   const [formData, setFormData] = React.useState({});
   const [cEAN, setcEAN] = useState('');
+  const [cod_interno, setCodInterno] = useState('');
   const [qtdMinima, setqtdMinima] = useState('');
   const [qCom, setqCom] = useState('');
   const [vUnCom, setvUnCom] = useState('');
@@ -32,6 +33,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
     if (produto) {
       // Preencher os campos com os dados da pessoa selecionada para edição
       setxProd(produto.xProd || '');
+      setCodInterno(produto.cod_interno || '');
       setcEAN(produto.cEAN || '');
       setqtdMinima(produto.qtdMinima || '');
       setqCom(produto.qCom || '');
@@ -44,6 +46,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
     } else {
       // Limpar os campos quando não há pessoa selecionada
       setxProd('');
+      setCodInterno('');
       setcEAN('');
       setqtdMinima('');
       setqCom('');
@@ -66,6 +69,9 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
 
   const handlexProdChange = (e) => {
     setxProd(e.target.value); // Atualiza o estado do nome
+  };
+  const handleCodInternoChange = (e) => {
+    setCodInterno(e.target.value); // Atualiza o estado do nome
   };
   const handlecEANChange = (e) => {
     setcEAN(e.target.value); // Atualiza o estado do nome
@@ -116,6 +122,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
       const formData = new FormData(e.target);
       const newProduto = {
         xProd: formData.get('xProd'),
+        cod_interno: formData.get('cod_interno'),
         cEAN: formData.get('cEAN'),
         qtdMinima: formData.get('qtdMinima'),
         qCom: formData.get('qCom'),
@@ -133,6 +140,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
     } else {
       onSubmit({
         xProd,
+        cod_interno,
         cEAN,
         qtdMinima,
         qCom,
@@ -185,6 +193,18 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
               />
             </div>
             <div>
+              <label htmlFor="cod_interno">Código Interno</label>
+              <input
+                className='input-geral'
+                type="text"
+                id="cod_interno"
+                name="cod_interno"
+                value={cod_interno} // Controlado pelo estado
+                onChange={handleCodInternoChange}
+                required
+              />
+            </div>
+            <div>
               <label htmlFor="cEAN">Código de Barras</label>
               <input
                 className='input-geral'
@@ -193,7 +213,6 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 name="cEAN"
                 value={cEAN} // Controlado pelo estado
                 onChange={handlecEANChange}
-                required
               />
             </div>
             <div>
@@ -232,7 +251,6 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 value={ncm}
                 onChange={handleNcmChange} // Adiciona o onChange para atualizar o estado
                 maxLength="150"
-                required
               />
             </div>
             <div>

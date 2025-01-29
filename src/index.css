@@ -245,7 +245,6 @@ code {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
   /* Certifique-se de que está acima de outros elementos */
 }
 
@@ -261,7 +260,6 @@ code {
   cursor: pointer;
   border-radius: 5px;
   justify-content: flex-end;
-  z-index: 1000;
   /* Certifique-se de que o botão está acima de outros elementos */
 
 }

@@ -74,6 +74,7 @@ function Produtos() {
     const handleaddProdutos = async (e) => {
         const newProduto = {
             xProd:e.xProd,
+            cod_interno: e.cod_interno,
             cEAN: e.cEAN,
             qtdMinima: e.qtdMinima,
             qCom:e.qCom,
@@ -113,6 +114,7 @@ function Produtos() {
         //const formData = new FormData(e.target);
         const updatedProduto = {
             xProd:e.xProd,
+            cod_interno: e.cod_interno,
             cEAN: e.cEAN,
             qtdMinima: e.qtdMinima,
             qCom:e.qCom,
