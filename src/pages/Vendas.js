@@ -32,6 +32,7 @@ function Vendas() {
   const [tipoPagamento, setTipoPagamento] = useState('');
   const [tiposPagamento, setTiposPagamento] = useState([]);
   const [isModalModalCancelaVendaOpen, setIsModalCancelaVendaOpen] = useState(false);
+  const [somarLancamentosManuais, setSomarLancamentosManuais] = useState(false);
 
 
 
@@ -146,14 +147,18 @@ function Vendas() {
     }
   }, [toast]);
 
-  const totalPreco = filteredPagamentos.reduce((sum, venda) => sum + parseFloat(venda.valorPago), 0);
+  //const totalPreco = filteredPagamentos.reduce((sum, venda) => sum + parseFloat(venda.valorPago), 0);
+
+  const totalPreco = filteredPagamentos
+    .filter(venda => venda.tipo === "Venda" || (somarLancamentosManuais && venda.tipo !== "Venda")) // Filtra conforme a condição de somarLancamentosManuais
+    .reduce((sum, venda) => sum + parseFloat(venda.valorPago), 0);
 
   const handlePrint = () => {
     const doc = new jsPDF();
 
     // Adiciona um título
-    doc.text('Relatório de Vendas', 14, 20);
-
+    const tituloRelatorio = somarLancamentosManuais ? 'Relatório de Vendas/Lançamentos' : 'Relatório de Vendas';
+    doc.text(tituloRelatorio, 14, 20);
     // Configura as colunas e os dados da tabela
     const tableColumn = [
       'ID',
@@ -172,16 +177,10 @@ function Vendas() {
       new Date(venda.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
     ]);
 
-    // Adiciona uma linha de rodapé com os totais
-    const totalPrecoFiltrado = filteredPagamentos.reduce(
-      (sum, venda) => sum + parseFloat(venda.valorPago),
-      0
-    );
-
     tableRows.push([
       'Totais:',
       '', // Cliente (vazio)
-      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPrecoFiltrado),
+      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPreco),
       '', // Forma de Pagamento (vazio)
       '' // Data de Criação (vazio)
     ]);
@@ -326,6 +325,17 @@ function Vendas() {
                       </option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label>
+                    <input
+                      className="input-consulta-vendas"
+                      type="checkbox"
+                      checked={somarLancamentosManuais}
+                      onChange={() => setSomarLancamentosManuais(!somarLancamentosManuais)}
+                    />
+                    Deseja Somar os Lançamentos Manuais?
+                  </label>
                 </div>
               </div>
             </div>
