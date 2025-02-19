@@ -1,12 +1,18 @@
+// src/components/Layout.js
 import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, Link } from 'react-router-dom';
 import '../styles/Layout.css';
+import { useAuth } from '../context/AuthContext';
+import { hasPermission } from '../utils/hasPermission'; // Importar a função para checar permissões
 
 function Layout() {
+  const { permissions } = useAuth(); // Pega as permissões do usuário
+
   const [username, setUser] = useState('');
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isCadastrosOpen, setCadastrosOpen] = useState(false);
   const [isMovimentacaoOpen, setMovimentacaoOpen] = useState(false);
+  const [isGestaoFinanceiraOpen, setGestaoFinanceiraOpen] = useState(false); // Novo estado para "Gestão Financeira"
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,45 +35,89 @@ function Layout() {
   const toggleCadastros = () => {
     setCadastrosOpen(!isCadastrosOpen);
     setMovimentacaoOpen(false); // Fecha o submenu de movimentação
+    setGestaoFinanceiraOpen(false); // Fecha o submenu de gestão financeira
   };
 
   const toggleMovimentacao = () => {
     setMovimentacaoOpen(!isMovimentacaoOpen);
     setCadastrosOpen(false); // Fecha o submenu de cadastros
+    setGestaoFinanceiraOpen(false); // Fecha o submenu de gestão financeira
+  };
+
+  const toggleGestaoFinanceira = () => {
+    setGestaoFinanceiraOpen(!isGestaoFinanceiraOpen);
+    setCadastrosOpen(false); // Fecha o submenu de cadastros
+    setMovimentacaoOpen(false); // Fecha o submenu de movimentação
+  };
+
+  // Função que retorna true se o usuário tem permissão para visualizar o item de menu
+  const canViewMenuItem = (pageName) => {
+    return hasPermission(permissions, pageName, 'view');
   };
 
   return (
     <div>
       <header id="header">
         <div id="header-content">
+          {/* Button to toggle the main menu */}
           <button id="menu-button" onClick={toggleMenu}>
             {isMenuOpen ? 'Fechar Menu' : 'Abrir Menu'}
           </button>
+          {/* Main navigation menu */}
           <nav id="menu" className={isMenuOpen ? 'show' : ''}>
-            <a href="/home" className="menu-item">Home</a>
-            <div id="cadastros" className="menu-item" onClick={toggleCadastros}>
-              <span>Cadastros</span>
-              <div id="cadastros-submenu" className={isCadastrosOpen ? 'submenu' : ''}>
-                <a href="/fornecedores" className="submenu-item">Fornecedores</a>
-                <a href="/clientes" className="submenu-item">Clientes</a>
-                <a href="/produtos" className="submenu-item">Produtos</a>
+            {canViewMenuItem('home') && <Link to="/home" className="menu-item">Home</Link>}
+
+            {/* Cadastros menu item with a submenu */}
+            {canViewMenuItem('permissoes') || canViewMenuItem('clientes') || canViewMenuItem('funcionarios') || canViewMenuItem('fornecedores') || canViewMenuItem('produtos') || canViewMenuItem('veiculos')
+              || canViewMenuItem('contasbancarias') ? (
+              <div id="cadastros" className="menu-item" onClick={toggleCadastros}>
+                <span>Cadastros</span>
+                <div id="cadastros-submenu" className={isCadastrosOpen ? 'submenu' : ''}>
+                  {canViewMenuItem('permissoes') && <Link to="/permissoes" className="submenu-item">Permissões</Link>}
+                  {canViewMenuItem('clientes') && <Link to="/clientes" className="submenu-item">Clientes</Link>}
+                  {canViewMenuItem('funcionarios') && <Link to="/funcionarios" className="submenu-item">Funcionários</Link>}
+                  {canViewMenuItem('fornecedores') && <Link to="/fornecedores" className="submenu-item">Fornecedores</Link>}
+                  {canViewMenuItem('produtos') && <Link to="/produtos" className="submenu-item">Produtos/Serviços</Link>}
+                  {canViewMenuItem('veiculos') && <Link to="/veiculos" className="submenu-item">Veículos</Link>}
+                  {canViewMenuItem('contasbancarias') && <Link to="/contasbancarias" className="submenu-item">Contas Bancárias</Link>}
+                </div>
               </div>
-            </div>
-            <div id="movimentacao" className="menu-item" onClick={toggleMovimentacao}>
-              <span>Movimentação</span>
-              <div id="movimentacao-submenu" className={isMovimentacaoOpen ? 'submenu' : ''}>
-                <a href="/notafiscal" className="submenu-item">Lançar NF-e</a>
-                <a href="/vendas" className="submenu-item">Gestão de Vendas</a>
+            ) : null}
+
+            {/* Movimentação menu item with a submenu */}
+            {canViewMenuItem('notafiscal') || canViewMenuItem('movimentacaoprodutos') || canViewMenuItem('vendas') ? (
+              <div id="movimentacao" className="menu-item" onClick={toggleMovimentacao}>
+                <span>Movimentação</span>
+                <div id="movimentacao-submenu" className={isMovimentacaoOpen ? 'submenu' : ''}>
+                  {canViewMenuItem('notafiscal') && <Link to="/notafiscal" className="submenu-item">Lançar NF-e</Link>}
+                  {canViewMenuItem('vendas') && <Link to="/vendas" className="submenu-item">Vendas</Link>}
+                  {canViewMenuItem('movimentacaoprodutos') && <Link to="/movimentacaoprodutos" className="submenu-item">Movimentação de Produtos</Link>}
+                </div>
               </div>
-            </div>
+            ) : null}
+
+            {/* Gestão Financeira menu item with a submenu */}
+            {canViewMenuItem('contaspagar') || canViewMenuItem('movimentacaofinanceiradespesas') || canViewMenuItem('contasliquidadas') ? (
+              <div id="gestao-financeira" className="menu-item" onClick={toggleGestaoFinanceira}>
+                <span>Gestão Financeira</span>
+                <div id="gestao-financeira-submenu" className={isGestaoFinanceiraOpen ? 'submenu' : ''}>
+                  {canViewMenuItem('movimentacaofinanceiradespesas') && <Link to="/movimentacaofinanceiradespesas" className="submenu-item">Contas a Pagar</Link>}
+                  {canViewMenuItem('contasliquidadas') && <Link to="/contasliquidadas" className="submenu-item">Contas/Parcelas Liquidadas</Link>}
+                </div>
+              </div>
+            ) : null}
+
           </nav>
-          <div id="user-info">
-            <span id="user-text">Bem-vindo, </span>
-            <span id="username">{username}</span>
+          {/* User information and logout button */}
+          <div>
+            <span id="usuario">{`Bem vindo ${username.toUpperCase()}`}</span>
+          </div>
+          <div>
             <button onClick={handleLogout} id="logout-button">Sair</button>
           </div>
         </div>
       </header>
+      {/* Main content area */}
       <main>
         <Outlet />
       </main>

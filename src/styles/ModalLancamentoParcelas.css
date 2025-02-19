@@ -1,0 +1,7 @@
+.parcelas-container {
+    display: flex;
+    flex-direction: column;
+    /* Organiza as parcelas em colunas */
+    gap: 10px;
+    /* Espaçamento entre as parcelas */
+}

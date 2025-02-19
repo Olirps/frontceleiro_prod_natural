@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { getCarros, addCarro, updateCarro, getCarroById, getMarcas } from '../services/api';
-import '../styles/Carros.css';
+import { getVeiculos, addVeiculos, updateVeiculos, getVeiculosById, getMarcas } from '../services/api';
+import { formatPlaca } from '../utils/functions';
+
+import '../styles/Veiculos.css';
 import Modal from '../components/ModalCadastroCarro';
 import Toast from '../components/Toast';
+import { useAuth } from '../context/AuthContext';
+import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
 
-function Carros() {
+
+function Veiculos() {
   const [carros, setCarros] = useState([]);
   const [filteredCarros, setFilteredCarros] = useState([]);
   const [modelo, setModelo] = useState('');
@@ -18,11 +23,13 @@ function Carros() {
   const [isEdit, setIsEdit] = useState(false);
   const [marcas, setMarcas] = useState([]);
   const [marcaId, setMarcaId] = useState('');
+  const { permissions } = useAuth();
+
 
   useEffect(() => {
     const fetchCarros = async () => {
       try {
-        const response = await getCarros();
+        const response = await getVeiculos();
         setCarros(response.data);
         setFilteredCarros(response.data);
       } catch (err) {
@@ -50,7 +57,7 @@ function Carros() {
     const lowerPlaca = placa.toLowerCase();
     const results = carros.filter(carro =>
       (lowerModelo ? carro.modelo.toLowerCase().includes(lowerModelo) : true) &&
-      (lowerPlaca ? carro.placa.toLowerCase().includes(lowerPlaca) : true) &&
+      (lowerPlaca ? carro.placa?.toLowerCase().includes(lowerPlaca) : true) &&
       (marcaId ? carro.marcaId == marcaId : true)
     );
 
@@ -71,6 +78,16 @@ function Carros() {
     setCurrentPage(1); // Resetar para a primeira página ao alterar o número de linhas
   };
 
+  const handleCadastrarModal = () => {
+    if (!hasPermission(permissions, 'veiculos', 'insert')) {
+      setToast({ message: "Você não tem permissão para cadastrar veiculos.", type: "error" });
+      return; // Impede a abertura do modal
+    }
+    setIsModalOpen(true);
+    setIsEdit(false);
+    setSelectedCarro(null);
+  };
+
   const handleAddCarro = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -79,13 +96,14 @@ function Carros() {
       placa: formData.get('placa'),
       quilometragem: formData.get('quilometragem'),
       marcaId: formData.get('marcaId'),
+      tipoveiculoId: formData.get('tipoVeiculoId'),
     };
 
     try {
-      await addCarro(newCarro);
+      await addVeiculos(newCarro);
       setToast({ message: "Veículo cadastrado com sucesso!", type: "success" });
       setIsModalOpen(false);
-      const response = await getCarros();
+      const response = await getVeiculos();
       setCarros(response.data);
       setFilteredCarros(response.data);
     } catch (err) {
@@ -96,7 +114,11 @@ function Carros() {
 
   const handleEditClick = async (carro) => {
     try {
-      const response = await getCarroById(carro.id);
+      if (!hasPermission(permissions, 'veiculos', 'viewcadastro')) {
+        setToast({ message: "Você não tem permissão para visualizar o cadastro de veículos.", type: "error" });
+        return; // Impede a abertura do modal
+      }
+      const response = await getVeiculosById(carro.id);
       setSelectedCarro(response.data);
       setIsEdit(true);
       setIsModalOpen(true);
@@ -114,15 +136,16 @@ function Carros() {
       placa: formData.get('placa'),
       quilometragem: formData.get('quilometragem'),
       marcaId: formData.get('marcaId'),
+      tipoveiculoId: formData.get('tipoVeiculoId')
     };
 
     try {
-      await updateCarro(selectedCarro.id, updatedCarro);
+      await updateVeiculos(selectedCarro.id, updatedCarro);
       setToast({ message: "Veículo atualizado com sucesso!", type: "success" });
       setIsModalOpen(false);
       setSelectedCarro(null);
       setIsEdit(false);
-      const response = await getCarros();
+      const response = await getVeiculos();
       setCarros(response.data);
       setFilteredCarros(response.data);
     } catch (err) {
@@ -156,7 +179,7 @@ function Carros() {
 
   return (
     <div id="carro-container">
-      <h1 id="carro-title">Consulta de Veículos</h1>
+      <h1 className='title-page'>Consulta de Veículos</h1>
       {loading ? (
         <div className="spinner-container">
           <div className="spinner"></div>
@@ -167,7 +190,7 @@ function Carros() {
               <div>
                 <label htmlFor="modelo">Modelo</label>
                 <input
-                className='input-geral'
+                  className='input-geral'
                   type="text"
                   id="modelo"
                   value={modelo}
@@ -175,13 +198,13 @@ function Carros() {
                   maxLength="150"
                 />
               </div>
-              <div className="input-group">
+              <div>
                 <label htmlFor="placa">Placa</label>
                 <input
-                className='input-geral'
+                  className='input-geral'
                   type="text"
                   id="placa"
-                  value={placa}
+                  value={formatPlaca(placa)}
                   onChange={(e) => setPlaca(e.target.value)}
                   maxLength="7"
                 />
@@ -189,7 +212,7 @@ function Carros() {
               <div>
                 <label htmlFor="marcaId">Marca</label>
                 <select
-                  className="select-geral"
+                  className="select-veiculos-geral"
                   id="marcaId"
                   value={marcaId}
                   onChange={(e) => setMarcaId(e.target.value)}
@@ -208,9 +231,7 @@ function Carros() {
                 <button onClick={handleSearch} className="button">Pesquisar</button>
                 <button onClick={handleClear} className="button">Limpar</button>
                 <button onClick={() => {
-                  setIsModalOpen(true);
-                  setIsEdit(false);
-                  setSelectedCarro(null);
+                  handleCadastrarModal();
                 }} className="button">Cadastrar</button>
               </div>
             </div>
@@ -219,8 +240,8 @@ function Carros() {
           <div id="separator-bar"></div>
 
           <div id="results-container">
-            <div id="carro-grid-container">
-              <table id="carro-grid">
+            <div id="grid-padrao-container">
+              <table id="grid-padrao">
                 <thead>
                   <tr>
                     <th>ID</th>
@@ -238,7 +259,7 @@ function Carros() {
                       <tr key={carro.id}>
                         <td>{carro.id}</td>
                         <td>{carro.modelo}</td>
-                        <td>{carro.placa}</td>
+                        <td>{formatPlaca(carro.placa)}</td>
                         <td>{carro.quilometragem}</td>
                         <td>{marca?.nome || 'Desconhecida'}</td>
                         <td>
@@ -246,7 +267,7 @@ function Carros() {
                             onClick={() => handleEditClick(carro)}
                             className="edit-button"
                           >
-                            Editar
+                            Visualizar
                           </button>
                         </td>
                       </tr>
@@ -280,7 +301,7 @@ function Carros() {
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
               onSubmit={isEdit ? handleEditSubmit : handleAddCarro}
-              defaultValues={selectedCarro}
+              carro={selectedCarro}
               marcas={marcas}
               isEdit={isEdit}
             />
@@ -292,4 +313,4 @@ function Carros() {
   );
 }
 
-export default Carros;
+export default Veiculos;

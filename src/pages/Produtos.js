@@ -4,6 +4,9 @@ import '../styles/Produtos.css';
 import '../styles/Fornecedores.css';
 import ModalCadastraProduto from '../components/ModalCadastraProduto';
 import Toast from '../components/Toast';
+import { useAuth } from '../context/AuthContext';
+import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { converterMoedaParaNumero } from '../utils/functions';
 
 
 function Produtos() {
@@ -19,6 +22,8 @@ function Produtos() {
     const [isCadastraProdutoModalOpen, setIsCadastraProdutoModalOpen] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
     const [importSuccess, setCadastroSuccess] = useState(false);
+    const { permissions } = useAuth();
+
 
     useEffect(() => {
         const fetchProdutos = async () => {
@@ -50,7 +55,7 @@ function Produtos() {
 
         const results = produtos.filter(produto =>
             (produto?.xProd ? produto.xProd.toLowerCase().includes(lowerNome) : !lowerNome) &&
-            (produto?.cEAN ? produto.cEAN.toLowerCase().includes(lowercEAN) : !lowercEAN)        );
+            (produto?.cEAN ? produto.cEAN.toLowerCase().includes(lowercEAN) : !lowercEAN));
         setFilteredProdutos(results);
         setCurrentPage(1); // Resetar para a primeira página após a busca
     };
@@ -71,34 +76,49 @@ function Produtos() {
         setcEAN(e.target.value);
     };
 
+    const handleCadastrarModal = () => {
+        if (!hasPermission(permissions, 'clientes', 'insert')) {
+            setToast({ message: "Você não tem permissão para cadastrar clientes.", type: "error" });
+            return; // Impede a abertura do modal
+        }
+        openCadastraProdutoModal();
+        setIsEdit(false);
+        setSelectedProduto(null);
+
+    };
+
     const handleaddProdutos = async (e) => {
         const newProduto = {
-            xProd:e.xProd,
+            xProd: e.xProd,
             cod_interno: e.cod_interno,
             cEAN: e.cEAN,
             qtdMinima: e.qtdMinima,
-            qCom:e.qCom,
-            NCM:e.ncm,
-            vUnCom: e.vUnCom,
-            vlrVenda: e.vlrVenda,
-            vlrVendaAtacado: e.vlrVendaAtacado
+            qCom: e.qCom,
+            NCM: e.ncm,
+            vUnCom: converterMoedaParaNumero(e.vUnCom),
+            vlrVenda: converterMoedaParaNumero(e.vlrVenda),
+            vlrVendaAtacado: converterMoedaParaNumero(e.vlrVendaAtacado)
         };
 
         try {
             const newProd = await addProdutos(newProduto);
-            setToast({ message: `Produto: ${newProd.data.id} - ${newProd.data.xProd}`, type: "success" });  
+            setToast({ message: `Produto: ${newProd.data.id} - ${newProd.data.xProd}`, type: "success" });
             const response = await getProdutos();
             setProdutos(response.data);
             closeCadastraProdutoModal();
             setCadastroSuccess(prev => !prev); // Atualiza o estado para acionar re-renderização
         } catch (err) {
-            const errorMessage = err.response.data.erro; 
+            const errorMessage = err.response.data.erro;
             setToast({ message: errorMessage, type: "error" });
         }
     };
 
     const handleEditClick = async (produto) => {
         try {
+            if (!hasPermission(permissions, 'produtos', 'viewcadastro')) {
+                setToast({ message: "Você não tem permissão para visualizar o cadastro de produtos/serviços.", type: "error" });
+                return; // Impede a abertura do modal
+            }
             const response = await getProdutoById(produto.id);
             setSelectedProduto(response.data);
             setIsEdit(true);
@@ -113,14 +133,14 @@ function Produtos() {
         //e.preventDefault();
         //const formData = new FormData(e.target);
         const updatedProduto = {
-            xProd:e.xProd,
+            xProd: e.xProd,
             cod_interno: e.cod_interno,
             cEAN: e.cEAN,
             qtdMinima: e.qtdMinima,
-            qCom:e.qCom,
+            qCom: e.qCom,
             vUnCom: e.vUnCom,
             NCM: e.ncm,
-            vlrVenda: e.vlrVenda,
+            vlrVenda: converterMoedaParaNumero(e.vlrVenda),
             vlrVendaAtacado: e.vlrVendaAtacado
         };
 
@@ -197,10 +217,7 @@ function Produtos() {
                                 <button onClick={handleSearch} className="button">Pesquisar</button>
                                 <button onClick={handleClear} className="button">Limpar</button>
                                 <button onClick={() => {
-                                    openCadastraProdutoModal();
-                                    setIsEdit(false);
-                                    setSelectedProduto(null);
-
+                                    handleCadastrarModal();
                                 }} className="button">Cadastrar</button>
                             </div>
                         </div>
@@ -226,7 +243,7 @@ function Produtos() {
                                             <td>{produto.xProd}</td>
                                             <td>{produto.cEAN}</td>
                                             <td>
-                                                <button onClick={() => handleEditClick(produto)} className="edit-button">Editar</button>
+                                                <button onClick={() => handleEditClick(produto)} className="edit-button">Visualizar</button>
                                             </td>
                                         </tr>
                                     ))}
@@ -266,7 +283,7 @@ function Produtos() {
                     produto={selectedProduto}
                 />
             )}
-        </div> 
+        </div>
     );
 }
 

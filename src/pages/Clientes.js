@@ -4,6 +4,10 @@ import '../styles/Clientes.css';
 import ModalCliente from '../components/ModalCadastraCliente';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
 import Toast from '../components/Toast';
+import { formatarCelular } from '../utils/functions';
+import { useAuth } from '../context/AuthContext';
+import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+
 
 function Clientes() {
   const [clientes, setClientes] = useState([]);
@@ -18,6 +22,8 @@ function Clientes() {
   const [toast, setToast] = useState({ message: '', type: '' });
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
+  const { permissions } = useAuth();
+
 
   useEffect(() => {
     const fetchClientes = async () => {
@@ -42,7 +48,7 @@ function Clientes() {
     lowerCpf = removeMaks(lowerCpf);
     const results = clientes.filter(cliente =>
       (lowerNome ? cliente.nome.toLowerCase().includes(lowerNome) : true) &&
-      (lowerNomeFantasia ? cliente.nomeFantasia.toLowerCase().includes(lowerNomeFantasia) : true) &&
+      (lowerNomeFantasia ? cliente.nomeFantasia?.toLowerCase().includes(lowerNomeFantasia) : true) &&
       (lowerCpf ? cliente.cpfCnpj.toLowerCase().includes(lowerCpf) : true)
     );
 
@@ -67,6 +73,17 @@ function Clientes() {
     const { value } = e.target;
     setCpf(cpfCnpjMask(value));
   };
+
+  const handleCadastrarModal = () => {
+    if (!hasPermission(permissions, 'clientes', 'insert')) {
+      setToast({ message: "Você não tem permissão para cadastrar clientes.", type: "error" });
+      return; // Impede a abertura do modal
+    }
+    setIsModalOpen(true);
+    setIsEdit(false);
+    setSelectedCliente(null);
+  };
+
 
   const handleAddCliente = async (e) => {
     e.preventDefault();
@@ -100,6 +117,10 @@ function Clientes() {
 
   const handleEditClick = async (cliente) => {
     try {
+      if (!hasPermission(permissions, 'clientes', 'viewcadastro')) {
+        setToast({ message: "Você não tem permissão para visualizar o cadastro de clientes.", type: "error" });
+        return; // Impede a abertura do modal
+      }
       const response = await getClienteById(cliente.id);
       setSelectedCliente(response.data);
       setIsEdit(true);
@@ -113,7 +134,6 @@ function Clientes() {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    console.log('Atributos do form:', Object.entries(e.target));
     const updatedCliente = {
       nome: formData.get('nome'),
       nomeFantasia: formData.get('nomeFantasia'),
@@ -168,7 +188,7 @@ function Clientes() {
 
   return (
     <div id="clientes-container">
-      <h1 id="clientes-title">Consulta de Clientes</h1>
+      <h1 className="title-page">Consulta de Clientes</h1>
       {loading ? (
         <div className="spinner-container">
           <div className="spinner"></div>
@@ -210,9 +230,7 @@ function Clientes() {
                 <button onClick={handleSearch} className="button">Pesquisar</button>
                 <button onClick={handleClear} className="button">Limpar</button>
                 <button onClick={() => {
-                  setIsModalOpen(true);
-                  setIsEdit(false);
-                  setSelectedCliente(null);
+                  handleCadastrarModal();
                 }} className="button">Cadastrar</button>
               </div>
             </div>
@@ -221,8 +239,8 @@ function Clientes() {
           <div id="separator-bar"></div>
 
           <div id="results-container">
-            <div id="clientes-grid-container">
-              <table id="clientes-grid">
+            <div id="grid-padrao-container">
+              <table id="grid-padrao">
                 <thead>
                   <tr>
                     <th>ID</th>
@@ -240,13 +258,13 @@ function Clientes() {
                       <td>{cliente.nome}</td>
                       <td>{cpfCnpjMask(cliente.cpfCnpj)}</td>
                       <td>{cliente.email}</td>
-                      <td>{cliente.celular}</td>
+                      <td>{formatarCelular(cliente.celular)}</td>
                       <td>
                         <button
                           onClick={() => handleEditClick(cliente)}
                           className="edit-button"
                         >
-                          Editar
+                          Visualizar
                         </button>
                       </td>
                     </tr>

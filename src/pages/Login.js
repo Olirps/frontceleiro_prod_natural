@@ -11,25 +11,37 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
+  
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       const response = await loginService(username, password);
-      const { token, username: user } = response.data;
+
+
+      // Verificando a estrutura correta da resposta
+      if (!response.user || !response.token) {
+        throw new Error('Resposta da API mal formatada.');
+      }
+
+      const { token, user } = response;  // Desestruturando diretamente a resposta
+
+      // Garantir que as permissões estão presentes
+      const permissoes = user.permissoes || [];
 
       // Armazenar o token no localStorage
       localStorage.setItem('authToken', token);
 
       // Usar a função de login do contexto para configurar o estado de autenticação
-      login(token, user);
+      login(token, user, permissoes);
 
       // Redirecionar para a página inicial após o login
       window.location.href = '/home';
     } catch (err) {
+      console.error('Erro no login:', err);
       setError('Usuário ou senha inválido. Por favor tente novamente.');
     }
   };
+
 
   return (
     <div id="login-container">

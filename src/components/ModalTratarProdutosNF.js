@@ -71,9 +71,9 @@ const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSu
             return;
         }
         const produto_ori_id = product.id;
-        const { nota_id, quantidade ,valor_unit} = product;
+        const { nota_id, quantidade, valor_unit } = product;
         const tipo_movimentacao = "entrada";
-        const produtoVinculado = { produto_ori_id, nota_id, produto, valor_unit:valor_unit ,produto_id: produtoId, tipo_movimentacao, quantidade };
+        const produtoVinculado = { produto_ori_id, nota_id, produto, valor_unit: valor_unit, produto_id: produtoId, tipo_movimentacao, quantidade };
 
         try {
             await vinculaProdutoNF(produto_ori_id, produtoVinculado);
@@ -93,29 +93,43 @@ const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSu
                     <div className="spinner"></div>
                 ) : (
                     <>
-                        <h2>Tratar Produto: {product.descricao}</h2>
-                        <p>ID: {product.id}</p>
-                        <p>Quantidade: {product.quantidade}</p>
-                        <p>Identificador: {product.identificador}</p>
+                        <div>
 
-                        <div id='produto-vinculado'>
-                            {/* Campo de pesquisa */}
-                            <div>
-                                <label htmlFor="produtoId">{produtoId}</label>
-                                <input
-                                    type="text"
-                                    value={produto}
-                                    onChange={handleSearchChange}
-                                    readOnly
-                                    required
-                                />
-                                <button className="button" onClick={openPesquisaGNModal}>Pesquisar Produto</button>
+                            <h2>Tratar Produto: {product.descricao}</h2>
+                            <button className="button-geral" onClick={openPesquisaGNModal}>Pesquisar Produto</button>
+                            <p>ID: {product.id}</p>
+                            <p>Quantidade: {product.quantidade}</p>
+                            <p>Identificador: {product.identificador}</p>
+
+                            <div id='produto-vinculado'>
+                                {/* Campo de pesquisa */}
+                                <div >
+                                    <label htmlFor="produtoId">{produtoId}</label>
+                                    <input
+                                        className='input-geral'
+                                        type="text"
+                                        value={produto}
+                                        onChange={handleSearchChange}
+                                        readOnly
+                                        required
+                                    />
+                                </div>
+
+                                {/* Botões de ação */}
+                                <div id='button-group'>
+                                    <button
+                                        className="button-geral"
+                                        onClick={handleSave}
+                                        disabled={isSaving}>
+                                        Salvar
+                                    </button>
+                                    <button
+                                        className="button-geral"
+                                        onClick={handleVincular}>
+                                        Vincular
+                                    </button>
+                                </div>
                             </div>
-
-                            {/* Botões de ação */}
-                            <button className="button" onClick={handleSave} disabled={isSaving} // Desabilita o botão
-                            >Salvar</button>
-                            <button className="button" onClick={handleVincular}>Vincular</button>
                         </div>
                     </>
                 )}

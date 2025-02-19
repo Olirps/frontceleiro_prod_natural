@@ -1,0 +1,93 @@
+  #carro-title {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+  }
+
+
+  #search-veiculos-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    width: 100%;
+    padding: 15px;
+  }
+
+  #search-veiculos-fields {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 600px;
+    /* Ajuste conforme necessário */
+  }
+
+  #search-veiculos-fields div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .input-veiculos-geral,
+  .select-veiculos-geral {
+    width: 220px;
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  .input-veiculos-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (max-width: 768px) {
+    #search-veiculos-fields {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .input-veiculos-geral,
+    .select-veiculos-geral {
+      width: 100%;
+    }
+  }
+
+  #carro-grid-container {
+    overflow-x: auto;
+  }
+
+  #carro-grid {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  #carro-grid th,
+  #carro-grid td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+
+  #carro-grid th {
+    background-color: #f4f4f4;
+  }
+
+
+  #input-group select {
+    width: auto;
+  }
+
+  .lancto-button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .lancto-button:hover {
+    background-color: #0056b3;
+  }

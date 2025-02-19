@@ -37,6 +37,10 @@
   color: #fff;
   text-decoration: none;
   cursor: pointer;
+  display: inline-block; /* Faz o elemento se ajustar ao conteúdo */
+  white-space: nowrap; /* Impede que o texto quebre em várias linhas */
+  margin: 5px; /* Espaçamento entre os itens */
+  flex-shrink: 0; /* Impede que o item encolha */
 }
 
 .menu-item:hover {
@@ -44,7 +48,7 @@
   border-radius: 4px;
 }
 
-#cadastros-submenu, #movimentacao-submenu {
+#cadastros-submenu, #movimentacao-submenu,#gestao-financeira-submenu {
   display: none;
   position: absolute;
   top: 100%;
@@ -70,9 +74,11 @@
 
 /* Exibe os submenus ao passar o mouse sobre o item pai */
 #cadastros:hover #cadastros-submenu,
-#movimentacao:hover #movimentacao-submenu {
+#movimentacao:hover #movimentacao-submenu,
+#gestao-financeira:hover #gestao-financeira-submenu {
   display: block;
 }
+
 
 /* Estilos específicos para a versão móvel */
 @media (max-width: 768px) {

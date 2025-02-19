@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import '../styles/ModalCadastraProduto.css'; // Certifique-se de criar este CSS também
 import { addProdutos, updateNFe } from '../services/api';
 import Toast from '../components/Toast';
+import { formatarMoedaBRL, converterMoedaParaNumero, normalizarNumero } from '../utils/functions';
 
 
 
@@ -53,13 +54,14 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
       setvUnCom('');
       setNcm('');
       setVlrVenda('');
-      setvlrVendaAtacado('');      
+      setvlrVendaAtacado('');
       setmargemSobreVlrCusto('');
       setmargemSobreVlrCustoAtacado('');
     }
   }, [produto]);
 
   if (!isOpen) return null;
+
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
@@ -84,25 +86,31 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
   };
 
   const handlevUnComChange = (e) => {
-    setvUnCom(e.target.value); // Atualiza o estado do nome
-    setmargemSobreVlrCusto(((vlrVenda / e.target.value) * 100).toFixed(4))
+    const novoValor = formatarMoedaBRL(e.target.value)
+    setvUnCom(novoValor); // Atualiza o estado do nome
+    const valor = converterMoedaParaNumero(novoValor)
+    setmargemSobreVlrCusto(((((vlrVenda / valor) * 100) / 2)).toFixed(4))
   };
   const handleNcmChange = (e) => {
     setNcm(e.target.value); // Atualiza o estado do nome
   };
   const handlevlrVendaChange = (e) => {
-    setVlrVenda(e.target.value); // Atualiza o estado do nome
-    setmargemSobreVlrCusto(((e.target.value / vUnCom) * 100).toFixed(4))
+    const novoValor = formatarMoedaBRL(e.target.value)
+    setVlrVenda(novoValor); // Atualiza o estado do nome
+    const valor = converterMoedaParaNumero(novoValor);
+    setmargemSobreVlrCusto(((((valor / converterMoedaParaNumero(vUnCom)) * 100) / 2)).toFixed(4))
   };
   const handlevlrVendaAtacadoChange = (e) => {
-    setvlrVendaAtacado(e.target.value); // Atualiza o estado do nome
-    setmargemSobreVlrCustoAtacado(((e.target.value / vUnCom) * 100).toFixed(4))
+    const novoValor = formatarMoedaBRL(e.target.value)
+    setvlrVendaAtacado(novoValor); // Atualiza o estado do nome
+    const valor = converterMoedaParaNumero(novoValor)
+    setmargemSobreVlrCustoAtacado(((((valor / converterMoedaParaNumero(vUnCom)) * 100) / 2) ).toFixed(4))
   };
 
   const handlemargemSobreVlrCustoChange = (e) => {
     setmargemSobreVlrCusto(e.target.value); // Atualiza o estado do nome
   };
-  
+
   const handlemargemSobreVlrCustoAtacadoChange = (e) => {
     setmargemSobreVlrCustoAtacado(e.target.value); // Atualiza o estado do nome
   };
@@ -126,14 +134,21 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
         cEAN: formData.get('cEAN'),
         qtdMinima: formData.get('qtdMinima'),
         qCom: formData.get('qCom'),
-        vUnCom: formData.get('vUnCom'),           //valor_unit: formData.get('valor_unit'),  ajustado para tratar produtos cadastrados manual na nf 24/09/2024
-        vlrVenda: formData.get('vlrVenda'),           //valor de venda: formData.get('valor_unit'),  ajustado para tratar produtos cadastrados manual na nf 24/09/2024
+        vUnCom: converterMoedaParaNumero(formData.get('vUnCom')),           //valor_unit: formData.get('valor_unit'),  ajustado para tratar produtos cadastrados manual na nf 24/09/2024
+        vlrVenda: converterMoedaParaNumero(formData.get('vlrVenda')),           //valor de venda: formData.get('valor_unit'),  ajustado para tratar produtos cadastrados manual na nf 24/09/2024
         nota_id: prod?.id
       };
 
       // Adiciona os campos adicionais
       additionalFields.forEach((field) => {
-        newProduto[field.name] = formData.get(field.name);
+        let value = '';
+
+        if (field.name === "valor_unit") {
+          value = formData.get(field.name); // Formata o valor ao digitar
+          newProduto[field.name] = converterMoedaParaNumero(value);
+        } else {
+          newProduto[field.name] = formData.get(field.name);
+        }
       });
 
       handleaddProdutos(newProduto); // Chama a função handleaddProdutos se prod.nNF não for nulo
@@ -260,7 +275,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 type="text"
                 id="vUnCom"
                 name="vUnCom"
-                value={vUnCom.replace(',', '.')}
+                value={formatarMoedaBRL(vUnCom)}
                 onChange={handlevUnComChange} // Adiciona o onChange para atualizar o estado
                 maxLength="150"
                 required
@@ -273,7 +288,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 type="text"
                 id="vlrVenda"
                 name="vlrVenda"
-                value={vlrVenda.replace(',', '.')}
+                value={formatarMoedaBRL(vlrVenda)}
                 onChange={handlevlrVendaChange} // Adiciona o onChange para atualizar o estado
                 maxLength="150"
                 required
@@ -299,7 +314,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 type="text"
                 id="vlrVendaAtacado"
                 name="vlrVendaAtacado"
-                value={vlrVendaAtacado.replace(',', '.')}
+                value={formatarMoedaBRL(vlrVendaAtacado)}
                 onChange={handlevlrVendaAtacadoChange} // Adiciona o onChange para atualizar o estado
                 maxLength="150"
                 required
@@ -321,14 +336,29 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
             {/* Campos adicionais */}
             {additionalFields.map((field, index) => (
               <input
-                className='input-geral'
+                className="input-geral"
                 key={index}
                 type={field.type}
                 name={field.name}
+                value={formData[field.name] || ""}
                 placeholder={field.placeholder}
-                onChange={handleInputChange}
+                onChange={(e) => {
+                  let value = e.target.value;
+
+                  if (field.name === "valor_unit") {
+                    value = formatarMoedaBRL(value); // Formata o valor ao digitar
+                  }
+
+                  handleInputChange({
+                    target: {
+                      name: field.name,
+                      value,
+                    },
+                  });
+                }}
               />
             ))}
+
             <div id='botao-salva'>
               <button type="submit" id="btnsalvar" className="button">Salvar</button>
             </div>

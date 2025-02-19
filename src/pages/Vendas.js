@@ -4,10 +4,12 @@ import '../styles/Vendas.css';
 import ModalCliente from '../components/ModalCadastraCliente';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
 import Toast from '../components/Toast';
-
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import ModalCancelaVenda from '../components/ModalCancelaVenda';
+import { useAuth } from '../context/AuthContext';
+import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+
 
 
 
@@ -25,14 +27,14 @@ function Vendas() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [toast, setToast] = useState({ message: '', type: '' });
-
-  ///
   const [pagamentosDetalhados, setPagamentosDetalhados] = useState([]);
   let [filteredPagamentos, setFilteredPagamentos] = useState([]);
   const [tipoPagamento, setTipoPagamento] = useState('');
   const [tiposPagamento, setTiposPagamento] = useState([]);
   const [isModalModalCancelaVendaOpen, setIsModalCancelaVendaOpen] = useState(false);
   const [somarLancamentosManuais, setSomarLancamentosManuais] = useState(false);
+  const { permissions } = useAuth();
+
 
 
 
@@ -215,8 +217,13 @@ function Vendas() {
   // Calcula as somas de desconto e totalPrice
 
   const handleOpenModalCancelaVenda = (venda) => {
-    setIdVenda(venda);
-    setIsModalCancelaVendaOpen(true);
+    if (!hasPermission(permissions, 'vendas', 'delete')) {
+      setToast({ message: "Você não tem permissão para cancelar vendas.", type: "error" });
+      return; // Impede a abertura do modal
+    } else {
+      setIdVenda(venda);
+      setIsModalCancelaVendaOpen(true);
+    }
   };
 
 
@@ -264,7 +271,7 @@ function Vendas() {
 
   return (
     <div id="vendas-container">
-      <h1 id="vendas-title">Vendas Realizadas</h1>
+      <h1 className="title-page">Vendas Realizadas</h1>
       {loading ? (
         <div className="spinner-container">
           <div className="spinner"></div>
