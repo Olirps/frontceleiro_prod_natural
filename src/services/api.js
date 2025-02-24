@@ -32,6 +32,27 @@ export const login = async (username, password) => {
 };
 
 // Funções para gerenciar Permissões de acesso
+export const addEmpresa = async (empresa) => {
+  return api.post('/empresa', empresa);
+};
+
+export const getAllEmpresas = async () => {
+  return api.get('/empresa');
+};
+
+export const getEmpresaById = async (id) => {
+  return api.get(`/empresa/${id}`);
+};
+
+
+export const updateEmpresa = async (id, dados) => {
+  return api.put(`/empresa/${id}`, dados);
+};
+
+
+
+
+// Funções para gerenciar Permissões de acesso
 export const addGrupoAcesso = async (grupoacesso) => {
   return api.post('/grupoacesso', grupoacesso);
 };
@@ -395,6 +416,11 @@ export const updateProduto = (id, produto) => {
 export const getProdutoById = async(id) => {
   return api.get(`/produtos/${id}`);
 };
+
+export const getProdutosVendidos = async(id) => {
+  return api.get('produtos/vendidos');
+};
+
 
 // UFs e Municípios
 export const getUfs =async () => {

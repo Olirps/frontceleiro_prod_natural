@@ -48,7 +48,7 @@
   border-radius: 4px;
 }
 
-#cadastros-submenu, #movimentacao-submenu,#gestao-financeira-submenu {
+#cadastros-submenu, #movimentacao-submenu,#gestao-financeira-submenu,#relatorios-submenu {
   display: none;
   position: absolute;
   top: 100%;
@@ -75,7 +75,10 @@
 /* Exibe os submenus ao passar o mouse sobre o item pai */
 #cadastros:hover #cadastros-submenu,
 #movimentacao:hover #movimentacao-submenu,
-#gestao-financeira:hover #gestao-financeira-submenu {
+#gestao-financeira:hover #gestao-financeira-submenu,
+#relatorios:hover #relatorios-submenu
+
+{
   display: block;
 }
 

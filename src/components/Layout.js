@@ -13,6 +13,7 @@ function Layout() {
   const [isCadastrosOpen, setCadastrosOpen] = useState(false);
   const [isMovimentacaoOpen, setMovimentacaoOpen] = useState(false);
   const [isGestaoFinanceiraOpen, setGestaoFinanceiraOpen] = useState(false); // Novo estado para "Gestão Financeira"
+  const [isRelatoriosOpen, setRelatoriosOpen] = useState(false); // Novo estado para "Gestão Financeira"
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,16 +37,28 @@ function Layout() {
     setCadastrosOpen(!isCadastrosOpen);
     setMovimentacaoOpen(false); // Fecha o submenu de movimentação
     setGestaoFinanceiraOpen(false); // Fecha o submenu de gestão financeira
+    setRelatoriosOpen(false); // Fecha o submenu de relatorios
   };
 
   const toggleMovimentacao = () => {
     setMovimentacaoOpen(!isMovimentacaoOpen);
     setCadastrosOpen(false); // Fecha o submenu de cadastros
     setGestaoFinanceiraOpen(false); // Fecha o submenu de gestão financeira
+    setRelatoriosOpen(false); // Fecha o submenu de relatorios
+
   };
 
   const toggleGestaoFinanceira = () => {
     setGestaoFinanceiraOpen(!isGestaoFinanceiraOpen);
+    setCadastrosOpen(false); // Fecha o submenu de cadastros
+    setMovimentacaoOpen(false); // Fecha o submenu de movimentação
+    setRelatoriosOpen(false); // Fecha o submenu de relatorios
+
+  };
+
+  const toggleRelatorios = () => {
+    setRelatoriosOpen(!isRelatoriosOpen); // Fecha o submenu de relatorios
+    setGestaoFinanceiraOpen(false);
     setCadastrosOpen(false); // Fecha o submenu de cadastros
     setMovimentacaoOpen(false); // Fecha o submenu de movimentação
   };
@@ -74,6 +87,7 @@ function Layout() {
                 <span>Cadastros</span>
                 <div id="cadastros-submenu" className={isCadastrosOpen ? 'submenu' : ''}>
                   {canViewMenuItem('permissoes') && <Link to="/permissoes" className="submenu-item">Permissões</Link>}
+                  {canViewMenuItem('empresas') && <Link to="/empresas" className="submenu-item">Empresas</Link>}
                   {canViewMenuItem('clientes') && <Link to="/clientes" className="submenu-item">Clientes</Link>}
                   {canViewMenuItem('funcionarios') && <Link to="/funcionarios" className="submenu-item">Funcionários</Link>}
                   {canViewMenuItem('fornecedores') && <Link to="/fornecedores" className="submenu-item">Fornecedores</Link>}
@@ -103,6 +117,15 @@ function Layout() {
                 <div id="gestao-financeira-submenu" className={isGestaoFinanceiraOpen ? 'submenu' : ''}>
                   {canViewMenuItem('movimentacaofinanceiradespesas') && <Link to="/movimentacaofinanceiradespesas" className="submenu-item">Contas a Pagar</Link>}
                   {canViewMenuItem('contasliquidadas') && <Link to="/contasliquidadas" className="submenu-item">Contas/Parcelas Liquidadas</Link>}
+                </div>
+              </div>
+            ) : null}
+            {/* Relatórios */}
+            {canViewMenuItem('relatorios') ? (
+              <div id="relatorios" className="menu-item" onClick={toggleRelatorios}>
+                <span>Relatórios</span>
+                <div id="relatorios-submenu" className={isRelatoriosOpen ? 'submenu' : ''}>
+                  {canViewMenuItem('produtosvendidos') && <Link to="/produtosvendidos" className="submenu-item">Produtos Vendidos</Link>}
                 </div>
               </div>
             ) : null}
