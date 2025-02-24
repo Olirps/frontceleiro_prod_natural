@@ -80,6 +80,9 @@ function ProdutosVendidos() {
             doc.setFontSize(12);
             doc.text(`Endereço: ${empresa.logradouro}, ${empresa.bairro}`, 14, startY);
             startY += 10;
+            doc.text(`Período: ${dataInicio ? formatarData(dataInicio) : 'Início'} a ${dataFim ? formatarData(dataFim) : 'Fim'}`, 14, 52);
+            startY += 20;
+
         }
 
         if (agruparPorProduto) {
@@ -314,6 +317,7 @@ function ProdutosVendidos() {
             acc[produto.produto_id] = {
                 produto: produto.xProd,
                 quantidadeTotal: 0,
+                dataVenda:produto.dataVenda,
                 valorTotal: 0
             };
         }
@@ -327,7 +331,7 @@ function ProdutosVendidos() {
         xProd: produtosAgrupadosSintetico[produtoId].produto,
         quantity: produtosAgrupadosSintetico[produtoId].quantidadeTotal,
         vlrVenda: produtosAgrupadosSintetico[produtoId].valorTotal,
-        dataVenda: ''
+        dataVenda: produtosAgrupadosSintetico[produtoId].dataVenda
     })) : produtosNivelados;
 
     const totalPages = Math.ceil(produtosExibidos.length / rowsPerPage);
