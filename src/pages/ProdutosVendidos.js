@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getProdutosVendidos,getEmpresaById } from '../services/api';
+import { getProdutosVendidos, getEmpresaById } from '../services/api';
 import { formatarData, formatarMoedaBRL } from '../utils/functions';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -16,6 +16,7 @@ function ProdutosVendidos() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
     const [empresa, setEmpresa] = useState(null);
+    const [agruparSintetico, setAgruparSintetico] = useState(false);
 
 
 
@@ -27,7 +28,7 @@ function ProdutosVendidos() {
                 setProdutosFiltrados(data.data || []);
 
                 // Buscar informações da empresa (substitua 1 pelo ID correto da empresa)
-                const dataEmpresa = await getEmpresaById(2); // Substitua 1 pelo ID da empresa
+                const dataEmpresa = await getEmpresaById(1); // Substitua 1 pelo ID da empresa
                 setEmpresa(dataEmpresa.data);
 
             } catch (err) {
@@ -168,7 +169,69 @@ function ProdutosVendidos() {
             // Adicionar total geral
             doc.setFontSize(12);
             doc.text(`Total Geral: Quantidade: ${totalGeralQuantidade.toFixed(3)} | Valor Total: ${formatarMoedaBRL(totalGeralValor)}`, 14, startY);
-        } else {
+        } else if (agruparSintetico) {
+            // Lógica de agrupamento sintético
+            const produtosAgrupados = {};
+            let totalGeralQuantidade = 0;
+            let totalGeralValor = 0;
+
+            produtosFiltrados.forEach((item) => {
+                item.produtos.forEach((produto) => {
+                    if (!produtosAgrupados[produto.produto_id]) {
+                        produtosAgrupados[produto.produto_id] = {
+                            produto: produto.xProd,
+                            quantidadeTotal: 0,
+                            valorTotal: 0
+                        };
+                    }
+                    const valorTotalVenda = produto.vlrVenda;
+                    produtosAgrupados[produto.produto_id].quantidadeTotal = (Number(produtosAgrupados[produto.produto_id].quantidadeTotal) + Number(produto.quantity));
+                    produtosAgrupados[produto.produto_id].valorTotal = Number(Number(produtosAgrupados[produto.produto_id].valorTotal) + Number(valorTotalVenda)).toFixed(2);
+
+                    // Soma geral
+                    totalGeralQuantidade += Number(produto.quantity);
+                    totalGeralValor = Number(Number(totalGeralValor) + Number(valorTotalVenda)).toFixed(2);
+                });
+            });
+
+            // Gerar tabela para cada produto
+            const headers = [['ID Produto', 'Produto', 'Quantidade Total', 'Valor Total']];
+            const body = Object.keys(produtosAgrupados).map((produtoId) => [
+                produtoId,
+                produtosAgrupados[produtoId].produto,
+                produtosAgrupados[produtoId].quantidadeTotal.toFixed(3),
+                formatarMoedaBRL(produtosAgrupados[produtoId].valorTotal)
+            ]);
+
+            // Adicionar linha de total geral
+            body.push([
+                'Total Geral',
+                '',
+                totalGeralQuantidade.toFixed(3),
+                formatarMoedaBRL(totalGeralValor)
+            ]);
+
+            // Gerar tabela
+            doc.autoTable({
+                startY: startY,
+                head: headers,
+                body: body,
+                theme: 'grid',
+                styles: { fontSize: 10 },
+                headStyles: {
+                    fillColor: [0, 123, 255], // Cor de fundo do cabeçalho (azul)
+                    textColor: [255, 255, 255], // Cor do texto do cabeçalho (branco)
+                    fontStyle: 'bold', // Texto em negrito
+                },
+                columnStyles: {
+                    0: { cellWidth: 20 }, // ID Produto
+                    1: { cellWidth: 50 }, // Produto
+                    2: { cellWidth: 30 }, // Quantidade Total
+                    3: { cellWidth: 30 } // Valor Total
+                }
+            });
+        }
+        else {
             // Visualização padrão
             let totalGeralQuantidade = 0;
             let totalGeralValor = 0;
@@ -245,12 +308,34 @@ function ProdutosVendidos() {
             dataVenda: item.venda?.dataVenda // Adiciona a dataVenda em cada produto
         }))
     );
-    const totalPages = Math.ceil(produtosNivelados.length / rowsPerPage);
+
+    const produtosAgrupadosSintetico = produtosNivelados.reduce((acc, produto) => {
+        if (!acc[produto.produto_id]) {
+            acc[produto.produto_id] = {
+                produto: produto.xProd,
+                quantidadeTotal: 0,
+                valorTotal: 0
+            };
+        }
+        acc[produto.produto_id].quantidadeTotal = Number(Number(produto.quantity) + Number(acc[produto.produto_id].quantidadeTotal)).toFixed(3);
+        acc[produto.produto_id].valorTotal = Number(Number(produto.vlrVenda) +  Number(acc[produto.produto_id].valorTotal)).toFixed(2);
+        return acc;
+    }, {});
+
+    const produtosExibidos = agruparSintetico ? Object.keys(produtosAgrupadosSintetico).map(produtoId => ({
+        produto_id: produtoId,
+        xProd: produtosAgrupadosSintetico[produtoId].produto,
+        quantity: produtosAgrupadosSintetico[produtoId].quantidadeTotal,
+        vlrVenda: produtosAgrupadosSintetico[produtoId].valorTotal,
+        dataVenda: ''
+    })) : produtosNivelados;
+
+    const totalPages = Math.ceil(produtosExibidos.length / rowsPerPage);
 
     // Obter os produtos da página atual
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
-    const currentProdutos = produtosNivelados.slice(startIndex, endIndex);
+    const currentProdutos = produtosExibidos.slice(startIndex, endIndex);
 
 
     const calcularTotais = () => {
@@ -302,8 +387,11 @@ function ProdutosVendidos() {
                         <input
                             type="radio"
                             value="padrao"
-                            checked={!agruparPorProduto}
-                            onChange={() => setAgruparPorProduto(false)}
+                            checked={!agruparPorProduto && !agruparSintetico}
+                            onChange={() => {
+                                setAgruparPorProduto(false);
+                                setAgruparSintetico(false);
+                            }}
                         />
                         Visualização Padrão
                     </label>
@@ -311,10 +399,25 @@ function ProdutosVendidos() {
                         <input
                             type="radio"
                             value="agrupado"
-                            checked={agruparPorProduto}
-                            onChange={() => setAgruparPorProduto(true)}
+                            checked={agruparPorProduto && !agruparSintetico}
+                            onChange={() => {
+                                setAgruparPorProduto(true);
+                                setAgruparSintetico(false);
+                            }}
                         />
                         Agrupar por Produto
+                    </label>
+                    <label>
+                        <input
+                            type="radio"
+                            value="sintetico"
+                            checked={agruparSintetico}
+                            onChange={() => {
+                                setAgruparPorProduto(false);
+                                setAgruparSintetico(true);
+                            }}
+                        />
+                        Agrupado Sintético
                     </label>
                 </div>
             </div>
