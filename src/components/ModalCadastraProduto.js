@@ -3,10 +3,13 @@ import '../styles/ModalCadastraProduto.css'; // Certifique-se de criar este CSS 
 import { addProdutos, updateNFe } from '../services/api';
 import Toast from '../components/Toast';
 import { formatarMoedaBRL, converterMoedaParaNumero, normalizarNumero } from '../utils/functions';
+import { useAuth } from '../context/AuthContext';
+import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
 
 
 
-const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additionalFields = [] }) => {
+
+const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, isInativar, onInativar, additionalFields = [] }) => {
   const [formData, setFormData] = React.useState({});
   const [cEAN, setcEAN] = useState('');
   const [cod_interno, setCodInterno] = useState('');
@@ -19,6 +22,12 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
   const [margemSobreVlrCusto, setmargemSobreVlrCusto] = useState('');
   const [margemSobreVlrCustoAtacado, setmargemSobreVlrCustoAtacado] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isInativado, setIsInativado] = useState(isInativar);
+  const [permiteEditar, setPermiteEditar] = useState(true);
+  const { permissions } = useAuth();
+  const [hasAccess, setHasAccess] = useState(true);
+
+
 
   /*********** */
   const [produtos, setProdutos] = useState([]);
@@ -60,6 +69,19 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
     }
   }, [produto]);
 
+
+  useEffect(() => {
+    setIsInativado(isInativar); // Atualiza o estado quando a prop muda
+  }, [isInativar]);
+
+  useEffect(() => {
+    if (isOpen && edit) {
+      const canEdit = hasPermission(permissions, 'produtos', edit ? 'edit' : 'insert');
+      setPermiteEditar(canEdit)
+    }
+  }, [isOpen, edit, permissions]);
+
+
   if (!isOpen) return null;
 
   const handleInputChange = (e) => {
@@ -67,6 +89,20 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
       ...formData,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const handleChangeStatus = () => {
+    if (!hasPermission(permissions, 'produtos', 'delete')) {
+      setToast({ message: "Você não tem permissão para inativar produtos.", type: "error" });
+      return; // Impede a abertura do modal
+    }
+    const novoStatus = !isInativado;
+    setIsInativado(novoStatus);
+
+    // Notifica o componente pai sobre a inativação
+    if (onInativar) {
+      onInativar(produto.id, novoStatus);
+    }
   };
 
   const handlexProdChange = (e) => {
@@ -104,7 +140,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
     const novoValor = formatarMoedaBRL(e.target.value)
     setvlrVendaAtacado(novoValor); // Atualiza o estado do nome
     const valor = converterMoedaParaNumero(novoValor)
-    setmargemSobreVlrCustoAtacado(((((valor / converterMoedaParaNumero(vUnCom)) * 100) / 2) ).toFixed(4))
+    setmargemSobreVlrCustoAtacado(((((valor / converterMoedaParaNumero(vUnCom)) * 100) / 2)).toFixed(4))
   };
 
   const handlemargemSobreVlrCustoChange = (e) => {
@@ -189,7 +225,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
   };
   return (
     <div className="modal-overlay">
-      <div className="modal-content-cad-prod">
+      <div className="modal-content">
         <button className="modal-close" onClick={onClose}>X</button>
         <h2>Cadastro de Produtos {prod?.nNF ? ` - Nota Fiscal Nº ${prod.nNF}` : ''}</h2>
         <form onSubmit={handleSubmit}>
@@ -205,6 +241,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 onChange={handlexProdChange} // Adiciona o onChange para atualizar o estado
                 maxLength="150"
                 required
+                disabled={!permiteEditar}
               />
             </div>
             <div>
@@ -217,6 +254,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 value={cod_interno} // Controlado pelo estado
                 onChange={handleCodInternoChange}
                 required
+                disabled={!permiteEditar}
               />
             </div>
             <div>
@@ -228,6 +266,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 name="cEAN"
                 value={cEAN} // Controlado pelo estado
                 onChange={handlecEANChange}
+                disabled={!permiteEditar}
               />
             </div>
             <div>
@@ -241,6 +280,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 onChange={handleQtdMinChange} // Adiciona o onChange para atualizar o estado
                 maxLength="50"
                 required
+                disabled={!permiteEditar}
               />
             </div>
             <div>
@@ -254,6 +294,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 onChange={handleqComChange} // Adiciona o onChange para atualizar o estado
                 maxLength="150"
                 required
+                disabled={!permiteEditar}
               />
             </div>
             <div>
@@ -266,6 +307,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 value={ncm}
                 onChange={handleNcmChange} // Adiciona o onChange para atualizar o estado
                 maxLength="150"
+                disabled={!permiteEditar}
               />
             </div>
             <div>
@@ -279,6 +321,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 onChange={handlevUnComChange} // Adiciona o onChange para atualizar o estado
                 maxLength="150"
                 required
+                disabled={!permiteEditar}
               />
             </div>
             <div>
@@ -292,6 +335,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 onChange={handlevlrVendaChange} // Adiciona o onChange para atualizar o estado
                 maxLength="150"
                 required
+                disabled={!permiteEditar}
               />
             </div>
             <div>
@@ -318,6 +362,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                 onChange={handlevlrVendaAtacadoChange} // Adiciona o onChange para atualizar o estado
                 maxLength="150"
                 required
+                disabled={!permiteEditar}
               />
             </div>
             <div>
@@ -356,12 +401,17 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, additi
                     },
                   });
                 }}
+                disabled={!permiteEditar}
               />
             ))}
 
-            <div id='botao-salva'>
-              <button type="submit" id="btnsalvar" className="button">Salvar</button>
-            </div>
+          </div>
+
+          <div id='button-group'>
+            <button type="submit" id="btnsalvar" className="button" disabled={!permiteEditar}
+            >Salvar</button>
+            <button onClick={handleChangeStatus} className="cancel-button">Deletar</button>
+
           </div>
         </form>
         {toast.message && <Toast type={toast.type} message={toast.message} />}

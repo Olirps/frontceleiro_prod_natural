@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { addProdutos, getProdutos, getProdutoById, updateProduto } from '../services/api';
+import { addProdutos, getProdutos, getProdutoById, updateProduto, inativarProduto } from '../services/api';
 import '../styles/Produtos.css';
 import '../styles/Fornecedores.css';
 import ModalCadastraProduto from '../components/ModalCadastraProduto';
@@ -21,6 +21,7 @@ function Produtos() {
     const [selectedProduto, setSelectedProduto] = useState(null);
     const [isCadastraProdutoModalOpen, setIsCadastraProdutoModalOpen] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
+    const [isInativar, setIsInativar] = useState(false);
     const [importSuccess, setCadastroSuccess] = useState(false);
     const { permissions } = useAuth();
 
@@ -40,6 +41,14 @@ function Produtos() {
 
         fetchProdutos();
     }, [importSuccess]);
+
+
+    useEffect(() => {
+        if (toast.message) {
+            const timer = setTimeout(() => setToast({ message: '', type: '' }), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [toast]);
 
     const openCadastraProdutoModal = () => {
         setIsCadastraProdutoModalOpen(true);
@@ -132,6 +141,9 @@ function Produtos() {
     const handleEditSubmit = async (e) => {
         //e.preventDefault();
         //const formData = new FormData(e.target);
+        if (!hasPermission(permissions, 'produtos', 'edit')) {
+            return; // Impede a abertura do modal
+        }
         const updatedProduto = {
             xProd: e.xProd,
             cod_interno: e.cod_interno,
@@ -156,12 +168,24 @@ function Produtos() {
         }
     };
 
-    useEffect(() => {
-        if (toast.message) {
-            const timer = setTimeout(() => setToast({ message: '', type: '' }), 3000);
-            return () => clearTimeout(timer);
+    const handleInativarProduto = async (produtoId, novoStatus) => {
+
+        // Aqui faz uma chamada à API para atualizar o status do produto no backend
+        try {
+            setLoading(true);
+            const produtoInativado = await inativarProduto(produtoId);
+            setToast({ message: `Produto ${produtoId} foi ${novoStatus ? 'inativado' : 'reativado'} com sucesso!`, type: "success" });
+            closeCadastraProdutoModal();
+            const response = await getProdutos();
+            setProdutos(response.data);
+            setCadastroSuccess(prev => !prev); // Atualiza o estado para acionar re-renderização
+            setLoading(false);
+        } catch (err) {
+            console.error('Erro ao inativar produto', err);
+            setToast({ message: "Erro ao inativar produto.", type: "error" });
         }
-    }, [toast]);
+
+    };
 
     const totalPages = Math.ceil(filteredProdutos.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -181,7 +205,7 @@ function Produtos() {
 
     return (
         <div id="produtos-container">
-            <h1 id="produtos-title">Consulta de Produtos</h1>
+            <h1 className="title-page">Consulta de Produtos</h1>
             {loading ? (
                 <div className="spinner-container">
                     <div className="spinner"></div>
@@ -280,7 +304,10 @@ function Produtos() {
                     isOpen={isCadastraProdutoModalOpen}
                     onClose={closeCadastraProdutoModal}
                     onSubmit={isEdit ? handleEditSubmit : handleaddProdutos}
+                    edit={isEdit}
                     produto={selectedProduto}
+                    inativar={isInativar}
+                    onInativar={handleInativarProduto} // Passamos a função como callback
                 />
             )}
         </div>

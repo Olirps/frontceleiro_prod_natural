@@ -179,7 +179,7 @@ const ModalCadastroFornecedor = ({ isOpen, onClose, isEdit, onSubmit, fornecedor
         <button className="modal-close" onClick={onClose}>X</button>
         <h2>{isEdit ? 'Editar Fornecedor' : 'Cadastrar Cadastro de Fornecedor'}</h2>
         <form onSubmit={onSubmit}>
-          <div id='cadastro-padrão'>
+          <div id='cadastro-padrao'>
             <div>
               <label htmlFor="tipofornecedor">Selecione um Tipo de Fornecedor:</label>
               <select

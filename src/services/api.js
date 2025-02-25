@@ -413,6 +413,10 @@ export const updateProduto = (id, produto) => {
   return api.put(`/produtos/${id}`, produto);
 };
 
+export const inativarProduto = (id) => {
+  return api.put(`/produtos-inativar/${id}`);
+};
+
 export const getProdutoById = async(id) => {
   return api.get(`/produtos/${id}`);
 };
