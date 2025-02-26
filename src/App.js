@@ -20,6 +20,7 @@ import Permissoes from './pages/Permissoes';
 import ContasPagas from './pages/ContasPagas';
 import ProdutosVendidos from './pages/ProdutosVendidos';
 import Empresa from './pages/Empresa';
+import ContasPendentes from './pages/ContasPendentes';
 
 
 import { hasPermission } from './utils/hasPermission'; // Importar a função
@@ -100,6 +101,10 @@ function App() {
           <Route
             path="/empresas"
             element={isAuthenticated && hasPermission(permissions, 'empresas', 'view') ? <Empresa /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/contaspendentes"
+            element={isAuthenticated && hasPermission(permissions, 'contaspendentes', 'view') ? <ContasPendentes /> : null} // Condicionalmente não renderiza
           />
         </Route>
       </Routes>

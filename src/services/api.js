@@ -258,6 +258,10 @@ export const getFuncionariosByFiltro = async (filtro) => {
   }
 };
 
+//movimentacao-despesa
+export const getMovimentacaofinanceiraDespesa = async (filters = {}) => {
+  return api.get('/movimentacao-despesa', { params: filters });
+};
 
 //Movimentacao Financeira
 export const getAllMovimentacaofinanceiraDespesa = async () => {

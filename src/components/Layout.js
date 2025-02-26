@@ -121,11 +121,12 @@ function Layout() {
               </div>
             ) : null}
             {/* Relatórios */}
-            {canViewMenuItem('relatorios') ? (
+            {canViewMenuItem('relatorios') || canViewMenuItem('produtosvendidos') || canViewMenuItem('contaspendentes')? (
               <div id="relatorios" className="menu-item" onClick={toggleRelatorios}>
                 <span>Relatórios</span>
                 <div id="relatorios-submenu" className={isRelatoriosOpen ? 'submenu' : ''}>
                   {canViewMenuItem('produtosvendidos') && <Link to="/produtosvendidos" className="submenu-item">Produtos Vendidos</Link>}
+                  {canViewMenuItem('contaspendentes') && <Link to="/contaspendentes" className="submenu-item">Contas Pendentes</Link>}
                 </div>
               </div>
             ) : null}
