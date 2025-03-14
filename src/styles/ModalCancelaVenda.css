@@ -50,25 +50,6 @@
     color: #ff4d4f;
 }
 
-/* Estilos para o formulário */
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    font-size: 1rem;
-    margin-bottom: 5px;
-}
-
-.form-group input {
-    width: 100%;
-    padding: 8px;
-    font-size: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
 /* Estilos para o footer do modal */
 .modal-footer {
     display: flex;

@@ -102,11 +102,12 @@ function Produtos() {
             cod_interno: e.cod_interno,
             cEAN: e.cEAN,
             qtdMinima: e.qtdMinima,
+            uCom: e.uCom,
             qCom: e.qCom,
             NCM: e.ncm,
-            vUnCom: converterMoedaParaNumero(e.vUnCom),
-            vlrVenda: converterMoedaParaNumero(e.vlrVenda),
-            vlrVendaAtacado: converterMoedaParaNumero(e.vlrVendaAtacado)
+            vUnCom: Number(e.vUnCom),
+            vlrVenda: Number(e.vlrVenda),
+            vlrVendaAtacado: Number(e.vlrVendaAtacado)
         };
 
         try {
@@ -149,11 +150,12 @@ function Produtos() {
             cod_interno: e.cod_interno,
             cEAN: e.cEAN,
             qtdMinima: e.qtdMinima,
+            uCom: e.uCom,
             qCom: e.qCom,
-            vUnCom: e.vUnCom,
+            vUnCom: Number(e.vUnCom),
             NCM: e.ncm,
-            vlrVenda: converterMoedaParaNumero(e.vlrVenda),
-            vlrVendaAtacado: e.vlrVendaAtacado
+            vlrVenda: Number(e.vlrVenda),
+            vlrVendaAtacado: Number(e.vlrVendaAtacado)
         };
 
         try {

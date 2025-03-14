@@ -200,7 +200,7 @@ function LancaNFe() {
 
       response.data.resultados.forEach((resultado) => {
         if (resultado.status === 'sucesso') {
-          setToast({ message: `Arquivo: ${resultado.arquivo} - ${resultado.status}`, type: "success" });
+          setToast({ message: `Arquivo: ${resultado.arquivo} - ${resultado.mensagem}`, type: "success" });
         } else if (resultado.status === 'erro') {
           setToast({ message: `Arquivo: ${resultado.arquivo} - ${resultado.mensagem}`, type: "error" });
         }

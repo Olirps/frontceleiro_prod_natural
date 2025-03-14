@@ -31,7 +31,7 @@ const MovimentacaoProdutos = () => {
             const dentroDoIntervalo = (!dataInicio || new Date(vinculo.dataVinculo) >= new Date(dataInicio)) &&
                 (!dataFim || new Date(vinculo.dataVinculo) <= new Date(dataFim));
             return (
-                vinculo.xProd.toLowerCase().includes(filtroProduto.toLowerCase()) &&
+                vinculo.xProd.toLowerCase().includes(filtroProduto.trim().toLowerCase()) &&
                 vinculo.modeloVeiculo.toLowerCase().includes(filtroVeiculo.toLowerCase()) &&
                 vinculo.numeroNota.toLowerCase().includes(filtroNota.toLowerCase()) &&
                 dentroDoIntervalo

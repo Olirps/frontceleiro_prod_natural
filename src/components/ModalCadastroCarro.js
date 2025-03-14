@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/ModalCadastroCarro.css';
 import { getMarcas, getTipoVeiculo } from '../services/api';
-import { formatPlaca,formatarMoeda } from '../utils/functions';
+import { formatPlaca, formatarNumeroMilhares } from '../utils/functions';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
-
+import Toast from '../components/Toast';
 
 const ModalCadastroCarro = ({ isOpen, onClose, isEdit, onSubmit, carro }) => {
   const [modelo, setModelo] = useState('');
@@ -16,10 +16,12 @@ const ModalCadastroCarro = ({ isOpen, onClose, isEdit, onSubmit, carro }) => {
   const [tiposVeiculo, setTiposVeiculo] = useState([]);
   const [permiteEditar, setPermiteEditar] = useState(true);
   const { permissions } = useAuth();
+  const [toast, setToast] = useState({ message: '', type: '' });
+
 
   useEffect(() => {
     if (isOpen && isEdit) {
-      const canEdit = hasPermission(permissions, 'carros', isEdit ? 'edit' : 'insert');
+      const canEdit = hasPermission(permissions, 'veiculos', isEdit ? 'edit' : 'insert');
       setPermiteEditar(canEdit)
     }
   }, [isOpen, isEdit, permissions]);
@@ -49,6 +51,7 @@ const ModalCadastroCarro = ({ isOpen, onClose, isEdit, onSubmit, carro }) => {
         setMarcas(response.data);
       } catch (err) {
         console.error('Erro ao buscar marcas', err);
+        setToast({ message: 'Erro ao buscar Marcas', type: "error" });
       }
     };
 
@@ -72,7 +75,7 @@ const ModalCadastroCarro = ({ isOpen, onClose, isEdit, onSubmit, carro }) => {
     const placaFormatada = formatPlaca(newPlaca);
     setPlaca(placaFormatada); // Atualiza o estado com a placa formatada
   };
-  const handleQuilometragemChange = (e) => setQuilometragem(e.target.value.replace(',', '.'));
+  const handleQuilometragemChange = (e) => setQuilometragem(e.target.value);
   const handleMarcaChange = (e) => setMarcaId(e.target.value);
   const handleTipoVeiculoChange = (e) => setTipoVeiculoId(e.target.value);
 
@@ -117,10 +120,10 @@ const ModalCadastroCarro = ({ isOpen, onClose, isEdit, onSubmit, carro }) => {
               <label htmlFor="quilometragem">Quilometragem</label>
               <input
                 className='input-geral'
-                type="number"
+                type="text"
                 id="quilometragem"
                 name="quilometragem"
-                value={quilometragem}
+                value={formatarNumeroMilhares(quilometragem)}
                 onChange={handleQuilometragemChange}
                 disabled={!permiteEditar}
                 required
@@ -164,7 +167,7 @@ const ModalCadastroCarro = ({ isOpen, onClose, isEdit, onSubmit, carro }) => {
                 ))}
               </select>
             </div>
-            <div id='botao-salva'>
+            <div id='button-group'>
               {permiteEditar ? (
                 <button
                   type="submit"
@@ -177,6 +180,7 @@ const ModalCadastroCarro = ({ isOpen, onClose, isEdit, onSubmit, carro }) => {
             </div>
           </div>
         </form>
+        {toast.message && <Toast type={toast.type} message={toast.message} />}
       </div>
     </div>
   );

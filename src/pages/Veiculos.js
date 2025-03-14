@@ -45,6 +45,7 @@ function Veiculos() {
         setMarcas(response.data);
       } catch (err) {
         console.error('Erro ao buscar marcas', err);
+        setToast({ message: 'Erro ao buscar Marcas', type: "error" });
       }
     };
 
@@ -90,13 +91,16 @@ function Veiculos() {
 
   const handleAddCarro = async (e) => {
     e.preventDefault();
+
     const formData = new FormData(e.target);
+    const tipoveiculoId = Number(formData.get('tipoVeiculoId'));
+
     const newCarro = {
       modelo: formData.get('modelo'),
       placa: formData.get('placa'),
       quilometragem: formData.get('quilometragem'),
       marcaId: formData.get('marcaId'),
-      tipoveiculoId: formData.get('tipoVeiculoId'),
+      tipoveiculoId: tipoveiculoId,
     };
 
     try {
@@ -131,12 +135,13 @@ function Veiculos() {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    const tipoveiculoId = Number(formData.get('tipoVeiculoId'));
     const updatedCarro = {
       modelo: formData.get('modelo'),
       placa: formData.get('placa'),
       quilometragem: formData.get('quilometragem'),
       marcaId: formData.get('marcaId'),
-      tipoveiculoId: formData.get('tipoVeiculoId')
+      tipoveiculoId: tipoveiculoId
     };
 
     try {

@@ -52,7 +52,7 @@ function ProdutosVendidos() {
                 const produtosFiltradosNaVenda = item.produtos.filter((produto) => (
                     !filtroProduto ||
                     produto.produto_id.toString().includes(filtroProduto) ||
-                    (produto.xProd && produto.xProd.toLowerCase().includes(filtroProduto.toLowerCase()))
+                    (produto.xProd && produto.xProd.toLowerCase().includes(filtroProduto.trim().toLowerCase()))
                 ));
                 if (produtosFiltradosNaVenda.length === 0) return null;
                 return { ...item, produtos: produtosFiltradosNaVenda };

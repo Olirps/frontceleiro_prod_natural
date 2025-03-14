@@ -1,4 +1,36 @@
 
+function dataAtual() {
+  const agora = new Date();
+
+  // Formata a data diretamente no fuso horário correto
+  const formatter = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Cuiaba",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
+  const [
+    { value: dia },
+    ,
+    { value: mes },
+    ,
+    { value: ano },
+    ,
+    { value: hora },
+    ,
+    { value: minuto },
+    ,
+    { value: segundo }
+  ] = formatter.formatToParts(agora);
+
+  // Retorna a data formatada no padrão `YYYY-MM-DD HH:MM:SS`
+  return `${ano}-${mes}-${dia} ${hora}:${minuto}:${segundo}`;
+}
+
 function converterData(dataString) {
   const partes = dataString.split(/[\/ :]/); // Divide a string em dia, mês, ano, hora, minuto e segundo
   const dia = partes[0];
@@ -71,6 +103,15 @@ const formatarNumero = (valor) => {
   return Number(valor.replace(/\D/g, "")).toLocaleString("pt-BR");
 };
 
+function formatarNumeroMilhares(numero) {
+    // Converte o número para string
+    let numeroStr = numero.toString().replace(/\./g, '');
+  
+    // Usa uma expressão regular para adicionar os pontos
+    numeroStr = numeroStr.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return numeroStr;
+}
+
 const converterMoedaParaNumero = (valor) => {
   if (!valor) return 0;
 
@@ -108,31 +149,49 @@ const formatarMoedaBRL = (valor) => {
   return numeroFormatado;
 };
 
-
 const formatarData = (data) => {
   const dataCorrigida = new Date(data);
   dataCorrigida.setMinutes(dataCorrigida.getMinutes() + dataCorrigida.getTimezoneOffset()); // Ajuste de fuso horário
   return dataCorrigida.toLocaleDateString('pt-BR');
 };
 
-const normalizarNumero = (valor)=> {
-  if (typeof valor !== "string") return NaN; // Garante que o valor é uma string
-  
-  // Remove qualquer caractere que não seja número, vírgula ou ponto
-  valor = valor.replace(/[^\d,.-]/g, '');
-  
-  // Se tiver mais de uma vírgula ou ponto, pode ser um caso inválido
-  const temMultiplasVirgulas = (valor.match(/,/g) || []).length > 1;
-  const temMultiplosPontos = (valor.match(/\./g) || []).length > 1;
-  if (temMultiplasVirgulas || temMultiplosPontos) return NaN;
+function formatarValor(valor) {
+  // Remove qualquer símbolo de moeda e espaços
+  let valorFormatado = valor.replace(/[^\d,.-]/g, '');
 
-  // Substitui vírgula decimal por ponto para padronizar como número float
-  valor = valor.replace(',', '.');
+  // Substitui vírgula por ponto para facilitar a conversão
+  valorFormatado = valorFormatado.replace(',', '.');
 
-  // Converte para float
-  const numero = parseFloat(valor);
+  // Converte para número
+  let valorDecimal = parseFloat(valorFormatado);
 
-  return isNaN(numero) ? NaN : numero;
+  if (isNaN(valorDecimal)) {
+    return 0; // Se a conversão falhar, retorna 0
+  }
+
+  // Verifica se o valor original contém uma vírgula ou ponto
+  const contemSeparadorDecimal = /[.,]/.test(valor);
+
+  // Se NÃO contém separador decimal, assume que é um valor em centavos
+  if (!contemSeparadorDecimal) {
+    valorDecimal = valorDecimal / 100;
+  }
+
+  // Retorna o valor com duas casas decimais
+  return Math.round(valorDecimal * 100) / 100;
 }
 
-module.exports = { converterData, formatarDataResumida, formatarData, formatPlaca, decodeJWT, formatarCelular, converterMoedaParaNumero, formatarNumero, formatarMoedaBRL ,normalizarNumero};
+module.exports = {
+  converterData,
+  formatarDataResumida,
+  formatarData,
+  formatPlaca,
+  decodeJWT,
+  formatarCelular,
+  converterMoedaParaNumero,
+  formatarNumero,
+  formatarNumeroMilhares,
+  formatarMoedaBRL,
+  dataAtual,
+  formatarValor
+};

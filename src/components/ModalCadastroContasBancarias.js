@@ -64,7 +64,9 @@ const ModalCadastroContasBancarias = ({ isOpen, onClose, edit, onSubmit, conta }
     }, []);
 
     if (!isOpen) return null;
-    if (loading) return <div className="modal-overlay">Carregando...</div>;
+    if (loading) {
+        return <div className="spinner-container"><div className="spinner"></div></div>;
+    }
 
 
     const handleBancoChange = (e) => setBancoId(e.target.value);
@@ -167,7 +169,7 @@ const ModalCadastroContasBancarias = ({ isOpen, onClose, edit, onSubmit, conta }
                                 maxLength={254}
                             />
                         </div>
-                        <div id='botao-salva'>
+                        <div id='button-group'>
                             {permiteEditar ? (
                                 <button
                                     type="submit"

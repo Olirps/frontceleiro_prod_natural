@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import '../styles/ModalCadastraProduto.css'; // Certifique-se de criar este CSS também
 import { addProdutos, updateNFe } from '../services/api';
 import Toast from '../components/Toast';
-import { formatarMoedaBRL, converterMoedaParaNumero, normalizarNumero } from '../utils/functions';
+import { formatarMoedaBRL, converterMoedaParaNumero, formatarValor } from '../utils/functions';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
 
@@ -14,6 +14,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
   const [cEAN, setcEAN] = useState('');
   const [cod_interno, setCodInterno] = useState('');
   const [qtdMinima, setqtdMinima] = useState('');
+  const [uCom, setuCom] = useState('');
   const [qCom, setqCom] = useState('');
   const [vUnCom, setvUnCom] = useState('');
   const [ncm, setNcm] = useState('');
@@ -38,6 +39,11 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
 
   /*********** */
 
+  const [isExpanded, setIsExpanded] = useState({
+    identificacao: true,
+    precos: false,
+    custoVendaPercentual: false,
+  });
 
   useEffect(() => {
     if (produto) {
@@ -46,6 +52,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
       setCodInterno(produto.cod_interno || '');
       setcEAN(produto.cEAN || '');
       setqtdMinima(produto.qtdMinima || '');
+      setuCom(produto.uCom || '');
       setqCom(produto.qCom || '');
       setvUnCom(produto.vUnCom || '');
       setNcm(produto.NCM || '');
@@ -60,6 +67,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
       setcEAN('');
       setqtdMinima('');
       setqCom('');
+      setuCom('');
       setvUnCom('');
       setNcm('');
       setVlrVenda('');
@@ -105,9 +113,6 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
     }
   };
 
-  const handlexProdChange = (e) => {
-    setxProd(e.target.value); // Atualiza o estado do nome
-  };
   const handleCodInternoChange = (e) => {
     setCodInterno(e.target.value); // Atualiza o estado do nome
   };
@@ -119,30 +124,45 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
   };
   const handleqComChange = (e) => {
     setqCom(e.target.value); // Atualiza o estado do nome
-  };
-
-  const handlevUnComChange = (e) => {
-    const novoValor = formatarMoedaBRL(e.target.value)
-    setvUnCom(novoValor); // Atualiza o estado do nome
-    const valor = converterMoedaParaNumero(novoValor)
-    setmargemSobreVlrCusto(((((vlrVenda / valor) * 100) / 2)).toFixed(4))
-  };
+  };  
+  
   const handleNcmChange = (e) => {
     setNcm(e.target.value); // Atualiza o estado do nome
   };
-  const handlevlrVendaChange = (e) => {
-    const novoValor = formatarMoedaBRL(e.target.value)
-    setVlrVenda(novoValor); // Atualiza o estado do nome
-    const valor = converterMoedaParaNumero(novoValor);
-    setmargemSobreVlrCusto(((((valor / converterMoedaParaNumero(vUnCom)) * 100) / 2)).toFixed(4))
+
+  const handlevUnComChange = (e) => {
+    const novoValor = formatarMoedaBRL(e.target.value);
+    const valorFormatado = formatarValor(novoValor);
+    setvUnCom(valorFormatado);
+  
+    const margem = ((vlrVenda - valorFormatado) / valorFormatado) * 100;
+    setmargemSobreVlrCusto(margem.toFixed(4));
+  
+    const margemAtacado = ((vlrVendaAtacado - valorFormatado) / valorFormatado) * 100;
+    setmargemSobreVlrCustoAtacado(margemAtacado.toFixed(4));
   };
+  
+  const handlevlrVendaChange = (e) => {
+    const novoValor = formatarMoedaBRL(e.target.value);
+    const valorFormatado = formatarValor(novoValor);
+    setVlrVenda(valorFormatado);
+  
+    const valorCusto = Number(vUnCom);
+    const margem = ((valorFormatado - valorCusto) / valorCusto) * 100;
+    setmargemSobreVlrCusto(margem.toFixed(4));
+  };
+  
   const handlevlrVendaAtacadoChange = (e) => {
-    const novoValor = formatarMoedaBRL(e.target.value)
-    setvlrVendaAtacado(novoValor); // Atualiza o estado do nome
-    const valor = converterMoedaParaNumero(novoValor)
-    setmargemSobreVlrCustoAtacado(((((valor / converterMoedaParaNumero(vUnCom)) * 100) / 2)).toFixed(4))
+    const novoValor = formatarMoedaBRL(e.target.value);
+    const valorFormatado = formatarValor(novoValor);
+    setvlrVendaAtacado(valorFormatado);
+  
+    const valorCusto = Number(vUnCom);
+    const margemAtacado = ((valorFormatado - valorCusto) / valorCusto) * 100;
+    setmargemSobreVlrCustoAtacado(margemAtacado.toFixed(4));
   };
 
+  
   const handlemargemSobreVlrCustoChange = (e) => {
     setmargemSobreVlrCusto(e.target.value); // Atualiza o estado do nome
   };
@@ -169,6 +189,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
         cod_interno: formData.get('cod_interno'),
         cEAN: formData.get('cEAN'),
         qtdMinima: formData.get('qtdMinima'),
+        uCom: formData.get('uCom'),
         qCom: formData.get('qCom'),
         vUnCom: converterMoedaParaNumero(formData.get('vUnCom')),           //valor_unit: formData.get('valor_unit'),  ajustado para tratar produtos cadastrados manual na nf 24/09/2024
         vlrVenda: converterMoedaParaNumero(formData.get('vlrVenda')),           //valor de venda: formData.get('valor_unit'),  ajustado para tratar produtos cadastrados manual na nf 24/09/2024
@@ -194,6 +215,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
         cod_interno,
         cEAN,
         qtdMinima,
+        uCom,
         qCom,
         vUnCom,
         vlrVenda,
@@ -223,162 +245,252 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
       setToast({ message: errorMessage, type: "error" });*/
     }
   };
+
+  const toggleSection = (section) => {
+    setIsExpanded((prevState) => ({
+      ...prevState,
+      [section]: !prevState[section],
+    }));
+  };
+
   return (
     <div className="modal-overlay">
       <div className="modal-content">
         <button className="modal-close" onClick={onClose}>X</button>
-        <h2>Cadastro de Produtos {prod?.nNF ? ` - Nota Fiscal Nº ${prod.nNF}` : ''}</h2>
+        <h2>
+          {edit
+            ? `Editar Produto - ${prod?.nNF ? `Nota Fiscal Nº ${prod.nNF}` : xProd}`
+            : `Cadastrar Produto : ${prod?.nNF ? `Nota Fiscal Nº ${prod.nNF}` : xProd}`}
+        </h2>
         <form onSubmit={handleSubmit}>
-          <div id='cadastro-produto'>
-            <div>
-              <label htmlFor="xProd">Nome</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="xProd"
-                name="xProd"
-                value={xProd}
-                onChange={handlexProdChange} // Adiciona o onChange para atualizar o estado
-                maxLength="150"
-                required
-                disabled={!permiteEditar}
-              />
-            </div>
-            <div>
-              <label htmlFor="cod_interno">Código Interno</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="cod_interno"
-                name="cod_interno"
-                value={cod_interno} // Controlado pelo estado
-                onChange={handleCodInternoChange}
-                required
-                disabled={!permiteEditar}
-              />
-            </div>
-            <div>
-              <label htmlFor="cEAN">Código de Barras</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="cEAN"
-                name="cEAN"
-                value={cEAN} // Controlado pelo estado
-                onChange={handlecEANChange}
-                disabled={!permiteEditar}
-              />
-            </div>
-            <div>
-              <label htmlFor="qtdMinima">Quantidade Mínima</label>
-              <input
-                className='input-geral'
-                type="number"
-                id="qtdMinima"
-                name="qtdMinima"
-                value={qtdMinima}
-                onChange={handleQtdMinChange} // Adiciona o onChange para atualizar o estado
-                maxLength="50"
-                required
-                disabled={!permiteEditar}
-              />
-            </div>
-            <div>
-              <label htmlFor="qCom">Quantidade</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="qCom"
-                name="qCom"
-                value={qCom}
-                onChange={handleqComChange} // Adiciona o onChange para atualizar o estado
-                maxLength="150"
-                required
-                disabled={!permiteEditar}
-              />
-            </div>
-            <div>
-              <label htmlFor="ncm">NCM</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="ncm"
-                name="ncm"
-                value={ncm}
-                onChange={handleNcmChange} // Adiciona o onChange para atualizar o estado
-                maxLength="150"
-                disabled={!permiteEditar}
-              />
-            </div>
-            <div>
-              <label htmlFor="vUnCom">Valor de Custo</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="vUnCom"
-                name="vUnCom"
-                value={formatarMoedaBRL(vUnCom)}
-                onChange={handlevUnComChange} // Adiciona o onChange para atualizar o estado
-                maxLength="150"
-                required
-                disabled={!permiteEditar}
-              />
-            </div>
-            <div>
-              <label htmlFor="vlrVenda">Valor de Venda</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="vlrVenda"
-                name="vlrVenda"
-                value={formatarMoedaBRL(vlrVenda)}
-                onChange={handlevlrVendaChange} // Adiciona o onChange para atualizar o estado
-                maxLength="150"
-                required
-                disabled={!permiteEditar}
-              />
-            </div>
-            <div>
-              <label htmlFor="margemSobreVlrCusto">Percentual do Vlr de Venda/Vlr Custo</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="margemSobreVlrCusto"
-                name="margemSobreVlrCusto"
-                value={margemSobreVlrCusto}
-                onChange={handlemargemSobreVlrCustoChange} // Adiciona o onChange para atualizar o estado
-                maxLength="150"
-                disabled
-              />
-            </div>
-            <div>
-              <label htmlFor="vlrVendaAtacado">Valor de Venda Atacado</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="vlrVendaAtacado"
-                name="vlrVendaAtacado"
-                value={formatarMoedaBRL(vlrVendaAtacado)}
-                onChange={handlevlrVendaAtacadoChange} // Adiciona o onChange para atualizar o estado
-                maxLength="150"
-                required
-                disabled={!permiteEditar}
-              />
-            </div>
-            <div>
-              <label htmlFor="margemSobreVlrCustoAtacado">Percentual do Vlr de Venda Atacado/Vlr Custo</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="margemSobreVlrCustoAtacado"
-                name="margemSobreVlrCustoAtacado"
-                value={margemSobreVlrCustoAtacado}
-                onChange={handlemargemSobreVlrCustoAtacadoChange} // Adiciona o onChange para atualizar o estado
-                maxLength="150"
-                disabled
-              />
-            </div>
-            {/* Campos adicionais */}
+          <div>
+            {/* Seção de Identificação do Produto */}
+            <fieldset>
+              <legend>
+                Identificação do Produto
+                <button
+                  type="button"
+                  onClick={() => toggleSection('identificacao')}
+                  className="expand-button"
+                >
+                  {isExpanded.identificacao ? '-' : '+'}
+                </button>
+              </legend>
+              {isExpanded.identificacao && (
+                <div>
+                  <div className="form-line">
+                    <div className="single-line">
+                      <label htmlFor="xProd">Nome</label>
+                      <input
+                        className="input-geral"
+                        type="text"
+                        id="xProd"
+                        name="xProd"
+                        value={xProd}
+                        onChange={(e)=>{setxProd(e.target.value.toUpperCase())}}
+                        maxLength="150"
+                        required
+                        disabled={!permiteEditar}
+                      />
+                    </div>
+                  </div>
+                  <div className="form-line">
+                    <div>
+                      <label htmlFor="cod_interno">Código Interno</label>
+                      <input
+                        className="input-geral"
+                        type="text"
+                        id="cod_interno"
+                        name="cod_interno"
+                        value={cod_interno}
+                        onChange={handleCodInternoChange}
+                        required
+                        disabled={!permiteEditar}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="cEAN">Código de Barras</label>
+                      <input
+                        className="input-geral"
+                        type="text"
+                        id="cEAN"
+                        name="cEAN"
+                        value={cEAN}
+                        onChange={handlecEANChange}
+                        disabled={!permiteEditar}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="ncm">NCM</label>
+                      <input
+                        className="input-geral"
+                        type="text"
+                        id="ncm"
+                        name="ncm"
+                        value={ncm}
+                        onChange={handleNcmChange}
+                        maxLength="150"
+                        disabled={!permiteEditar}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </fieldset>
+
+            {/* Seção de Preços e Quantidades */}
+            <fieldset>
+              <legend>
+                Quantidades
+                <button
+                  type="button"
+                  onClick={() => toggleSection('precos')}
+                  className="expand-button"
+                >
+                  {isExpanded.precos ? '-' : '+'}
+                </button>
+              </legend>
+              {isExpanded.precos && (
+                <div className="form-line">
+                  <div>
+                    <label htmlFor="uCom">Unidade Medida</label>
+                    <select
+                      className="input-geral"
+                      id="uCom"
+                      name="uCom"
+                      value={uCom}
+                      onChange={(e) => { setuCom(e.target.value) }}
+                      required
+                      disabled={!permiteEditar}
+                    >
+                      <option value="">Selecione uma opção</option>
+                      <option value="CX">Caixa</option>
+                      <option value="UN">Unidade</option>
+                      <option value="KG">Quilo</option>
+                      <option value="LT">Litro</option>
+                      <option value="MT">Metro</option>
+                      <option value="PC">Pacote</option>
+                      <option value="SC">Saca</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="qtdMinima">Quantidade Mínima</label>
+                    <input
+                      className="input-geral"
+                      type="number"
+                      id="qtdMinima"
+                      name="qtdMinima"
+                      value={qtdMinima}
+                      onChange={handleQtdMinChange}
+                      maxLength="50"
+                      required
+                      disabled={!permiteEditar}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="qCom">Quantidade</label>
+                    <input
+                      className="input-geral"
+                      type="text"
+                      id="qCom"
+                      name="qCom"
+                      value={qCom}
+                      onChange={handleqComChange}
+                      maxLength="150"
+                      required
+                      disabled={!permiteEditar}
+                    />
+                  </div>
+                </div>
+              )}
+            </fieldset>
+            {/* Seção de Preço de Custo / Venda e Percentuais */}
+            <fieldset>
+              <legend>
+                Preço de Custo/Venda e Percentuais
+                <button
+                  type="button"
+                  onClick={() => toggleSection('custoVendaPercentual')}
+                  className="expand-button"
+                >
+                  {isExpanded.custoVendaPercentual ? '-' : '+'}
+                </button>
+              </legend>
+              {isExpanded.custoVendaPercentual && (
+                <div className="form-line">
+                  <div>
+                    <label htmlFor="vUnCom">Valor de Custo</label>
+                    <input
+                      className='input-geral'
+                      type="text"
+                      id="vUnCom"
+                      name="vUnCom"
+                      value={formatarMoedaBRL(vUnCom)}
+                      onChange={handlevUnComChange}
+                      maxLength="150"
+                      required
+                      disabled={!permiteEditar}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="vlrVenda">Valor de Venda</label>
+                    <input
+                      className='input-geral'
+                      type="text"
+                      id="vlrVenda"
+                      name="vlrVenda"
+                      value={formatarMoedaBRL(vlrVenda)}
+                      onChange={handlevlrVendaChange}
+                      maxLength="150"
+                      required
+                      disabled={!permiteEditar}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="vlrVendaAtacado">Valor de Venda Atacado</label>
+                    <input
+                      className='input-geral'
+                      type="text"
+                      id="vlrVendaAtacado"
+                      name="vlrVendaAtacado"
+                      value={formatarMoedaBRL(vlrVendaAtacado)}
+                      onChange={handlevlrVendaAtacadoChange}
+                      maxLength="150"
+                      required
+                      disabled={!permiteEditar}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="margemSobreVlrCusto">Percentual do Vlr de Venda/Vlr Custo</label>
+                    <input
+                      className="input-geral"
+                      type="text"
+                      id="margemSobreVlrCusto"
+                      name="margemSobreVlrCusto"
+                      value={margemSobreVlrCusto}
+                      onChange={handlemargemSobreVlrCustoChange}
+                      maxLength="150"
+                      disabled
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="margemSobreVlrCustoAtacado">Percentual do Vlr de Venda Atacado/Vlr Custo</label>
+                    <input
+                      className="input-geral"
+                      type="text"
+                      id="margemSobreVlrCustoAtacado"
+                      name="margemSobreVlrCustoAtacado"
+                      value={margemSobreVlrCustoAtacado}
+                      onChange={handlemargemSobreVlrCustoAtacadoChange}
+                      maxLength="150"
+                      disabled
+                    />
+                  </div>
+                </div>
+              )}
+            </fieldset>
+
+            {/* Campos Adicionais */}
             {additionalFields.map((field, index) => (
               <input
                 className="input-geral"
@@ -404,20 +516,17 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
                 disabled={!permiteEditar}
               />
             ))}
-
           </div>
 
-          <div id='button-group'>
-            <button type="submit" id="btnsalvar" className="button" disabled={!permiteEditar}
-            >Salvar</button>
+          <div id="button-group">
+            <button type="submit" id="btnsalvar" className="button" disabled={!permiteEditar}>Salvar</button>
             <button onClick={handleChangeStatus} className="cancel-button">Deletar</button>
-
           </div>
         </form>
         {toast.message && <Toast type={toast.type} message={toast.message} />}
-
       </div>
     </div>
+
   );
 };
 

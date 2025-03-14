@@ -200,7 +200,7 @@ const ContasBancarias = () => {
                             value={bancoId}
                             onChange={(e) => setBancoId(e.target.value)}
                         >
-                            <option value="">Todas as Marcas</option>
+                            <option value="">Todas os Bancos</option>
                             {bancos.map((banco) => (
                                 <option key={banco.id} value={banco.id}>
                                     {banco.codBancario + ' - ' + banco.nome}

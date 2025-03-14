@@ -104,15 +104,6 @@ function Funcionarios() {
       setFilteredFuncionarios(response.data);
     } catch (err) {
       const errorMessage = err.response?.data?.error || "Erro ao cadastrar funcionário.";
-      /*if (errorMessage.includes('Já existe um Funcionário com esse CPF/CNPJ:')) {
-        const confirmReuse = window.confirm("Já existe um funcionário com o CPF/CNPJ informado. Deseja reaproveitar os dados?");
-        if (confirmReuse) {
-          const existingFuncionario = err.response.data.funcionario;
-          setSelectedFuncionario(existingFuncionario);
-          setIsEdit(true);
-          setIsModalOpen(true);
-        }
-      }*/
       setToast({ message: errorMessage, type: "error" });
     }
   };
@@ -148,7 +139,7 @@ function Funcionarios() {
       uf_id: formData.get('uf'),
       municipio_id: formData.get('municipio'),
       cep: formData.get('cep'),
-      salario: formData.get('salario'),
+      salario: converterMoedaParaNumero(formData.get('salario')),
       logradouro: formData.get('logradouro')
     };
 

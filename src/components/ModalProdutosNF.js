@@ -181,7 +181,7 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen,onVinculoSuccess }) =
 
   const additionalFields = [
     { name: 'qCom', type: 'text', placeholder: 'Quantidade' },
-    { name: 'valor_unit', type: 'text', placeholder: 'Valor do Unitário',value: formatarMoedaBRL(valor_unit)},
+    { name: 'valor_unit', type: 'text', placeholder: 'Valor do Unitário' },
   ];
 
   const handleFecharNF = async (nfe) => {

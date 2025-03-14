@@ -31,7 +31,7 @@ function ContasPendentes() {
                 dataInicio,
                 dataFim,
                 fornecedor: filtroFornecedor,
-                status: filtroStatus,
+                status: 'Pendente',
                 cnpj: filtroCNPJ
             };
             const response = await getMovimentacaofinanceiraDespesa(filters);
@@ -188,7 +188,6 @@ function ContasPendentes() {
                             value={filtroStatus}
                             onChange={(e) => setFiltroStatus(e.target.value)}
                         >
-                            <option value="">Todos</option>
                             <option value="Pendente">Pendente</option>
                         </select>
                     </label>

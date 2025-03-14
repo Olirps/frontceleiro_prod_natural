@@ -28,6 +28,12 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
     const { permissions } = useAuth();
     const [hasAccess, setHasAccess] = useState(true);
 
+    const [isExpanded, setIsExpanded] = useState({
+        dadosBasicos: true,
+        dadosJuridicos: false,
+        contato: false,
+        endereco: false
+    });
 
     useEffect(() => {
         if (isOpen && edit) {
@@ -142,192 +148,255 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
 
     if (!isOpen) return null;
 
-
+    const toggleSection = (section) => {
+        setIsExpanded((prevState) => ({
+            ...prevState,
+            [section]: !prevState[section],
+        }));
+    };
 
     return (
         <div className="modal-overlay">
             <div className="modal-content">
                 <button className="modal-close" onClick={onClose}>X</button>
-                <h2>Cadastro de Cliente</h2>
+                <h2>
+                    {edit
+                        ? `Editar Cliente - ${nomeFantasia ? nomeFantasia : nome}`
+                        : `Cadastrar Cliente : ${nomeFantasia ? nomeFantasia : nome}`}
+                </h2>
                 <form onSubmit={onSubmit}>
-                    <div id='cadastro-padrao'>
-                        <div>
-                            <label htmlFor="nome">Nome</label>
-                            <input
-                                className='input-geral'
-                                type="text"
-                                id="nome"
-                                name="nome"
-                                value={nome.toUpperCase()}
-                                onChange={(e) => { setNome(e.target.value) }} //forma resumida de atualizar o input
-                                maxLength="150"
-                                disabled={!permiteEditar}
-                                required
-                            />
-                            <label htmlFor="nomeFantasia">Nome Fantasia</label>
-                            <input
-                                className='input-geral'
-                                type="text"
-                                id="nomeFantasia"
-                                name="nomeFantasia"
-                                value={nomeFantasia.toUpperCase()}
-                                onChange={(e) => { setNomeFantasia(e.target.value) }} //forma resumida de atualizar o input
-                                maxLength="150"
-                                disabled={!permiteEditar}
-
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="cpfCnpj">CPF/CNPJ</label>
-                            <input
-                                className='input-geral'
-                                type="text"
-                                id="cpfCnpj"
-                                name="cpfCnpj"
-                                value={cpfCnpjMask(cpfCnpj)} // Controlado pelo estado
-                                onChange={(e) => { setCpf(cpfCnpjMask(e.target.value)) }} //forma resumida de atualizar o input
-                                disabled={!permiteEditar}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="email">Email</label>
-                            <input
-                                className='input-geral'
-                                type="email"
-                                id="email"
-                                name="email"
-                                value={email.toLowerCase()}
-                                onChange={(e) => { setEmail(e.target.value) }}
-                                maxLength={100}
-                                disabled={!permiteEditar}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="celular">Celular</label>
-                            <input
-                                className='input-geral'
-                                type="text"
-                                id="celular"
-                                name="celular"
-                                value={formatarCelular(celular)}
-                                onChange={(e) => { setCelular(e.target.value) }}
-                                maxLength={20}
-                                disabled={!permiteEditar}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="logradouro">Logradouro</label>
-                            <input
-                                className='input-geral'
-                                type="text"
-                                id="logradouro"
-                                name="logradouro"
-                                value={logradouro.toUpperCase()}
-                                onChange={(e) => { setLogradouro(e.target.value) }}
-                                maxLength={100}
-                                disabled={!permiteEditar}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="numero">Número</label>
-                            <input
-                                className='input-geral'
-                                type="text"
-                                id="numero"
-                                name="numero"
-                                value={numero}
-                                onChange={(e) => { setNumero(e.target.value) }}
-                                maxLength={8}
-                                disabled={!permiteEditar}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="bairro">Bairro</label>
-                            <input
-                                className='input-geral'
-                                type="text"
-                                id="bairro"
-                                name="bairro"
-                                value={bairro.toUpperCase()}
-                                onChange={(e) => { setBairro(e.target.value) }}
-                                maxLength={100}
-                                disabled={!permiteEditar}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="cep">CEP</label>
-                            <input
-                                className='input-geral'
-                                type="text"
-                                id="cep"
-                                name="cep"
-                                value={cep}
-                                onChange={(e) => { setCep(e.target.value) }}
-                                maxLength={9}
-                                disabled={!permiteEditar}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="uf">UF</label>
-                            <select
-                                className="input-geral"
-                                id="uf"
-                                name="uf"
-                                value={uf}
-                                onChange={handleUfChange}
-                                disabled={!permiteEditar}
-                                required
-                            >
-                                <option value="">Selecione um estado</option>
-                                {ufs.map((uf) => (
-                                    <option key={uf.id} value={uf.codIBGE}>
-                                        {uf.nome}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label htmlFor="municipio">Município</label>
-                            <select
-                                className="input-geral"
-                                id="municipio"
-                                name="municipio"
-                                value={municipio}
-                                onChange={(e) => { setMunicipio(e.target.value) }}
-                                disabled={!permiteEditar}
-                                required
-                            >
-                                <option value="">Selecione um município</option>
-
-                                {Array.isArray(municipios) &&
-                                    municipios.map((mun) => (
-                                        <option key={mun.id} value={mun.id}>
-                                            {mun.nome}
-                                        </option>
-                                    ))
-                                }
-
-                            </select>
-                        </div>
-                        <div id='botao-salva'>
-                            {permiteEditar ? (
+                    <div >
+                        {/* Dados Básicos do Cliente */}
+                        <fieldset>
+                            <legend>
+                                Dados Básicos
                                 <button
-                                    type="submit"
-                                    id="btnsalvar"
-                                    className="button"
+                                    type="button"
+                                    onClick={() => toggleSection('dadosBasicos')}
+                                    className="expand-button"
                                 >
-                                    Salvar
+                                    {isExpanded.dadosBasicos ? '-' : '+'}
                                 </button>
-                            ) : ''}
+                            </legend>
+                            <div style={{ display: isExpanded.dadosBasicos ? 'block' : 'none' }}>
+                                <div>
+                                    <div className="form-line">
+                                        <label htmlFor="nome">Nome</label>
+                                        <input
+                                            className='input-geral'
+                                            type="text"
+                                            id="nome"
+                                            name="nome"
+                                            value={nome}
+                                            onChange={(e) => { setNome(e.target.value.toUpperCase()) }} //forma resumida de atualizar o input
+                                            maxLength="150"
+                                            disabled={!permiteEditar}
+                                            required
+                                        />
+                                        <label htmlFor="nomeFantasia">Nome Fantasia</label>
+                                        <input
+                                            className='input-geral'
+                                            type="text"
+                                            id="nomeFantasia"
+                                            name="nomeFantasia"
+                                            value={nomeFantasia}
+                                            onChange={(e) => { setNomeFantasia(e.target.value.toUpperCase()) }} //forma resumida de atualizar o input
+                                            maxLength="150"
+                                            disabled={!permiteEditar}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
 
-                        </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend>
+                                Dados Jurídicos
+                                <button
+                                    type="button"
+                                    onClick={() => toggleSection('dadosJuridicos')}
+                                    className="expand-button"
+                                >
+                                    {isExpanded.dadosJuridicos ? '-' : '+'}
+                                </button>
+                            </legend>
+                            <div style={{ display: isExpanded.dadosJuridicos ? 'block' : 'none' }}>
+                                <div className="form-line">
+                                    <label htmlFor="cpfCnpj">CPF/CNPJ</label>
+                                    <input
+                                        className='input-geral'
+                                        type="text"
+                                        id="cpfCnpj"
+                                        name="cpfCnpj"
+                                        value={cpfCnpjMask(cpfCnpj)} // Controlado pelo estado
+                                        onChange={(e) => { setCpf(cpfCnpjMask(e.target.value)) }} //forma resumida de atualizar o input
+                                        disabled={!permiteEditar}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend>
+                                Contato
+                                <button
+                                    type="button"
+                                    onClick={() => toggleSection('contato')}
+                                    className="expand-button"
+                                >
+                                    {isExpanded.contato ? '-' : '+'}
+                                </button>
+                            </legend>
+                            <div style={{ display: isExpanded.contato ? 'block' : 'none' }}>
+                                <div className="form-line">
+                                    <div>
+                                        <label htmlFor="email">Email</label>
+                                        <input
+                                            className='input-geral'
+                                            type="email"
+                                            id="email"
+                                            name="email"
+                                            value={email}
+                                            onChange={(e) => { setEmail(e.target.value.toLowerCase()) }}
+                                            maxLength={100}
+                                            disabled={!permiteEditar}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="celular">Celular</label>
+                                        <input
+                                            className='input-geral'
+                                            type="text"
+                                            id="celular"
+                                            name="celular"
+                                            value={formatarCelular(celular)}
+                                            onChange={(e) => { setCelular(e.target.value) }}
+                                            maxLength={20}
+                                            disabled={!permiteEditar}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend>
+                                Endereço
+                                <button
+                                    type="button"
+                                    onClick={() => toggleSection('endereco')}
+                                    className="expand-button"
+                                >
+                                    {isExpanded.endereco ? '-' : '+'}
+                                </button>
+                            </legend>
+                            <div style={{ display: isExpanded.endereco ? 'block' : 'none' }}>
+                                <div className="form-line">
+                                    <div>
+                                        <label htmlFor="logradouro">Logradouro</label>
+                                        <input
+                                            className='input-geral'
+                                            type="text"
+                                            id="logradouro"
+                                            name="logradouro"
+                                            value={logradouro}
+                                            onChange={(e) => { setLogradouro(e.target.value.toUpperCase()) }}
+                                            maxLength={100}
+                                            disabled={!permiteEditar}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="numero">Número</label>
+                                        <input
+                                            className='input-geral'
+                                            type="text"
+                                            id="numero"
+                                            name="numero"
+                                            value={numero}
+                                            onChange={(e) => { setNumero(e.target.value) }}
+                                            maxLength={8}
+                                            disabled={!permiteEditar}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="bairro">Bairro</label>
+                                        <input
+                                            className='input-geral'
+                                            type="text"
+                                            id="bairro"
+                                            name="bairro"
+                                            value={bairro}
+                                            onChange={(e) => { setBairro(e.target.value.toUpperCase()) }}
+                                            maxLength={100}
+                                            disabled={!permiteEditar}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="cep">CEP</label>
+                                        <input
+                                            className='input-geral'
+                                            type="text"
+                                            id="cep"
+                                            name="cep"
+                                            value={cep}
+                                            onChange={(e) => { setCep(e.target.value) }}
+                                            maxLength={9}
+                                            disabled={!permiteEditar}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="uf">UF</label>
+                                        <select
+                                            className="input-geral"
+                                            id="uf"
+                                            name="uf"
+                                            value={uf}
+                                            onChange={handleUfChange}
+                                            disabled={!permiteEditar}
+                                            required
+                                        >
+                                            <option value="">Selecione um estado</option>
+                                            {ufs.map((uf) => (
+                                                <option key={uf.id} value={uf.codIBGE}>
+                                                    {uf.nome}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="municipio">Município</label>
+                                        <select
+                                            className="input-geral"
+                                            id="municipio"
+                                            name="municipio"
+                                            value={municipio}
+                                            onChange={(e) => { setMunicipio(e.target.value) }}
+                                            disabled={!permiteEditar}
+                                            required
+                                        >
+                                            <option value="">Selecione um município</option>
+                                            {Array.isArray(municipios) &&
+                                                municipios.map((mun) => (
+                                                    <option key={mun.id} value={mun.id}>
+                                                        {mun.nome}
+                                                    </option>
+                                                ))
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+                    <div id='button-group'>
+                        {permiteEditar ? (
+                            <button
+                                type="submit"
+                                id="btnsalvar"
+                                className="button"
+                            >
+                                Salvar
+                            </button>
+                        ) : ''}
                     </div>
                 </form>
                 {toast.message && (

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/ModalMovimentacaoFinanceiraDespesa.css';
 import Toast from '../components/Toast';
-import { formatarMoedaBRL, converterMoedaParaNumero } from '../utils/functions';
+import { getLancamentoUnificar } from '../services/api';
+import { formatarMoedaBRL, formatarData, converterMoedaParaNumero } from '../utils/functions';
 import ConfirmarLancarParcelas from '../components/ConfirmarLancarParcelas'; // Importando o novo modal
 import ModalPesquisaCredor from '../components/ModalPesquisaCredor'; // Importando o modal de pesquisa
 import ModalLancamentoParcelas from '../components/ModalLancamentoParcelas'; // Importe o novo modal
 import { calcularParcelas, atualizarValorParcela, atualizarDataVencimentoParcela } from '../utils/parcelasUtils'; // Importando a função de cálculo de parcelas
 
-const ModalMovimentacaoFinanceiraDespesa = ({ isOpen, onConfirmar, onSubmit, edit, onClose, movimentacao, onSuccess }) => {
+const ModalUnificaLancamentos = ({ isOpen, onConfirmar, onSubmit, edit, onClose, onSuccess }) => {
     const [descricao, setDescricao] = useState('');
     const [valor, setValor] = useState('');
     const [tipoCredor, setTipoCredor] = useState('');
@@ -23,6 +24,7 @@ const ModalMovimentacaoFinanceiraDespesa = ({ isOpen, onConfirmar, onSubmit, edi
     const [isModalPesquisaOpen, setIsModalPesquisaOpen] = useState(false);  // Controle do Modal de Pesquisa
     const [credorSelecionado, setCredorSelecionado] = useState(null);  // Crédito selecionado do Modal de Pesquisa
     const [lancarParcelas, setLancarParcelas] = useState(''); // Estado para controlar a opção de parcelamento
+    const [lancamentos, setLancamentos] = useState([]); // Estado para controlar a opção de parcelamento
     const [isModalParcelasOpen, setIsModalParcelasOpen] = useState(false); // Estado para controlar o modal de parcelas
     const [disabledSalvar, setDisabledSalvar] = useState(false); // Estado para controlar o modal de parcelas
     const [cancelarLancto, setCancelarLancto] = useState(false); // Estado para controlar o modal de parcelas
@@ -31,6 +33,7 @@ const ModalMovimentacaoFinanceiraDespesa = ({ isOpen, onConfirmar, onSubmit, edi
     const [parcelas, setParcelas] = useState([]); // Estado para armazenar as parcelas
     const [parcelas_old, setParcelas_old] = useState([]); // Estado para armazenar as parcelas
     const [boleto, setBoleto] = useState(''); // Estado para controlar o modal de parcelas
+    const [selectedLancamentos, setSelectedLancamentos] = useState([]);
 
 
 
@@ -95,33 +98,40 @@ const ModalMovimentacaoFinanceiraDespesa = ({ isOpen, onConfirmar, onSubmit, edi
 
     useEffect(() => {
         if (isOpen) {
-            // Reseta os estados quando o modal é aberto
-            if (movimentacao?.id && edit) {
-                setDescricao(movimentacao.descricao || '');
-                setValor(String(movimentacao.valor || '')); // Convertendo para string
-                setDataVencimento(movimentacao.data_vencimento || '');
-                setTipo(movimentacao.tipo || 'debito'); // Garante que o tipo esteja correto
-
-                // Verifica o tipo de credor e define o estado adequado
-                if (movimentacao.funcionario_id) {
-                    setCredorSelecionado(movimentacao.funcionario.cliente);
-                } else if (movimentacao.fornecedor_id) {
-                    setCredorSelecionado(movimentacao.fornecedor);
-                } else if (movimentacao.cliente_id) {
-                    setCredorSelecionado(movimentacao.cliente);
-                }
-                setLoading(false);
-
-            } else {
-                setDescricao('');
-                setValor('');
-                setDataVencimento('');
-                setTipo('debito');
-                setCredorSelecionado(null); // Reseta o crédito selecionado
-                setLoading(false);
-            }
+            setDescricao('');
+            setValor('');
+            setDataVencimento('');
+            setTipo('debito');
+            setCredorSelecionado(null); // Reseta o crédito selecionado
+            setLoading(false);
         }
-    }, [isOpen, movimentacao]);
+    }, [isOpen]);
+
+    useEffect(() => {
+        const fetchLancamento = async () => {
+            if (credorSelecionado) {
+                try {
+                    let filtro = {}
+                    if (credorSelecionado.cpfCnpj) {
+                        filtro.cpfCnpj = credorSelecionado.cpfCnpj;
+                    }
+                    else if (credorSelecionado.nome) {
+                        filtro.credor_nome = credorSelecionado.nome;
+                    }
+                    else {
+                        filtro.credor_nome = credorSelecionado.nomeFantasia;
+                    };
+                    // Supondo que `getLancamentosUnificar` seja uma função que retorna os dados da API
+                    const response = await getLancamentoUnificar(filtro);
+                    setLancamentos(response.data);  // Atualize o estado com os dados retornados
+                } catch (error) {
+                    console.error('Erro ao buscar lançamentos:', error);
+                }
+            }
+        };
+
+        fetchLancamento();
+    }, [credorSelecionado]);  // O useEffect será acionado sempre que `credorSelecionado mudar`
 
     const handleTipoCredor = (tipo) => {
         setTipoCredor(tipo); // Aqui, o tipo de credor é atualizado no estado do componente pai
@@ -132,14 +142,13 @@ const ModalMovimentacaoFinanceiraDespesa = ({ isOpen, onConfirmar, onSubmit, edi
     }
 
     const handleCancelar = () => {
-        if (!movimentacao) return;
         setCancelarLancto(true)
         setMensagem('Deseja realmente excluir esta despesa?')
         setIsConfirmDialogOpen(true);
     };
 
     const handleConfirmCancelamento = async () => {
-        onConfirmar(movimentacao);
+        onConfirmar();
     }
 
     const handleSaveParcelas = (parcelas) => {
@@ -162,13 +171,47 @@ const ModalMovimentacaoFinanceiraDespesa = ({ isOpen, onConfirmar, onSubmit, edi
         const { value } = e.target;
         setCredor(value);
     };
+
+
+    // Função para lidar com a seleção de lançamentos
+    const handleSelectLancamento = (id, valor) => {
+        setSelectedLancamentos((prevSelected) => {
+            let newSelected;
+            if (prevSelected.includes(id)) {
+                // Remove o lançamento se já estiver selecionado
+                newSelected = prevSelected.filter((item) => item !== id);
+            } else {
+                // Adiciona o lançamento se não estiver selecionado
+                newSelected = [...prevSelected, id];
+            }
+
+            // Calcula a soma dos valores dos lançamentos selecionados
+            const total = lancamentos
+                .filter((lancamento) => newSelected.includes(lancamento.id))
+                .reduce((sum, lancamento) => sum + lancamento.valor, 0).toFixed(2);
+
+
+            // Atualiza o estado com o valor total formatado
+            setValor(formatarMoedaBRL(total));
+
+            return newSelected;
+        });
+    };
+
+
+    // Função para unificar os lançamentos selecionados
+    const handleUnificarLancamentos = () => {
+        // Aqui você pode chamar sua API para unificar os lançamentos selecionados
+        console.log('Unificando lançamentos: ', selectedLancamentos);
+    };
+
     if (!isOpen) return null;
 
     return (
         <div className="modal-overlay">
             <div className="modal-content">
                 <button className="modal-close" onClick={onClose}>X</button>
-                <h2>{movimentacao ? "Editar Despesa" : "Cadastrar Despesa"}</h2>
+                <h2>Unificar Lançamentos</h2>
                 <div>
                     <button className='button-geral' onClick={handleOpenPesquisaCredito}>Pesquisar Credor</button>
                 </div>
@@ -252,8 +295,8 @@ const ModalMovimentacaoFinanceiraDespesa = ({ isOpen, onConfirmar, onSubmit, edi
                             </div>
                             <div>
                                 <div>
-                                    <h2> Tipo de Despesa</h2>
-                                    <div className='radio-group'>
+                                    <label>Tipo de Despesa</label>
+                                    <div>
                                         <label>
                                             <input
                                                 type="radio"
@@ -290,82 +333,109 @@ const ModalMovimentacaoFinanceiraDespesa = ({ isOpen, onConfirmar, onSubmit, edi
                                         </label>
                                     </div>
                                 </div>
-
+                                <div id="results-container">
+                                    <div id="grid-padrao-container">
+                                        <input type="hidden" name="selectedLancamentos" value={selectedLancamentos} />
+                                        <table id='grid-padrao'>
+                                            <thead>
+                                                <tr>
+                                                    <th>Select</th>
+                                                    <th>ID</th>
+                                                    <th>Descrição</th>
+                                                    <th>Valor</th>
+                                                    <th>Data de Lançamento</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {lancamentos.map(lancamento => (
+                                                    <tr key={lancamento.id}>
+                                                        <td>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedLancamentos.includes(lancamento.id)}
+                                                                onChange={() => handleSelectLancamento(lancamento.id)}
+                                                            />
+                                                        </td>
+                                                        <td>{lancamento.id}</td>
+                                                        <td>{lancamento.descricao}</td>
+                                                        <td>{formatarMoedaBRL(lancamento.valor)}</td>
+                                                        <td>{formatarData(lancamento.data_lancamento)}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                                 {/* Exibe campos de despesa parcelada */}
                                 {despesaRecorrente === 'parcelada' && (
                                     <>
                                         <div id='form-parcelas'>
-                                            <div className='radio-group'>
-                                                <label>
-                                                    <input
-                                                        type="radio"
-                                                        value="mensal"
-                                                        name='tipoParcelamento'
-                                                        checked={tipoParcelamento === 'mensal'}
-                                                        onChange={() => {
-                                                            setTipoParcelamento('mensal')
-                                                        }
-                                                        }
-                                                    />
-                                                    Mensal
-                                                </label>
-                                                <label>
-                                                    <input
-                                                        type="radio"
-                                                        value="anual"
-                                                        name='tipoParcelamento'
-                                                        checked={tipoParcelamento === 'anual'}
-                                                        onChange={() => {
-                                                            setTipoParcelamento('anual')
-                                                        }
-                                                        }
-                                                    />
-                                                    Anual
-                                                </label>
+                                            <label>
+                                                <input
+                                                    type="radio"
+                                                    value="mensal"
+                                                    name='tipoParcelamento'
+                                                    checked={tipoParcelamento === 'mensal'}
+                                                    onChange={() => {
+                                                        setTipoParcelamento('mensal')
+                                                    }
+                                                    }
+                                                />
+                                                Mensal
+                                            </label>
+                                            <label>
+                                                <input
+                                                    type="radio"
+                                                    value="anual"
+                                                    name='tipoParcelamento'
+                                                    checked={tipoParcelamento === 'anual'}
+                                                    onChange={() => {
+                                                        setTipoParcelamento('anual')
+                                                    }
+                                                    }
+                                                />
+                                                Anual
+                                            </label>
+                                            <div>
+                                                <label>Quantidade de Parcelas</label>
+                                                <input
+                                                    className='input-geral'
+                                                    type="number"
+                                                    name='lancarParcelas'
+                                                    value={lancarParcelas}
+                                                    onChange={(e) => {
+                                                        // Remove qualquer caractere que não seja um número inteiro
+                                                        const value = e.target.value.replace(/[^0-9]/g, '');
+                                                        // Converte o valor para número inteiro
+                                                        const intValue = parseInt(value, 10);
+                                                        // Define o valor mínimo como 1
+                                                        setLancarParcelas(Math.max(1, intValue || 0));
+                                                    }}
+                                                    required
+                                                />
                                             </div>
-                                            <div id='cadastro-padrao'>
-                                                <div>
-                                                    <label>Quantidade de Parcelas</label>
-                                                    <input
-                                                        className='input-geral'
-                                                        type="number"
-                                                        name='lancarParcelas'
-                                                        value={lancarParcelas}
-                                                        onChange={(e) => {
-                                                            // Remove qualquer caractere que não seja um número inteiro
-                                                            const value = e.target.value.replace(/[^0-9]/g, '');
-                                                            // Converte o valor para número inteiro
-                                                            const intValue = parseInt(value, 10);
-                                                            // Define o valor mínimo como 1
-                                                            setLancarParcelas(Math.max(1, intValue || 0));
-                                                        }}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label>Vencimento da Primeira Parcela</label>
-                                                    <input
-                                                        className='input-geral'
-                                                        type="date"
-                                                        name='dataVencimento'
-                                                        value={dataVencimento}
-                                                        onChange={(e) => setDataVencimento(e.target.value)}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label>Valor de Entrada</label>
-                                                    <input
-                                                        className='input-geral'
-                                                        type="text"
-                                                        name='valorEntradaDespesa'
-                                                        value={valorEntradaDespesa}
-                                                        onChange={(e) => setValorEntradaDespesa(formatarMoedaBRL(e.target.value))}
-                                                        required
-                                                    />
-                                                </div>
+                                            <div>
+                                                <label>Vencimento da Primeira Parcela</label>
+                                                <input
+                                                    className='input-geral'
+                                                    type="date"
+                                                    name='dataVencimento'
+                                                    value={dataVencimento}
+                                                    onChange={(e) => setDataVencimento(e.target.value)}
+                                                    required
+                                                />
                                             </div>
-
+                                            <div>
+                                                <label>Valor de Entrada</label>
+                                                <input
+                                                    className='input-geral'
+                                                    type="text"
+                                                    name='valorEntradaDespesa'
+                                                    value={valorEntradaDespesa}
+                                                    onChange={(e) => setValorEntradaDespesa(formatarMoedaBRL(e.target.value))}
+                                                    required
+                                                />
+                                            </div>
                                         </div>
                                     </>
                                 )}
@@ -410,20 +480,19 @@ const ModalMovimentacaoFinanceiraDespesa = ({ isOpen, onConfirmar, onSubmit, edi
                                         </div>
                                     </div>
                                 )}
-                                <div id='button-group'>
-                                    <button type="submit"
-                                        className="button"
-                                        disabled={disabledSalvar}
+                                <div id="button-group">
+                                    <button
+                                        className="button-geral"
+                                        type="submit"
+                                        disabled={selectedLancamentos.length <= 1}  // Desabilita se nenhum lançamento for selecionado
+                                        onClick={handleUnificarLancamentos}
                                     >
-                                        Salvar
+                                        Unificar Lançamentos
                                     </button>
-                                    {movimentacao &&
-                                        <button className="button-excluir" onClick={handleCancelar}>
-                                            Excluir
-                                        </button>}
                                 </div>
                             </div>
                         </form>
+
                     </>
                 )}
             </div>
@@ -457,4 +526,4 @@ const ModalMovimentacaoFinanceiraDespesa = ({ isOpen, onConfirmar, onSubmit, edi
     );
 };
 
-export default ModalMovimentacaoFinanceiraDespesa;
+export default ModalUnificaLancamentos;

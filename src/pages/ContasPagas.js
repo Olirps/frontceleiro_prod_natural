@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getContasPagas } from '../services/api';
 import { formatarData, formatarMoedaBRL } from '../utils/functions';
+import { cpfCnpjMask, removeMaks } from '../components/utils';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -8,6 +9,9 @@ function ContasPagas() {
     const [contasPagas, setContasPagas] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [descricao, setDescricao] = useState('');
+    const [credorNome, setCredorNome] = useState('');
+    const [credorCpfCnpj, setCredorCpfCnpj] = useState('');
     const [dataInicio, setDataInicio] = useState('');
     const [dataFim, setDataFim] = useState('');
     const [contasFiltradas, setContasFiltradas] = useState([]);
@@ -17,8 +21,8 @@ function ContasPagas() {
         async function fetchContasPagas() {
             try {
                 const data = await getContasPagas();
-                setContasPagas(data.data ||[]);
-                setContasFiltradas(data.data||[]); // Inicialmente, exibe todas as contas
+                setContasPagas(data.data);
+                setContasFiltradas(data.data); // Inicialmente, exibe todas as contas
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -29,27 +33,45 @@ function ContasPagas() {
         fetchContasPagas();
     }, []);
 
-    // Função para aplicar o filtro de data
+    // Função para aplicar o filtro de data e outros critérios
     const aplicarFiltro = () => {
         const contasFiltradas = contasPagas.filter((conta) => {
-            const dataPagamento = new Date(conta.data_pagamento); // Usando a propriedade `data_pagamento` do JSON
+            const dataPagamento = new Date(conta.data_pagamento);
             const inicio = dataInicio ? new Date(dataInicio) : null;
             const fim = dataFim ? new Date(dataFim) : null;
 
+            // Converte os filtros de texto para minúsculas para comparação sem distinção entre maiúsculas e minúsculas
+            const filtroCredorCpfCnpj = credorCpfCnpj ? credorCpfCnpj.toLowerCase() : "";
+            const filtroCredorNome = credorNome ? credorNome.toLowerCase() : "";
+            const filtroDescricao = descricao ? descricao.toLowerCase() : "";
+
+            // Verifica se os valores do objeto também estão em minúsculas para comparação
+            const credorCpfCnpjConta = conta.credor_cpfcnpj ? conta.credor_cpfcnpj.toLowerCase() : "";
+            const credorNomeConta = conta.credor_nome ? conta.credor_nome.toLowerCase() : "";
+            const descricaoConta = conta.descricao ? conta.descricao.toLowerCase() : "";
+
             // Verifica se a data de pagamento está dentro do intervalo
-            return (
-                (!inicio || dataPagamento >= inicio) &&
-                (!fim || dataPagamento <= fim)
-            );
+            const dataValida = (!inicio || dataPagamento >= inicio) && (!fim || dataPagamento <= fim);
+
+            // Verifica se os valores digitados pelo usuário estão contidos nos campos correspondentes
+            const credorCpfCnpjValido = !filtroCredorCpfCnpj || credorCpfCnpjConta.includes(filtroCredorCpfCnpj);
+            const credorNomeValido = !filtroCredorNome || credorNomeConta.includes(filtroCredorNome);
+            const descricaoValida = !filtroDescricao || descricaoConta.includes(filtroDescricao);
+
+            return dataValida && credorCpfCnpjValido && credorNomeValido && descricaoValida;
         });
 
         setContasFiltradas(contasFiltradas);
     };
 
+
     // Função para limpar os filtros
     const limparFiltros = () => {
         setDataInicio('');
         setDataFim('');
+        setDescricao('');
+        setCredorNome('');
+        setCredorCpfCnpj('');
         setContasFiltradas(contasPagas); // Exibe todas as contas novamente
     };
 
@@ -72,14 +94,14 @@ function ContasPagas() {
         // Cabeçalho com os dados do cliente
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
-        doc.text("Fazenda Aparecida do Norte", 14, 20);
+        doc.text("Celeiro Produtos Naturais", 14, 20);
 
         // Informações de contato
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text("Rodovia MT 129 - KM 10 - Paranatinga - MT", 14, 30);
-        doc.text("Tel: (67) 98124-7654", 14, 36);
-        doc.text("Email: faz.aparecidadonorte@gmail.com", 14, 42);
+        doc.text("Avenida Paraná - Primavera do Leste - MT", 14, 30);
+        doc.text("Tel: (66) 9615-1598", 14, 36);
+        
 
         // Informações sobre os filtros utilizados
         doc.setFontSize(12);
@@ -152,7 +174,7 @@ function ContasPagas() {
     };
 
     if (loading) {
-        return <div>Carregando...</div>;
+        return <div className="spinner-container"><div className="spinner"></div></div>;
     }
 
     if (error) {
@@ -166,24 +188,55 @@ function ContasPagas() {
             {/* Filtros de data */}
             <div id="search-container">
                 <div id="search-fields">
-                    <label>
-                        Data de Início:
-                        <input
-                            className='input-geral'
-                            type="date"
-                            value={dataInicio}
-                            onChange={(e) => setDataInicio(e.target.value)}
+                    <label htmlFor="descricao">Descrição</label>
+                    <input className="input-geral"
+                        type="text"
+                        id="descricao"
+                        value={descricao}
+                        onChange={(e) => setDescricao(e.target.value)}
+                        maxLength="150"
+                    />
+                    <label htmlFor="credorNome">Nome Credor</label>
+                    <input className="input-geral"
+                        type="text"
+                        id="credorNome"
+                        value={credorNome}
+                        onChange={(e) => setCredorNome(e.target.value)}
+                        maxLength="150"
+                    />
+
+                    <div>
+                        <label htmlFor="credorCpfCnpj">CPF/CNPJ</label>
+                        <input className="input-geral"
+                            type="text"
+                            id="credorCpfCnpj"
+                            value={cpfCnpjMask(credorCpfCnpj)}
+                            onChange={(e) => setCredorCpfCnpj(removeMaks(e.target.value))}
+                            maxLength="18"
                         />
-                    </label>
-                    <label>
-                        Data de Fim:
-                        <input
-                            className='input-geral'
-                            type="date"
-                            value={dataFim}
-                            onChange={(e) => setDataFim(e.target.value)}
-                        />
-                    </label>
+                    </div>
+                    <div>
+                        <label>
+                            Data de Início:
+                            <input
+                                className='input-geral'
+                                type="date"
+                                value={dataInicio}
+                                onChange={(e) => setDataInicio(e.target.value)}
+                            />
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            Data de Fim:
+                            <input
+                                className='input-geral'
+                                type="date"
+                                value={dataFim}
+                                onChange={(e) => setDataFim(e.target.value)}
+                            />
+                        </label>
+                    </div>
                 </div>
 
                 <div id='button-group'>
@@ -200,6 +253,7 @@ function ContasPagas() {
                     <table id="grid-padrao">
                         <thead>
                             <tr>
+                                <th>Credor</th>
                                 <th>Descrição</th>
                                 <th>Valor Pago</th>
                                 <th>Data de Pagamento</th>
@@ -210,6 +264,7 @@ function ContasPagas() {
                         <tbody>
                             {contasFiltradas.map((conta) => (
                                 <tr key={conta.id}>
+                                    <td>{conta.credor_nome}</td>
                                     <td>{conta.descricao}</td>
                                     <td>{formatarMoedaBRL(conta.valor_pago)}</td>
                                     <td>{formatarData(conta.data_pagamento)}</td>

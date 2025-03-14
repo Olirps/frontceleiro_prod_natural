@@ -96,7 +96,7 @@ export default function PermissionsPage() {
                 setToastMessage({ type: "success", text: "Permissão atualizada com sucesso!" });
             } catch (error) {
                 console.error("Erro ao atualizar permissão", error);
-                setToastMessage({ type: "error", text: 'Erro ao atualizar permissão' });
+                setToastMessage({ type: "error", text: 'Erro ao atualizar permissão: '+ error });
             }
         } else {
             try {
@@ -104,7 +104,7 @@ export default function PermissionsPage() {
                 setToastMessage({ type: "success", text: "Permissão adicionada com sucesso!" });
             } catch (error) {
                 console.error("Erro ao adicionar permissão", error);
-                setToastMessage({ type: "error", text: 'Erro ao adicionar permissão' });
+                setToastMessage({ type: "error", text: 'Erro ao adicionar permissão ' + error.response.data.error });
             }
         }
 

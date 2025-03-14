@@ -3,7 +3,7 @@ import '../styles/ModalPesquisaCredor.css';
 import Toast from '../components/Toast';
 import { getFornecedoresByFiltro, getFuncionariosByFiltro, getClientesByFiltro } from '../services/api';  // Funções de consulta
 
-const ModalPesquisaCredor = ({ isOpen,onTipoCredor, onClose, onSelectCredor }) => {
+const ModalPesquisaCredor = ({ isOpen, onTipoCredor, onClose, onSelectCredor }) => {
     const [tipoCredito, setTipoCredito] = useState('fornecedor'); // Estado para o tipo de crédito selecionado
     const [funcionarioInputs, setFuncionarioInputs] = useState({ nome: '', cpf: '' });
     const [fornecedorInputs, setFornecedorInputs] = useState({ razaoSocial: '', nomeFantasia: '', cnpj: '' });
@@ -12,7 +12,6 @@ const ModalPesquisaCredor = ({ isOpen,onTipoCredor, onClose, onSelectCredor }) =
     const [loading, setLoading] = useState(false);
     const [selectedItems, setSelectedItems] = useState([]);
     const [toast, setToast] = useState({ message: '', type: '' });
-
 
     useEffect(() => {
         if (isOpen) {
@@ -24,7 +23,8 @@ const ModalPesquisaCredor = ({ isOpen,onTipoCredor, onClose, onSelectCredor }) =
     }, [isOpen]);
 
     const handleSearch = async () => {
-        setLoading(true);
+        setLoading(true); // Ativa o loading
+
         try {
             let response;
             switch (tipoCredito) {
@@ -47,19 +47,19 @@ const ModalPesquisaCredor = ({ isOpen,onTipoCredor, onClose, onSelectCredor }) =
                     setToast({ message: '', type: '' });
                 }, 3000);
             }
-            setLoading(false);
         } catch (err) {
             console.error('Erro na pesquisa', err);
             setToast({ message: "Erro ao buscar credores.", type: "error" });
             setTimeout(() => {
                 setToast({ message: '', type: '' });
             }, 3000);
-            setLoading(false);
+        } finally {
+            setLoading(false); // Desativa o loading, independentemente do resultado
         }
     };
 
     const handleSelect = (credor) => {
-        onTipoCredor(tipoCredito)
+        onTipoCredor(tipoCredito);
         onSelectCredor(credor);  // Envia o item selecionado para o pai
         onClose();  // Fecha o modal
     };
@@ -80,9 +80,7 @@ const ModalPesquisaCredor = ({ isOpen,onTipoCredor, onClose, onSelectCredor }) =
                             name="tipoCredito"
                             value="fornecedor"
                             checked={tipoCredito === 'fornecedor'}
-                            onClick={() => {
-                                setResultados([])
-                            }}
+                            onClick={() => setResultados([])}
                             onChange={() => setTipoCredito('fornecedor')}
                         />
                         <label htmlFor="fornecedor">Fornecedor</label>
@@ -94,9 +92,7 @@ const ModalPesquisaCredor = ({ isOpen,onTipoCredor, onClose, onSelectCredor }) =
                             name="tipoCredito"
                             value="funcionario"
                             checked={tipoCredito === 'funcionario'}
-                            onClick={() => {
-                                setResultados([])
-                            }}
+                            onClick={() => setResultados([])}
                             onChange={() => setTipoCredito('funcionario')}
                         />
                         <label htmlFor="funcionario">Funcionário</label>
@@ -108,9 +104,7 @@ const ModalPesquisaCredor = ({ isOpen,onTipoCredor, onClose, onSelectCredor }) =
                             name="tipoCredito"
                             value="cliente"
                             checked={tipoCredito === 'cliente'}
-                            onClick={() => {
-                                setResultados([])
-                            }}
+                            onClick={() => setResultados([])}
                             onChange={() => setTipoCredito('cliente')}
                         />
                         <label htmlFor="cliente">Cliente</label>
@@ -196,9 +190,14 @@ const ModalPesquisaCredor = ({ isOpen,onTipoCredor, onClose, onSelectCredor }) =
                     </div>
                 )}
 
-                <button className='button-geral' onClick={handleSearch}>Pesquisar</button>
+                <button className='button-geral' onClick={handleSearch} disabled={loading}>
+                    {loading ? 'Pesquisando...' : 'Pesquisar'}
+                </button>
 
-                {loading && <div className="spinner-container"><div className="spinner"></div></div>}
+                {loading && (
+                    <div className="spinner-container">
+                        <div className="spinner"></div>
+                    </div>)}
 
                 <div id="results-container">
                     <div id="grid-padrao-container">
@@ -215,15 +214,11 @@ const ModalPesquisaCredor = ({ isOpen,onTipoCredor, onClose, onSelectCredor }) =
                                 {resultados.map((item) => (
                                     <tr key={item.id}>
                                         <td>{item.id}</td>
-                                        <td>{item.nome || item.cliente.nome}</td>
-                                        <td>{item.cpfCnpj || item.cliente.cpfCnpj}</td>
+                                        <td>{item.nome || item.cliente?.nome}</td>
+                                        <td>{item?.cpfCnpj || item.cliente?.cpfCnpj}</td>
                                         <td>
-                                            <button className='button-geral' onClick={() => {
-                                                handleSelect(item)
-                                            }
-                                            }>
+                                            <button className='button-geral' onClick={() => handleSelect(item)}>
                                                 Selecionar
-
                                             </button>
                                         </td>
                                     </tr>

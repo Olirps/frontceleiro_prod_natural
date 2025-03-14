@@ -85,8 +85,11 @@ const ModalPagarLancamentos = ({ isOpen, onSubmit, onClose, parcela }) => {
                             <option value="credito">Cartão de Crédito</option>
                             <option value="debito">Cartão de Débito</option>
                             <option value="cheque">Cheque</option>
+                            <option value="DA">Débito Automático</option>
                             <option value="dinheiro">Dinheiro</option>
                             <option value="PIX">PIX</option>
+                            <option value="TED">TED</option>
+                            <option value="TRFCC">Transf. Entre CC</option>
                         </select>
                     </div>
                     <button type='submit' className="button-geral">Efetuar Pagamento</button>

@@ -367,7 +367,7 @@ const ModalCadastroFornecedor = ({ isOpen, onClose, isEdit, onSubmit, fornecedor
                 onChange={handleCepChange}
               />
             </div>
-            <div id='botao-salva'>
+            <div id='button-group'>
               <button type="submit" id="btnsalvar" className="button">Salvar</button>
             </div>
           </div>

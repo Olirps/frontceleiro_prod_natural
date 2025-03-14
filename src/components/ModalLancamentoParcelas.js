@@ -13,9 +13,7 @@ const ModalLancamentoParcelas = ({ isOpen, onSubmit, onClose, valorTotal, despes
     const [tipoParcelamento, setTipoParcelamento] = useState('mensal');
     const [parcelas_old, setParcelas_old] = useState([]); // Estado para armazenar as parcelas
     const [disabledSalvar, setDisabledSalvar] = useState(false); // Estado para controlar o modal de parcelas
-
-
-
+    const [boleto, setBoleto] = useState([]); // Estado para controlar o modal de parcelas
     const [toast, setToast] = useState({ message: '', type: '' });
 
     useEffect(() => {
@@ -23,7 +21,7 @@ const ModalLancamentoParcelas = ({ isOpen, onSubmit, onClose, valorTotal, despes
         setParcelas(novasParcelas);
         setParcelas_old(novasParcelas); // Atualiza o estado das parcelas originais
 
-    }, [quantidadeParcelas, vencimento, valorEntrada, tipoParcelamento,valorTotal]);
+    }, [quantidadeParcelas, vencimento, valorEntrada, tipoParcelamento, valorTotal]);
 
     useEffect(() => {
         if (toast.message) {
@@ -65,27 +63,14 @@ const ModalLancamentoParcelas = ({ isOpen, onSubmit, onClose, valorTotal, despes
         const novasParcelas = atualizarDataVencimentoParcela(index, parcelas, e)
         setParcelas(novasParcelas)
     }
+    const handleAlterarBoletoParcela = (index, value) => {
+        setParcelas((prevParcelas) =>
+            prevParcelas.map((parcela, i) =>
+                i === index ? { ...parcela, boleto: value } : parcela
+            )
+        );
+    };
 
-
-    /*const calcularParcelas = () => {
-        const entrada = converterMoedaParaNumero(valorEntrada) || 0;
-        const restante = valorTotal - entrada;
-        const valorBaseParcela = Math.floor((restante / quantidadeParcelas) * 100) / 100;
-        let somaParcelas = valorBaseParcela * (quantidadeParcelas - 1);
-        const valorAjustadoUltimaParcela = restante - somaParcelas;
-
-        const novasParcelas = Array.from({ length: quantidadeParcelas }, (_, i) => {
-            const dataVenc = new Date(vencimento);
-            dataVenc.setMonth(dataVenc.getMonth() + i);
-            return {
-                numero: i + 1,
-                valor: i === quantidadeParcelas - 1 ? valorAjustadoUltimaParcela : valorBaseParcela,
-                dataVencimento: dataVenc.toISOString().split('T')[0],
-            };
-        });
-
-        setParcelas(novasParcelas);
-    };*/
 
     if (!isOpen) return null;
 
@@ -95,68 +80,83 @@ const ModalLancamentoParcelas = ({ isOpen, onSubmit, onClose, valorTotal, despes
                 <button className="modal-close" onClick={onClose}>X</button>
                 <h2>Lançamento de Parcelas - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorTotal)}</h2>
                 <form onSubmit={onSubmit}>
-                    <div id='cadastro-padrao'>
+                    <div>
                         <div>
-                            <label>
-                                <input
-                                    type="radio"
-                                    value="mensal"
-                                    name='tipoParcelamento'
-                                    checked={tipoParcelamento === 'mensal'}
-                                    onChange={() => {
-                                        setTipoParcelamento('mensal')
-                                    }
-                                    }
-                                />
-                                Mensal
-                            </label>
-                            <label>
-                                <input
-                                    type="radio"
-                                    value="anual"
-                                    name='tipoParcelamento'
-                                    checked={tipoParcelamento === 'anual'}
-                                    onChange={() => {
-                                        setTipoParcelamento('anual')
-                                    }
-                                    }
-                                />
-                                Anual
-                            </label>
-                            <label>Quantidade de Parcelas:</label>
-                            <input
-                                className='input-geral'
-                                type="text"
-                                value={quantidadeParcelas}
-                                name='quantidadeParcelas'
-                                onChange={(e) => setQuantidadeParcelas(Math.max(1, Number(e.target.value.replace(',', ''))))}
-                                min="1"
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Data de Vencimento:</label>
-                            <input
-                                className='input-geral'
-                                type="date"
-                                name='vencimento'
-                                value={vencimento}
-                                onChange={(e) => setVencimento(e.target.value)}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Valor de Entrada:</label>
-                            <input
-                                className='input-geral'
-                                type="text"
-                                value={valorEntrada}
-                                name='valorEntrada'
-                                onChange={(e) => setValorEntrada(formatarMoedaBRL(e.target.value))}
-                                min="0"
-                                step="0.01"
-                            />
+                            <div className='radio-group'>
+                                <label>
+                                    <input
+                                        type="radio"
+                                        value="mensal"
+                                        name='tipoParcelamento'
+                                        checked={tipoParcelamento === 'mensal'}
+                                        onChange={() => {
+                                            setTipoParcelamento('mensal')
+                                        }
+                                        }
+                                    />
+                                    Mensal
+                                </label>
+                                <label>
+                                    <input
+                                        type="radio"
+                                        value="anual"
+                                        name='tipoParcelamento'
+                                        checked={tipoParcelamento === 'anual'}
+                                        onChange={() => {
+                                            setTipoParcelamento('anual')
+                                        }
+                                        }
+                                    />
+                                    Anual
+                                </label>
+                            </div>
+                            <div id='cadastro-padrao'>
+                                <div>
+                                    <label>Quantidade de Parcelas:</label>
+                                    <input
+                                        className='input-geral'
+                                        type="text"
+                                        value={quantidadeParcelas}
+                                        name='quantidadeParcelas'
+                                        onChange={(e) => setQuantidadeParcelas(Math.max(1, Number(e.target.value.replace(',', ''))))}
+                                        min="1"
+                                    />
+                                </div>
+                                <div>
+                                    <label>Data de Vencimento:</label>
+                                    <input
+                                        className='input-geral'
+                                        type="date"
+                                        name='vencimento'
+                                        value={vencimento}
+                                        onChange={(e) => setVencimento(e.target.value)}
+                                    />
+                                </div>
+                                <div >
+                                    <label>Boleto:</label>
+                                    <input
+                                        className='input-geral'
+                                        type="text"
+                                        name='boleto'
+                                        value={boleto}
+                                        onChange={(e) => setBoleto(e.target.value)}
+                                    />
+                                </div>
+                                <div >
+                                    <label>Valor de Entrada:</label>
+                                    <input
+                                        className='input-geral'
+                                        type="text"
+                                        value={valorEntrada}
+                                        name='valorEntrada'
+                                        onChange={(e) => setValorEntrada(formatarMoedaBRL(e.target.value))}
+                                        min="0"
+                                        step="0.01"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
-
                     {parcelas.length > 0 && (
                         <div>
                             <h3>Parcelas</h3>
@@ -166,7 +166,7 @@ const ModalLancamentoParcelas = ({ isOpen, onSubmit, onClose, valorTotal, despes
                                     <div key={index} className="parcela">
                                         <span>{`Parcela ${parcela.numeroParcela}`}</span>
                                         <span>
-                                            <label>Vencimento</label>
+                                            <label>Vencimento: </label>
                                             <input
                                                 type="date"
                                                 name={`parcelas[${index}].dataVencimento`}  // Aqui estamos usando um nome único para cada parcela
@@ -175,7 +175,16 @@ const ModalLancamentoParcelas = ({ isOpen, onSubmit, onClose, valorTotal, despes
                                             />
                                         </span>
                                         <span>
-                                            <label>Valor</label>
+                                            <label>Boleto: </label>
+                                            <input
+                                                type="text"
+                                                name={`parcelas[${index}].boleto`} // Garante que cada parcela tenha seu campo único
+                                                value={parcela.boleto || ''} // Evita erro caso `boleto` esteja undefined
+                                                onChange={(e) => handleAlterarBoletoParcela(index, e.target.value)}
+                                            />
+                                        </span>
+                                        <span>
+                                            <label>Valor: </label>
                                             <input
                                                 type="text"
                                                 name={`parcelas[${index}].valor`}  // Aqui também estamos fazendo a mesma coisa para o valor
@@ -188,10 +197,13 @@ const ModalLancamentoParcelas = ({ isOpen, onSubmit, onClose, valorTotal, despes
                             </div>
                         </div>
                     )}
-                    <button type='submit' className="button-geral">Salvar Parcelas</button>
+                    <div id='button-group'>
+                        <button type='submit' className="button">Salvar Parcelas</button>
+                    </div>
+
                 </form>
-                {toast.message && <Toast message={toast.message} type={toast.type} />}
             </div>
+            {toast.message && <Toast message={toast.message} type={toast.type} />}
         </div>
     );
 };

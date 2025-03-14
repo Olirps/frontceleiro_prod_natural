@@ -45,30 +45,35 @@ const ModalCancelaVenda = ({ idVenda, isOpen, onClose, onSubmit }) => {
     };
 
     return (
-        <div className="modal-overlay-cancela">
-            <div className="modal-content-cancela">
+        <div className="modal-overlay">
+            <div className="modal-content">
                 <div className="modal-header">
-                    <h2>Cancela Vendas ${idVenda}</h2>
+                    <h2>Cancela Vendas: {idVenda}</h2>
                     <button className="close-button" onClick={onClose}>&times;</button>
                 </div>
                 <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>Motivo:</label>
-                        <input type="text" name="motivo" required />
-                    </div>
-
-                    <div className="modal-footer">
-                        <button className="button-primary" 
-                            type="submit"
-                            disabled={loading}// Desativa o botão enquanto está carregando 
-                            > 
-                            {loading ? 'Processando...' : 'Cancelar Venda'}
+                    <div id='motivo-cancelamento'>
+                        <label htmlFor="motivo"> Motivo:</label>
+                        <input
+                            className='input-geral'
+                            type="text"
+                            name="motivo"
+                            required />
+                        <div className="modal-footer">
+                            <button className="button-primary"
+                                type="submit"
+                                disabled={loading}// Desativa o botão enquanto está carregando 
+                            >
+                                {loading ? 'Processando...' : 'Cancelar Venda'}
 
                             </button>
-                        <button className="button-secondary" type="button" onClick={onClose}>
-                            Fechar
-                        </button>
+                            <button className="button-secondary" type="button" onClick={onClose}>
+                                Fechar
+                            </button>
+                        </div>
                     </div>
+
+
                 </form>
                 {toast.message && <Toast message={toast.message} type={toast.type} />}
             </div>

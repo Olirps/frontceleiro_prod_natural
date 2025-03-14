@@ -269,7 +269,7 @@ function ModalFuncionario({ isOpen, onClose, onSubmit, funcionario, edit }) {
                 id='salario'
                 name="salario"
                 value={formatarMoedaBRL(salario)}
-                onChange={(e) => setSalario(formatarMoedaBRL(e.target.value))}
+                onChange={(e) => setSalario(e.target.value)}
                 maxLength={12}
                 disabled={!permiteEditar}
                 required
@@ -370,7 +370,7 @@ function ModalFuncionario({ isOpen, onClose, onSubmit, funcionario, edit }) {
                 }
               </select>
             </div>
-            <div id='botao-salva'>
+            <div id='button-group'>
               {permiteEditar ? (
                 <button
                   type="submit"

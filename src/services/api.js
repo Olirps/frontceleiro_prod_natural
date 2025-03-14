@@ -316,7 +316,15 @@ export const getContasPagas = async () => {
   return api.get('/contaspagas/');
 };
 
-
+export const getLancamentoUnificar = async (filtro) => {
+  try {
+    const response = await api.get('/lancamentos-unificar/', { params: filtro });
+    return response;
+  } catch (error) {
+    console.error('Erro ao buscar lancamentos com filtro:', error);
+    throw error;
+  }
+};
 
 
 // Nota Fiscal Eletronica
@@ -427,6 +435,10 @@ export const getProdutoById = async(id) => {
 
 export const getProdutosVendidos = async(id) => {
   return api.get('produtos/vendidos');
+};
+
+export const getProdutosVendidosSemana = async(id) => {
+  return api.get('produtos/vendidos-semana');
 };
 
 
