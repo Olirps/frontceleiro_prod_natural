@@ -2,12 +2,9 @@ import React, { useEffect, useState } from 'react';
 import '../styles/ModalCadastraProduto.css'; // Certifique-se de criar este CSS também
 import { addProdutos, updateNFe } from '../services/api';
 import Toast from '../components/Toast';
-import { formatarMoedaBRL, converterMoedaParaNumero, formatarValor } from '../utils/functions';
+import { formatarMoedaBRL, converterMoedaParaNumero, formatarValor, mascaraPercentual, formatarPercentual } from '../utils/functions';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
-
-
-
 
 const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, isInativar, onInativar, additionalFields = [] }) => {
   const [formData, setFormData] = React.useState({});
@@ -19,23 +16,20 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
   const [vUnCom, setvUnCom] = useState('');
   const [ncm, setNcm] = useState('');
   const [vlrVenda, setVlrVenda] = useState('');
+  const [percentual, setPercentual] = useState('');
   const [vlrVendaAtacado, setvlrVendaAtacado] = useState('');
   const [margemSobreVlrCusto, setmargemSobreVlrCusto] = useState('');
   const [margemSobreVlrCustoAtacado, setmargemSobreVlrCustoAtacado] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [isInativado, setIsInativado] = useState(isInativar);
   const [permiteEditar, setPermiteEditar] = useState(true);
   const { permissions } = useAuth();
-  const [hasAccess, setHasAccess] = useState(true);
-
+  const [isService, setIsService] = useState(false); // Para controlar se é produto ou serviço
 
 
   /*********** */
   const [produtos, setProdutos] = useState([]);
   const [xProd, setxProd] = useState('');
   const [toast, setToast] = useState({ message: '', type: '' });
-  const [isCadastraProdutoModalOpen, setIsCadastraProdutoModalOpen] = useState(false);
-  const [importSuccess, setCadastroSuccess] = useState(false);
 
   /*********** */
 
@@ -50,6 +44,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
       // Preencher os campos com os dados da pessoa selecionada para edição
       setxProd(produto.xProd || '');
       setCodInterno(produto.cod_interno || '');
+      setIsService(produto.tipo === 'servico' ? true : false);
       setcEAN(produto.cEAN || '');
       setqtdMinima(produto.qtdMinima || '');
       setuCom(produto.uCom || '');
@@ -60,6 +55,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
       setvlrVendaAtacado(produto.vlrVendaAtacado || '');
       setmargemSobreVlrCusto(produto.margemSobreVlrCusto || '');
       setmargemSobreVlrCustoAtacado(produto.margemSobreVlrCustoAtacado || '');
+      setPercentual(produto.pct_servico || '');
     } else {
       // Limpar os campos quando não há pessoa selecionada
       setxProd('');
@@ -113,79 +109,51 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
     }
   };
 
-  const handleCodInternoChange = (e) => {
-    setCodInterno(e.target.value); // Atualiza o estado do nome
-  };
-  const handlecEANChange = (e) => {
-    setcEAN(e.target.value); // Atualiza o estado do nome
-  };
-  const handleQtdMinChange = (e) => {
-    setqtdMinima(e.target.value); // Atualiza o estado do nome
-  };
-  const handleqComChange = (e) => {
-    setqCom(e.target.value); // Atualiza o estado do nome
-  };  
-  
-  const handleNcmChange = (e) => {
-    setNcm(e.target.value); // Atualiza o estado do nome
-  };
-
   const handlevUnComChange = (e) => {
     const novoValor = formatarMoedaBRL(e.target.value);
     const valorFormatado = formatarValor(novoValor);
     setvUnCom(valorFormatado);
-  
+
     const margem = ((vlrVenda - valorFormatado) / valorFormatado) * 100;
     setmargemSobreVlrCusto(margem.toFixed(4));
-  
+
     const margemAtacado = ((vlrVendaAtacado - valorFormatado) / valorFormatado) * 100;
     setmargemSobreVlrCustoAtacado(margemAtacado.toFixed(4));
   };
-  
+
   const handlevlrVendaChange = (e) => {
     const novoValor = formatarMoedaBRL(e.target.value);
     const valorFormatado = formatarValor(novoValor);
     setVlrVenda(valorFormatado);
-  
+
     const valorCusto = Number(vUnCom);
     const margem = ((valorFormatado - valorCusto) / valorCusto) * 100;
     setmargemSobreVlrCusto(margem.toFixed(4));
   };
-  
+
   const handlevlrVendaAtacadoChange = (e) => {
     const novoValor = formatarMoedaBRL(e.target.value);
     const valorFormatado = formatarValor(novoValor);
     setvlrVendaAtacado(valorFormatado);
-  
+
     const valorCusto = Number(vUnCom);
     const margemAtacado = ((valorFormatado - valorCusto) / valorCusto) * 100;
     setmargemSobreVlrCustoAtacado(margemAtacado.toFixed(4));
   };
 
-  
-  const handlemargemSobreVlrCustoChange = (e) => {
-    setmargemSobreVlrCusto(e.target.value); // Atualiza o estado do nome
-  };
-
-  const handlemargemSobreVlrCustoAtacadoChange = (e) => {
-    setmargemSobreVlrCustoAtacado(e.target.value); // Atualiza o estado do nome
-  };
-
-  const closeCadastraProdutoModal = () => {
-    setIsCadastraProdutoModalOpen(false);
+  const handleProductTypeChange = (e) => {
+    setIsService(e.target.value === 'service');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault(); // Evita o comportamento padrão de recarregar a página
-    /*formData.forEach((value, key) => {
-      console.log('FormData: ' + `${key}: ${value}`);
-    });*/
 
     if (prod?.nNF) {
       const nota_id = 0
       const formData = new FormData(e.target);
       const newProduto = {
         xProd: formData.get('xProd'),
+        productType: 'produto',
         cod_interno: formData.get('cod_interno'),
         cEAN: formData.get('cEAN'),
         qtdMinima: formData.get('qtdMinima'),
@@ -212,6 +180,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
     } else {
       onSubmit({
         xProd,
+        isService,
         cod_interno,
         cEAN,
         qtdMinima,
@@ -222,7 +191,8 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
         margemSobreVlrCusto,
         ncm,
         vlrVendaAtacado,
-        margemSobreVlrCustoAtacado
+        margemSobreVlrCustoAtacado,
+        percentual
       });// Continua com o comportamento original se prod.nNF for nulo
     }
   };
@@ -264,6 +234,30 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
         </h2>
         <form onSubmit={handleSubmit}>
           <div>
+            {/* Seção de Tipo (Produto ou Serviço) */}
+            <fieldset>
+              <legend>Tipo de Cadastro</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="productType"
+                  value="product"
+                  checked={!isService}
+                  onChange={handleProductTypeChange}
+                />
+                Produto
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="productType"
+                  value="service"
+                  checked={isService}
+                  onChange={handleProductTypeChange}
+                />
+                Serviço
+              </label>
+            </fieldset>
             {/* Seção de Identificação do Produto */}
             <fieldset>
               <legend>
@@ -287,13 +281,14 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
                         id="xProd"
                         name="xProd"
                         value={xProd}
-                        onChange={(e)=>{setxProd(e.target.value.toUpperCase())}}
+                        onChange={(e) => { setxProd(e.target.value.toUpperCase()) }}
                         maxLength="150"
                         required
                         disabled={!permiteEditar}
                       />
                     </div>
                   </div>
+                  {/* Campos compartilhados entre produto e serviço */}
                   <div className="form-line">
                     <div>
                       <label htmlFor="cod_interno">Código Interno</label>
@@ -303,7 +298,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
                         id="cod_interno"
                         name="cod_interno"
                         value={cod_interno}
-                        onChange={handleCodInternoChange}
+                        onChange={(e) => { setCodInterno(e.target.value) }} // Atualiza o estado do nome
                         required
                         disabled={!permiteEditar}
                       />
@@ -316,7 +311,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
                         id="cEAN"
                         name="cEAN"
                         value={cEAN}
-                        onChange={handlecEANChange}
+                        onChange={(e) => { setcEAN(e.target.value) }} // Atualiza o estado do nome
                         disabled={!permiteEditar}
                       />
                     </div>
@@ -328,7 +323,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
                         id="ncm"
                         name="ncm"
                         value={ncm}
-                        onChange={handleNcmChange}
+                        onChange={(e) => { setNcm(e.target.value) }} // Atualiza o estado do nome
                         maxLength="150"
                         disabled={!permiteEditar}
                       />
@@ -339,156 +334,200 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
             </fieldset>
 
             {/* Seção de Preços e Quantidades */}
-            <fieldset>
-              <legend>
-                Quantidades
-                <button
-                  type="button"
-                  onClick={() => toggleSection('precos')}
-                  className="expand-button"
-                >
-                  {isExpanded.precos ? '-' : '+'}
-                </button>
-              </legend>
-              {isExpanded.precos && (
-                <div className="form-line">
+
+            {isService ? (
+              <fieldset>
+                <legend>
+                  Preço e Percentuais
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('precos')}
+                    className="expand-button"
+                  >
+                    {isExpanded.precos ? '-' : '+'}
+                  </button>
+                </legend>
+                {isExpanded.precos && (
                   <div>
-                    <label htmlFor="uCom">Unidade Medida</label>
-                    <select
-                      className="input-geral"
-                      id="uCom"
-                      name="uCom"
-                      value={uCom}
-                      onChange={(e) => { setuCom(e.target.value) }}
-                      required
-                      disabled={!permiteEditar}
-                    >
-                      <option value="">Selecione uma opção</option>
-                      <option value="CX">Caixa</option>
-                      <option value="UN">Unidade</option>
-                      <option value="KG">Quilo</option>
-                      <option value="LT">Litro</option>
-                      <option value="MT">Metro</option>
-                      <option value="PC">Pacote</option>
-                      <option value="SC">Saca</option>
-                    </select>
+                    <div className="form-line">
+                      <label htmlFor="vlrVenda">Preço do Serviço</label>
+                      <input
+                        className="input-geral"
+                        type="text"
+                        id="vlrVenda"
+                        name="vlrVenda"
+                        value={formatarMoedaBRL(vlrVenda)}
+                        onChange={handlevlrVendaChange}
+                      />
+                    </div>
+                    <div className="form-line">
+                      <label htmlFor="percentual">Percentual sobre o preço</label>
+                      <input
+                        className="input-geral"
+                        type="text"
+                        id="percentual"
+                        name="percentual"
+                        value={percentual}
+                        onChange={(e) => { setPercentual(e.target.value.replace(',', '.')) }}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label htmlFor="qtdMinima">Quantidade Mínima</label>
-                    <input
-                      className="input-geral"
-                      type="number"
-                      id="qtdMinima"
-                      name="qtdMinima"
-                      value={qtdMinima}
-                      onChange={handleQtdMinChange}
-                      maxLength="50"
-                      required
-                      disabled={!permiteEditar}
-                    />
+                )}
+              </fieldset>
+            ) :
+              (<fieldset>
+                <legend>
+                  Quantidades
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('precos')}
+                    className="expand-button"
+                  >
+                    {isExpanded.precos ? '-' : '+'}
+                  </button>
+                </legend>
+                {isExpanded.precos && (
+                  <div className="form-line">
+                    <div>
+                      <label htmlFor="uCom">Unidade Medida</label>
+                      <select
+                        className="input-geral"
+                        id="uCom"
+                        name="uCom"
+                        value={uCom}
+                        onChange={(e) => { setuCom(e.target.value) }}
+                        required
+                        disabled={!permiteEditar}
+                      >
+                        <option value="">Selecione uma opção</option>
+                        <option value="CX">Caixa</option>
+                        <option value="UN">Unidade</option>
+                        <option value="KG">Quilo</option>
+                        <option value="LT">Litro</option>
+                        <option value="MT">Metro</option>
+                        <option value="PC">Pacote</option>
+                        <option value="SC">Saca</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="qtdMinima">Quantidade Mínima</label>
+                      <input
+                        className="input-geral"
+                        type="number"
+                        id="qtdMinima"
+                        name="qtdMinima"
+                        value={qtdMinima}
+                        onChange={(e) => { setqtdMinima(e.target.value) }} // Atualiza o estado do nome
+
+                        maxLength="50"
+                        required
+                        disabled={!permiteEditar}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="qCom">Quantidade</label>
+                      <input
+                        className="input-geral"
+                        type="text"
+                        id="qCom"
+                        name="qCom"
+                        value={qCom}
+                        onChange={(e) => { setqCom(e.target.value) }} // Atualiza o estado do nome
+                        maxLength="150"
+                        required
+                        disabled={!permiteEditar}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label htmlFor="qCom">Quantidade</label>
-                    <input
-                      className="input-geral"
-                      type="text"
-                      id="qCom"
-                      name="qCom"
-                      value={qCom}
-                      onChange={handleqComChange}
-                      maxLength="150"
-                      required
-                      disabled={!permiteEditar}
-                    />
-                  </div>
-                </div>
+                )}
+              </fieldset>
               )}
-            </fieldset>
             {/* Seção de Preço de Custo / Venda e Percentuais */}
-            <fieldset>
-              <legend>
-                Preço de Custo/Venda e Percentuais
-                <button
-                  type="button"
-                  onClick={() => toggleSection('custoVendaPercentual')}
-                  className="expand-button"
-                >
-                  {isExpanded.custoVendaPercentual ? '-' : '+'}
-                </button>
-              </legend>
-              {isExpanded.custoVendaPercentual && (
-                <div className="form-line">
-                  <div>
-                    <label htmlFor="vUnCom">Valor de Custo</label>
-                    <input
-                      className='input-geral'
-                      type="text"
-                      id="vUnCom"
-                      name="vUnCom"
-                      value={formatarMoedaBRL(vUnCom)}
-                      onChange={handlevUnComChange}
-                      maxLength="150"
-                      required
-                      disabled={!permiteEditar}
-                    />
+            {isService ? null :
+              (<fieldset>
+                <legend>
+                  Preço de Custo/Venda e Percentuais
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('custoVendaPercentual')}
+                    className="expand-button"
+                  >
+                    {isExpanded.custoVendaPercentual ? '-' : '+'}
+                  </button>
+                </legend>
+                {isExpanded.custoVendaPercentual && (
+                  <div className="form-line">
+                    <div>
+                      <label htmlFor="vUnCom">Valor de Custo</label>
+                      <input
+                        className='input-geral'
+                        type="text"
+                        id="vUnCom"
+                        name="vUnCom"
+                        value={formatarMoedaBRL(vUnCom)}
+                        onChange={handlevUnComChange}
+                        maxLength="150"
+                        required
+                        disabled={!permiteEditar}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="vlrVenda">Valor de Venda</label>
+                      <input
+                        className='input-geral'
+                        type="text"
+                        id="vlrVenda"
+                        name="vlrVenda"
+                        value={formatarMoedaBRL(vlrVenda)}
+                        onChange={handlevlrVendaChange}
+                        maxLength="150"
+                        required
+                        disabled={!permiteEditar}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="vlrVendaAtacado">Valor de Venda Atacado</label>
+                      <input
+                        className='input-geral'
+                        type="text"
+                        id="vlrVendaAtacado"
+                        name="vlrVendaAtacado"
+                        value={formatarMoedaBRL(vlrVendaAtacado)}
+                        onChange={handlevlrVendaAtacadoChange}
+                        maxLength="150"
+                        required
+                        disabled={!permiteEditar}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="margemSobreVlrCusto">Percentual do Vlr de Venda/Vlr Custo</label>
+                      <input
+                        className="input-geral"
+                        type="text"
+                        id="margemSobreVlrCusto"
+                        name="margemSobreVlrCusto"
+                        value={margemSobreVlrCusto}
+                        onChange={(e) => { setmargemSobreVlrCusto(e.target.value) }}// Atualiza o estado do nome
+                        maxLength="150"
+                        disabled
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="margemSobreVlrCustoAtacado">Percentual do Vlr de Venda Atacado/Vlr Custo</label>
+                      <input
+                        className="input-geral"
+                        type="text"
+                        id="margemSobreVlrCustoAtacado"
+                        name="margemSobreVlrCustoAtacado"
+                        value={margemSobreVlrCustoAtacado}
+                        onChange={(e) => { setmargemSobreVlrCustoAtacado(e.target.value) }} // Atualiza o estado do nome
+                        maxLength="150"
+                        disabled
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label htmlFor="vlrVenda">Valor de Venda</label>
-                    <input
-                      className='input-geral'
-                      type="text"
-                      id="vlrVenda"
-                      name="vlrVenda"
-                      value={formatarMoedaBRL(vlrVenda)}
-                      onChange={handlevlrVendaChange}
-                      maxLength="150"
-                      required
-                      disabled={!permiteEditar}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="vlrVendaAtacado">Valor de Venda Atacado</label>
-                    <input
-                      className='input-geral'
-                      type="text"
-                      id="vlrVendaAtacado"
-                      name="vlrVendaAtacado"
-                      value={formatarMoedaBRL(vlrVendaAtacado)}
-                      onChange={handlevlrVendaAtacadoChange}
-                      maxLength="150"
-                      required
-                      disabled={!permiteEditar}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="margemSobreVlrCusto">Percentual do Vlr de Venda/Vlr Custo</label>
-                    <input
-                      className="input-geral"
-                      type="text"
-                      id="margemSobreVlrCusto"
-                      name="margemSobreVlrCusto"
-                      value={margemSobreVlrCusto}
-                      onChange={handlemargemSobreVlrCustoChange}
-                      maxLength="150"
-                      disabled
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="margemSobreVlrCustoAtacado">Percentual do Vlr de Venda Atacado/Vlr Custo</label>
-                    <input
-                      className="input-geral"
-                      type="text"
-                      id="margemSobreVlrCustoAtacado"
-                      name="margemSobreVlrCustoAtacado"
-                      value={margemSobreVlrCustoAtacado}
-                      onChange={handlemargemSobreVlrCustoAtacadoChange}
-                      maxLength="150"
-                      disabled
-                    />
-                  </div>
-                </div>
-              )}
-            </fieldset>
+                )}
+              </fieldset>)}
 
             {/* Campos Adicionais */}
             {additionalFields.map((field, index) => (

@@ -14,6 +14,7 @@ function Produtos() {
     const [cEAN, setcEAN] = useState('');
     const [filteredProdutos, setFilteredProdutos] = useState([]);
     const [xProd, setxProd] = useState('');
+    const [tipo, setTipo] = useState('');
     const [loading, setLoading] = useState(true);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
@@ -62,9 +63,12 @@ function Produtos() {
         const lowerNome = xProd ? xProd.toLowerCase() : '';
         const lowercEAN = cEAN ? cEAN.toLowerCase() : '';
 
+        const tipoProduto = tipo;
+
         const results = produtos.filter(produto =>
-            (produto?.xProd ? produto.xProd.toLowerCase().includes(lowerNome) : !lowerNome) &&
-            (produto?.cEAN ? produto.cEAN.toLowerCase().includes(lowercEAN) : !lowercEAN));
+            (produto.xProd ? produto.xProd.toLowerCase().includes(lowerNome) : !lowerNome) &&
+            (produto?.cEAN ? produto.cEAN.toLowerCase().includes(lowercEAN) : !lowercEAN) &&
+            (produto?.tipo ? produto.tipo.includes(tipoProduto) : !tipoProduto));
         setFilteredProdutos(results);
         setCurrentPage(1); // Resetar para a primeira página após a busca
     };
@@ -72,6 +76,7 @@ function Produtos() {
     const handleClear = () => {
         setxProd('');
         setcEAN('');
+        setTipo('');
         setFilteredProdutos(produtos);
         setCurrentPage(1); // Resetar para a primeira página ao limpar a busca
     };
@@ -97,8 +102,11 @@ function Produtos() {
     };
 
     const handleaddProdutos = async (e) => {
+
+        const tipo = e.isService === true ? 'servico' : 'produto'
         const newProduto = {
             xProd: e.xProd,
+            tipo: tipo,
             cod_interno: e.cod_interno,
             cEAN: e.cEAN,
             qtdMinima: e.qtdMinima,
@@ -107,13 +115,15 @@ function Produtos() {
             NCM: e.ncm,
             vUnCom: Number(e.vUnCom),
             vlrVenda: Number(e.vlrVenda),
-            vlrVendaAtacado: Number(e.vlrVendaAtacado)
+            vlrVendaAtacado: Number(e.vlrVendaAtacado),
+            pct_servico: Number(e.percentual)
         };
 
         try {
             const newProd = await addProdutos(newProduto);
             setToast({ message: `Produto: ${newProd.data.id} - ${newProd.data.xProd}`, type: "success" });
             const response = await getProdutos();
+            handleClear();
             setProdutos(response.data);
             closeCadastraProdutoModal();
             setCadastroSuccess(prev => !prev); // Atualiza o estado para acionar re-renderização
@@ -148,6 +158,7 @@ function Produtos() {
         const updatedProduto = {
             xProd: e.xProd,
             cod_interno: e.cod_interno,
+            tipo: e.productType,
             cEAN: e.cEAN,
             qtdMinima: e.qtdMinima,
             uCom: e.uCom,
@@ -155,7 +166,8 @@ function Produtos() {
             vUnCom: Number(e.vUnCom),
             NCM: e.ncm,
             vlrVenda: Number(e.vlrVenda),
-            vlrVendaAtacado: Number(e.vlrVendaAtacado)
+            vlrVendaAtacado: Number(e.vlrVendaAtacado),
+            pct_servico: Number(e.percentual)
         };
 
         try {
@@ -163,6 +175,7 @@ function Produtos() {
             setToast({ message: "Produto atualizado com sucesso!", type: "success" });
             setIsEdit(false);
             closeCadastraProdutoModal();
+            handleClear();
             setCadastroSuccess(prev => !prev); // Atualiza o estado para acionar re-renderização
         } catch (err) {
             const errorMessage = err.response.data.erro;
@@ -180,6 +193,7 @@ function Produtos() {
             closeCadastraProdutoModal();
             const response = await getProdutos();
             setProdutos(response.data);
+            handleClear();
             setCadastroSuccess(prev => !prev); // Atualiza o estado para acionar re-renderização
             setLoading(false);
         } catch (err) {
@@ -215,6 +229,18 @@ function Produtos() {
                 <>
                     <div id="search-container">
                         <div id="search-fields">
+                            <div>
+                                <label htmlFor="tipo">Status</label>
+                                <select
+                                    id="tipo"
+                                    value={tipo}
+                                    onChange={(e) => setTipo(e.target.value)}
+                                >
+                                    <option value="">Todos</option>
+                                    <option value="servico">Serviço</option>
+                                    <option value="produto">Produto</option>
+                                </select>
+                            </div>
                             <div >
                                 <label htmlFor="xProd">Nome</label>
                                 <input

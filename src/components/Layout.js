@@ -82,7 +82,7 @@ function Layout() {
 
             {/* Cadastros menu item with a submenu */}
             {canViewMenuItem('permissoes') || canViewMenuItem('clientes') || canViewMenuItem('funcionarios') || canViewMenuItem('fornecedores') || canViewMenuItem('produtos') || canViewMenuItem('veiculos')
-              || canViewMenuItem('contasbancarias') ? (
+              || canViewMenuItem('contasbancarias') || canViewMenuItem('osstatus') ? (
               <div id="cadastros" className="menu-item" onClick={toggleCadastros}>
                 <span>Cadastros</span>
                 <div id="cadastros-submenu" className={isCadastrosOpen ? 'submenu' : ''}>
@@ -92,6 +92,7 @@ function Layout() {
                   {canViewMenuItem('funcionarios') && <Link to="/funcionarios" className="submenu-item">Funcionários</Link>}
                   {canViewMenuItem('fornecedores') && <Link to="/fornecedores" className="submenu-item">Fornecedores</Link>}
                   {canViewMenuItem('produtos') && <Link to="/produtos" className="submenu-item">Produtos/Serviços</Link>}
+                  {canViewMenuItem('osstatus') && <Link to="/osstatus" className="submenu-item">Status O.S.</Link>}
                   {canViewMenuItem('veiculos') && <Link to="/veiculos" className="submenu-item">Veículos</Link>}
                   {canViewMenuItem('contasbancarias') && <Link to="/contasbancarias" className="submenu-item">Contas Bancárias</Link>}
                 </div>
@@ -99,23 +100,27 @@ function Layout() {
             ) : null}
 
             {/* Movimentação menu item with a submenu */}
-            {canViewMenuItem('notafiscal') || canViewMenuItem('movimentacaoprodutos') || canViewMenuItem('vendas') ? (
+            {canViewMenuItem('notafiscal') || canViewMenuItem('movimentacaoprodutos') || canViewMenuItem('vendas') || canViewMenuItem('os')?
+            (
               <div id="movimentacao" className="menu-item" onClick={toggleMovimentacao}>
                 <span>Movimentação</span>
                 <div id="movimentacao-submenu" className={isMovimentacaoOpen ? 'submenu' : ''}>
                   {canViewMenuItem('notafiscal') && <Link to="/notafiscal" className="submenu-item">Lançar NF-e</Link>}
                   {canViewMenuItem('vendas') && <Link to="/vendas" className="submenu-item">Vendas</Link>}
+                  {canViewMenuItem('os') && <Link to="/os" className="submenu-item">Ordem de Serviço</Link>}
                   {canViewMenuItem('movimentacaoprodutos') && <Link to="/movimentacaoprodutos" className="submenu-item">Movimentação de Produtos</Link>}
                 </div>
               </div>
             ) : null}
 
             {/* Gestão Financeira menu item with a submenu */}
-            {canViewMenuItem('contaspagar') || canViewMenuItem('movimentacaofinanceiradespesas') ? (
+            {canViewMenuItem('contaspagar') || canViewMenuItem('movimentacaofinanceiradespesas')|| canViewMenuItem('movimentacaofinanceirareceitas')? 
+            (
               <div id="gestao-financeira" className="menu-item" onClick={toggleGestaoFinanceira}>
                 <span>Gestão Financeira</span>
                 <div id="gestao-financeira-submenu" className={isGestaoFinanceiraOpen ? 'submenu' : ''}>
                   {canViewMenuItem('movimentacaofinanceiradespesas') && <Link to="/movimentacaofinanceiradespesas" className="submenu-item">Contas a Pagar</Link>}
+                  {canViewMenuItem('movimentacaofinanceirareceitas') && <Link to="/movimentacaofinanceirareceitas" className="submenu-item">Contas a Receber</Link>}
                 </div>
               </div>
             ) : null}
@@ -124,8 +129,7 @@ function Layout() {
               <div id="relatorios" className="menu-item" onClick={toggleRelatorios}>
                 <span>Relatórios</span>
                 <div id="relatorios-submenu" className={isRelatoriosOpen ? 'submenu' : ''}>
-                {canViewMenuItem('produtosvendidos') && <Link to="/produtosvendidos" className="submenu-item">Produtos Vendidos</Link>}
-
+                  {canViewMenuItem('produtosvendidos') && <Link to="/produtosvendidos" className="submenu-item">Produtos Vendidos</Link>}
                   {canViewMenuItem('contaspendentes') && <Link to="/contaspendentes" className="submenu-item">Contas Pendentes</Link>}
                   {canViewMenuItem('contasliquidadas') && <Link to="/contasliquidadas" className="submenu-item">Contas/Parcelas Liquidadas</Link>}
 

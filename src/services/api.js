@@ -25,7 +25,7 @@ export { api, setAuthToken };
 export const login = async (username, password) => {
   try {
     const response = await api.post('/auth/login', { username, password });
-    return response.data;  
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -95,8 +95,8 @@ export const getContasBancariaById = async (id) => {
   return api.get(`/contasbancarias/${id}`);
 };
 
-export const updateContaBancaria = async (id,conta) => {
-  return api.put(`/contasbancarias/${id}`,conta);
+export const updateContaBancaria = async (id, conta) => {
+  return api.put(`/contasbancarias/${id}`, conta);
 };
 
 export const getAllBancos = async () => {
@@ -260,12 +260,18 @@ export const getFuncionariosByFiltro = async (filtro) => {
 
 //movimentacao-despesa
 export const getMovimentacaofinanceiraDespesa = async (filters = {}) => {
-  return api.get('/movimentacao-despesa', { params: filters });
+  return await api.get('/movimentacao-despesa', { params: filters });
 };
 
 //Movimentacao Financeira
-export const getAllMovimentacaofinanceiraDespesa = async () => {
-  return api.get('/movimentacaofinanceiradespesa');
+export const getAllMovimentacaofinanceiraDespesa = async (filters = {}) => {
+  try {
+    const response = await api.get('/movimentacaofinanceiradespesa', { params: filters });
+    return response;
+  } catch (error) {
+    console.error('Erro ao buscar Movimentação Financeira:', error);
+    throw error;
+  }
 };
 
 export const getContaPagarSemana = async () => {
@@ -288,24 +294,24 @@ export const getParcelaByID = async (id) => {
   return api.get(`/parcelas/${id}`);
 };
 
-export const pagamentoParcela = async (id,pagamento) => {
-  return api.put(`/parcelas/${id}`,pagamento);
+export const pagamentoParcela = async (id, pagamento) => {
+  return api.put(`/parcelas/${id}`, pagamento);
 };
 
 export const addMovimentacaofinanceiraDespesa = async (lancamento) => {
-  return api.post('/movimentacaofinanceiradespesa',lancamento);
+  return api.post('/movimentacaofinanceiradespesa', lancamento);
 };
 
 export const addParcelasDespesa = async (parcelas) => {
-  return api.post('/lancamentoparcelas',parcelas);
+  return api.post('/lancamentoparcelas', parcelas);
 };
 
 export const updateMovimentacaofinanceiraDespesa = async (id) => {
   return api.put(`/movimentacaofinanceiradespesa/${id}`);
 };
 
-export const updateLancamentoDespesa = async (id,dados) => {
-  return api.put(`/lancamentos/${id}`,dados);
+export const updateLancamentoDespesa = async (id, dados) => {
+  return api.put(`/lancamentos/${id}`, dados);
 };
 
 export const cancelarMovimentacaofinanceiraDespesa = async (id) => {
@@ -372,7 +378,7 @@ export const getGrupoProdutos = async () => {
   return api.get('/grupoproduto');
 };
 
-export const addGrupoProdutos = async(produto) => {
+export const addGrupoProdutos = async (produto) => {
   return api.post('/grupoproduto', produto);
 };
 
@@ -380,7 +386,7 @@ export const updateGrupoProduto = (id, produto) => {
   return api.put(`/grupoproduto/${id}`, produto);
 };
 
-export const getGrupoProdutoById = async(id) => {
+export const getGrupoProdutoById = async (id) => {
   return api.get(`/grupoproduto/${id}`);
 };
 
@@ -393,7 +399,7 @@ export const getSubGrupoProdutos = async () => {
   return api.get('/subgrupoproduto');
 };
 
-export const addSubGrupoProdutos = async(produto) => {
+export const addSubGrupoProdutos = async (produto) => {
   return api.post('/subgrupoproduto', produto);
 };
 
@@ -401,7 +407,7 @@ export const updateSubGrupoProduto = (id, produto) => {
   return api.put(`/subgrupoproduto/${id}`, produto);
 };
 
-export const getSubGrupoProdutoById = async(id) => {
+export const getSubGrupoProdutoById = async (id) => {
   return api.get(`/subgrupoproduto/${id}`);
 };
 
@@ -417,7 +423,7 @@ export const getProdutos = async (filters = {}) => {
   return response;
 };
 
-export const addProdutos = async(produto) => {
+export const addProdutos = async (produto) => {
   return api.post('/produtos', produto);
 };
 
@@ -429,29 +435,29 @@ export const inativarProduto = (id) => {
   return api.put(`/produtos-inativar/${id}`);
 };
 
-export const getProdutoById = async(id) => {
+export const getProdutoById = async (id) => {
   return api.get(`/produtos/${id}`);
 };
 
-export const getProdutosVendidos = async(id) => {
+export const getProdutosVendidos = async (id) => {
   return api.get('produtos/vendidos');
 };
 
-export const getProdutosVendidosSemana = async(id) => {
+export const getProdutosVendidosSemana = async (id) => {
   return api.get('produtos/vendidos-semana');
 };
 
 
 // UFs e Municípios
-export const getUfs =async () => {
+export const getUfs = async () => {
   return api.get('/uf');
 };
 
-export const getMunicipiosUfId = async(id) => {
+export const getMunicipiosUfId = async (id) => {
   return api.get(`/municipios/${id}`);
 };
 
-export const getMunicipios = async(id) => {
+export const getMunicipios = async (id) => {
   return api.get(`/municipios/${id}`);
 };
 
@@ -463,12 +469,197 @@ export const getUFIBGE = async (codIBGE) => {
   return api.get(`/uf/uf/${codIBGE}`);
 };
 
+// Formas de Pagamentos
+
+export const getFormasPagamento = async (filtro = {}) => {
+  try {
+    const response = await api.get('/formas-pagamento', { params: filtro });
+    return response
+  } catch (error) {
+    console.error('Erro ao buscar formas de pagamento:', error);
+    throw error;
+  }
+};
+
+
 
 // Vendas
-export const getVendas =async () => {
-  return api.get('/vendasdetalhes');
+export const registravenda = async (venda) => {
+  return api.post('/vendas', venda);
+};
+
+export const getVendas = async (filtro = {}) => {
+  try {
+    const response = await api.get('/vendasdetalhes', { params: filtro });
+    return response
+  } catch (error) {
+    console.error('Erro ao buscar status com filtro:', error);
+    throw error;
+  }
+};
+
+
+export const getVendaById = async (id) => {
+  try {
+    const response = await api.get(`/vendasid/${id}`);
+    return response.data; // Retorna os dados do status
+  } catch (error) {
+    console.error('Erro ao buscar Venda por ID:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+};
+
+export const updateVenda = async (id) => {
+  try {
+    const response = await api.get(`/atualizar-venda/${id}`);
+    return response.data; // Retorna os dados do status
+  } catch (error) {
+    console.error('Erro ao atualizar Venda:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
 };
 
 export const cancelaVenda = (id, venda) => {
   return api.put(`/cancelavenda/${id}`, venda);
+};
+
+export const consultaVendaPorId = async (id) => {
+  return api.get(`/vendasid/${id}`);
+};
+
+export const consultaItensVenda = async (id) => {
+  return api.get(`/vendas/${id}`);
+};
+
+// Consulta de Pagamentos Por Id da Venda
+export const consultaPagamentosById = async (id) => {
+  return api.get(`/pagamentos/${id}`);
+};
+
+
+
+// Funções para gerenciar Status das OS
+export const addOSStatus = async (status) => {
+  try {
+    const response = await api.post('/osstatus', status);
+    return response;
+  } catch (error) {
+    console.error('Erro ao adicionar status:', error);
+    throw error;
+  }
+};
+
+export const getAllOSStatus = async (filtro = {}) => {
+  try {
+    const response = await api.get('/osstatus/', { params: filtro });
+    return response;
+  } catch (error) {
+    console.error('Erro ao buscar status com filtro:', error);
+    throw error;
+  }
+};
+
+export const getByIdOSStatus = async (id) => {
+  try {
+    const response = await api.get(`/osstatus/${id}`);
+    return response.data; // Retorna os dados do status
+  } catch (error) {
+    console.error('Erro ao buscar status por ID:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+};
+
+
+export const updateOSStatus = async (id, status) => {
+  if (!id || !status) {
+    throw new Error('ID e Status são obrigatórios');
+  }
+  try {
+    const response = await api.put(`/osstatus/${id}`, status);
+    return response;
+  } catch (error) {
+    console.error('Erro ao atualizar status da OS:', error);
+    throw error;
+  }
+};
+
+// Funções para gerenciar Status das OS
+
+export const addOS = async (status) => {
+  try {
+    const response = await api.post('/osservice', status);
+    return response;
+  } catch (error) {
+    console.error('Erro ao adicionar O.S.:', error);
+    throw error;
+  }
+};
+
+export const getAllOS = async (filtro = {}) => {
+  try {
+    const response = await api.get('/osservice/', { params: filtro });
+    return response;
+  } catch (error) {
+    console.error('Erro ao buscar status com filtro:', error);
+    throw error;
+  }
+};
+
+export const getByIdOS = async (id) => {
+  try {
+    const response = await api.get(`/osservice/${id}`);
+    return response.data; // Retorna os dados do status
+  } catch (error) {
+    console.error('Erro ao buscar O.S. por ID:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+};
+
+export const getWorkFlowIdOS = async (id) => {
+  try {
+    const response = await api.get(`/osservice-workflow/${id}`);
+    return response.data; // Retorna os dados do status
+  } catch (error) {
+    console.error('Erro ao buscar WorkFlow da O.S.:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+};
+
+export const updateOS = async (id, os) => {
+  if (!id || !os) {
+    throw new Error('ID e Status são obrigatórios');
+  }
+  try {
+    const response = await api.put(`/osservice/${id}`, os);
+    return response;
+  } catch (error) {
+    console.error('Erro ao atualizar O.S. :', error);
+    throw error;
+  }
+};
+
+export const aprovarOS = async (id, os) => {
+  if (!id || !os) {
+    throw new Error('ID e Status são obrigatórios');
+  }
+  try {
+    const response = await api.put(`/osservice-aprovar/${id}`, os);
+    return response;
+  } catch (error) {
+    console.error('Erro ao aprovar O.S. :', error);
+    throw error;
+  }
+};
+
+export const removerProdutoOS = async (id) => {
+  if (!id) {
+    throw new Error('ID');
+  }
+  try {
+    const response = await api.put(`/osremove_item/${id}`);
+    return response;
+  } catch (error) {
+    console.error('Erro ao aprovar O.S. :', error);
+    throw error;
+  }
 };

@@ -14,6 +14,7 @@ import Veiculos from './pages/Veiculos';
 import Clientes from './pages/Clientes';
 import Funcionarios from './pages/Funcionarios';
 import MovimentacaoFinanceiraDespesa from './pages/MovimentacaoFinanceiraDespesa';
+import MovimentacaoFinanceiraReceitas from './pages/MovimentacaoFinanceiraReceitas';
 import ContasBancarias from './pages/ContasBancarias';
 import Vendas from './pages/Vendas';
 import Permissoes from './pages/Permissoes';
@@ -21,6 +22,8 @@ import ContasPagas from './pages/ContasPagas';
 import ProdutosVendidos from './pages/ProdutosVendidos';
 import Empresa from './pages/Empresa';
 import ContasPendentes from './pages/ContasPendentes';
+import OSStatus from './pages/OSStatus';
+import OSPage from './pages/OSPage';
 
 
 import { hasPermission } from './utils/hasPermission'; // Importar a função
@@ -55,6 +58,10 @@ function App() {
             element={isAuthenticated && hasPermission(permissions, 'fornecedores', 'view') ? <Fornecedores /> : null} // Condicionalmente não renderiza
           />
           <Route
+            path="/osstatus"
+            element={isAuthenticated && hasPermission(permissions, 'osstatus', 'view') ? <OSStatus /> : null} // Condicionalmente não renderiza
+          />
+          <Route
             path="/grupoproduto"
             element={isAuthenticated && hasPermission(permissions, 'grupoproduto', 'view') ? <GrupoPage /> : null} // Condicionalmente não renderiza
           />
@@ -83,12 +90,20 @@ function App() {
             element={isAuthenticated && hasPermission(permissions, 'movimentacaofinanceiradespesas', 'view') ? <MovimentacaoFinanceiraDespesa /> : null} // Condicionalmente não renderiza
           />
           <Route
+            path="/movimentacaofinanceirareceitas"
+            element={isAuthenticated && hasPermission(permissions, 'movimentacaofinanceirareceitas', 'view') ? <MovimentacaoFinanceiraReceitas /> : null} // Condicionalmente não renderiza
+          />
+          <Route
             path="/contasbancarias"
             element={isAuthenticated && hasPermission(permissions, 'contasbancarias', 'view') ? <ContasBancarias /> : null} // Condicionalmente não renderiza
           />
           <Route
             path="/vendas"
             element={isAuthenticated && hasPermission(permissions, 'vendas', 'view') ? <Vendas /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/os"
+            element={isAuthenticated && hasPermission(permissions, 'os', 'view') ? <OSPage /> : null} // Condicionalmente não renderiza
           />
           <Route
             path="/contasliquidadas"

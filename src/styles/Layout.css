@@ -177,7 +177,9 @@
   }
 
   #cadastros-submenu,
-  #movimentacao-submenu {
+  #gestao-financeira-submenu,
+  #movimentacao-submenu,
+  #relatorios-submenu {
     display: none;
     position: static;
     /* Remove o posicionamento absoluto */
@@ -239,7 +241,7 @@
 @media (min-width: 769px) {
   #menu-button {
     display: none;
-    z-index: 1;
+    z-index: 9999;
     /* Oculta o botão de menu em dispositivos maiores */
   }
 }

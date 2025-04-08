@@ -170,6 +170,7 @@
   #menu {
     flex-direction: column;
     margin-top: 10px;
+    z-index: 1;
     /* Adiciona espaço acima do menu em telas menores */
   }
 

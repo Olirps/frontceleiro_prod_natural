@@ -104,12 +104,12 @@ const formatarNumero = (valor) => {
 };
 
 function formatarNumeroMilhares(numero) {
-    // Converte o número para string
-    let numeroStr = numero.toString().replace(/\./g, '');
-  
-    // Usa uma expressão regular para adicionar os pontos
-    numeroStr = numeroStr.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return numeroStr;
+  // Converte o número para string
+  let numeroStr = numero.toString().replace(/\./g, '');
+
+  // Usa uma expressão regular para adicionar os pontos
+  numeroStr = numeroStr.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return numeroStr;
 }
 
 const converterMoedaParaNumero = (valor) => {
@@ -119,7 +119,7 @@ const converterMoedaParaNumero = (valor) => {
   let numeroLimpo = valor.replace(/R\$\s?|\./g, "").replace(",", ".");
 
   // Converte para número decimal
-  return parseFloat(numeroLimpo);
+  return (numeroLimpo);
 };
 
 const formatarMoedaBRL = (valor) => {
@@ -134,7 +134,7 @@ const formatarMoedaBRL = (valor) => {
     const vlrNovo = String(valor)
     const casasDecimais = vlrNovo.split(".")[1]?.length || 0;
     if (casasDecimais === 1) {
-      valorNovo = valor.toFixed(2)
+      valorNovo = Number(valor).toFixed(2)
     }
     numeroLimpo = String(valorNovo).replace(/\D/g, "");
   }
@@ -151,9 +151,31 @@ const formatarMoedaBRL = (valor) => {
 
 const formatarData = (data) => {
   const dataCorrigida = new Date(data);
-  dataCorrigida.setMinutes(dataCorrigida.getMinutes() + dataCorrigida.getTimezoneOffset()); // Ajuste de fuso horário
+  dataCorrigida.setMinutes(dataCorrigida.getMinutes() - dataCorrigida.getTimezoneOffset() - 180);
   return dataCorrigida.toLocaleDateString('pt-BR');
 };
+
+function formatarDataHora(data, incluirSegundos = false) {
+  const dataObj = new Date(data);
+  // dataObj.setMinutes(dataObj.getMinutes() + dataObj.getTimezoneOffset());
+
+  const opcoes = {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  };
+
+  if (incluirSegundos) {
+    opcoes.second = '2-digit';
+  }
+
+  return dataObj.toLocaleString('pt-BR', opcoes)
+    .replace(',', ' -'); // Substitui vírgula por " - " para seu formato
+}
+
 
 function formatarValor(valor) {
   // Remove qualquer símbolo de moeda e espaços
@@ -181,9 +203,74 @@ function formatarValor(valor) {
   return Math.round(valorDecimal * 100) / 100;
 }
 
+const mascaraPercentual = (e) => {
+  let valor = e;
+
+  // Remove caracteres não numéricos, exceto o ponto
+  valor = valor.replace(/[^0-9.]/g, '');
+
+  // Se o valor começar com ponto, coloca o zero na frente (0.05, por exemplo)
+  if (valor.startsWith('.')) {
+    valor = '0' + valor;
+  }
+
+  // Verifica se o valor possui mais de duas casas decimais e limita
+  if (valor.includes('.')) {
+    const partes = valor.split('.');
+    partes[1] = partes[1].substring(0, 2); // Limita as casas decimais a 2
+    valor = partes.join('.');
+  }
+
+  // Se o valor for vazio ou apenas ponto, remove o percentual
+  if (valor === '' || valor === '.') {
+    valor = '';
+  }
+
+  // Adiciona o símbolo de percentual apenas se houver valor
+  if (valor) {
+    valor = `${valor}%`;
+  }
+
+  // Atualiza o valor no input com a máscara
+  return valor;
+};
+
+const formatarPercentual = (valor) => {
+  valor = valor.replace(/%/g, '');
+
+  // Substitui vírgulas por pontos
+  valor = valor.replace(/,/g, '.');
+
+
+  // Garante que haja no máximo um ponto decimal
+  const partes = valor.split('.');
+  if (partes.length > 2) {
+    valor = partes[0] + '.' + partes.slice(1).join('');
+  }
+
+  // Se o valor começar com um ponto, adiciona um zero antes
+  if (valor.startsWith('.')) {
+    valor = '0' + valor;
+  }
+
+  // Separa a parte inteira da parte decimal
+  let parteInteira = partes[0] || '0';
+  let parteDecimal = partes[1] || '';
+
+  // Limita a parte decimal a 4 casas
+  parteDecimal = parteDecimal.slice(0, 4);
+
+  // Junta as partes formatadas
+  const valorFormatado = parteDecimal ? `${parteInteira}.${parteDecimal} %` : valor + '%';
+
+  return valorFormatado;
+};
+
+
 module.exports = {
   converterData,
   formatarDataResumida,
+  formatarDataHora,
   formatarData,
   formatPlaca,
   decodeJWT,
@@ -193,5 +280,7 @@ module.exports = {
   formatarNumeroMilhares,
   formatarMoedaBRL,
   dataAtual,
-  formatarValor
+  formatarValor,
+  mascaraPercentual,
+  formatarPercentual
 };

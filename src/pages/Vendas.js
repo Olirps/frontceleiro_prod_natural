@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getVendas, cancelaVenda } from '../services/api';
+import { getVendas, cancelaVenda, getVendaById, updateVenda, addOS, registravenda } from '../services/api';
 import '../styles/Vendas.css';
 import ModalCliente from '../components/ModalCadastraCliente';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
@@ -9,6 +9,9 @@ import 'jspdf-autotable';
 import ModalCancelaVenda from '../components/ModalCancelaVenda';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import ModalCadastroOS from '../components/ModalCadastroOS'; // Componente para o modal de cadastro
+import vendaRealizadas from '../relatorios/vendaRealizadas'; // Importe a função de geração de PDF
+import imprimeVenda from '../utils/impressaovenda';
 
 
 
@@ -18,6 +21,7 @@ function Vendas() {
   const [vendas, setVendas] = useState([]);
   const [idVenda, setIdVenda] = useState('');
   const [filteredVendas, setFilteredVendas] = useState([]);
+  const [selectedVenda, setSelectedVenda] = useState('');
   const [nome, setNome] = useState('');
   const [cpfCnpj, setCpf] = useState('');
   const [dataVendaInicial, setdataVendaInicial] = useState('');
@@ -31,12 +35,12 @@ function Vendas() {
   let [filteredPagamentos, setFilteredPagamentos] = useState([]);
   const [tipoPagamento, setTipoPagamento] = useState('');
   const [tiposPagamento, setTiposPagamento] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalModalCancelaVendaOpen, setIsModalCancelaVendaOpen] = useState(false);
+  const [isVendaFinalizada, setIsVendaFinalizada] = useState(false);
   const [somarLancamentosManuais, setSomarLancamentosManuais] = useState(false);
   const { permissions } = useAuth();
-
-
-
+  const [isEdit, setIsEdit] = useState(false);
 
 
   const fetchVendas = async () => {
@@ -93,34 +97,138 @@ function Vendas() {
     fetchVendas();
   }, []);
 
-  const handleSearch = () => {
-    const lowerNome = nome.toLowerCase();
-    const lowerCpf = removeMaks(cpfCnpj.toLowerCase());
+  const handleSearch = async () => {
+    try {
+      setLoading(true); // Ativa o estado de carregamento
+      // Preparar os parâmetros de busca
+      const params = {
+        clienteNome: nome || undefined,
+        cpfCnpj: cpfCnpj || undefined,
+        dataInicio: dataVendaInicial || undefined,
+        dataFim: dataVendaFinal || undefined,
+        tipoVenda: tipoVenda || undefined
+      };
 
-    // Certificar que as datas estão no formato correto para comparação
-    const dataInicial = dataVendaInicial ? new Date(dataVendaInicial).toISOString().split('T')[0] : null;
-    const dataFinal = dataVendaFinal ? new Date(dataVendaFinal).toISOString().split('T')[0] : null;
+      // Limpar parâmetros vazios
+      Object.keys(params).forEach(key => {
+        if (params[key] === undefined || params[key] === '') {
+          delete params[key];
+        }
+      });
 
-    const results = pagamentosDetalhados.filter(venda => {
-      const vendaNome = venda.cliente?.toLowerCase() || '';
-      const vendaCpf = removeMaks(venda.cpfCnpj || '');
+      // Converter datas para o formato YYYY-MM-DD se existirem
+      if (params.dataInicio) {
+        params.dataInicio = new Date(params.dataInicio).toISOString().split('T')[0] + ' 00:00:00';
+      }
+      if (params.dataFim) {
+        params.dataFim = new Date(params.dataFim).toISOString().split('T')[0] + ' 23:59:59';
+      }
 
-      // Garantir que a data da venda esteja no formato correto
-      const vendaData = new Date(venda.dataVenda).toISOString().split('T')[0];
+      // Enviar requisição para o backend
+      const response = await getVendas(params);
 
-      return (
-        (lowerNome ? vendaNome.includes(lowerNome) : true) &&
-        (lowerCpf ? vendaCpf.includes(lowerCpf) : true) &&
-        (dataInicial ? vendaData >= dataInicial : true) &&
-        (dataFinal ? vendaData <= dataFinal : true) &&
-        (tipoVenda ? venda.formaPagamento === tipoVenda : true)
-      );
-    });
+      // Processar todas as transações
+      const pagamentos = response.data.transacoes.flatMap((venda) => {
+        // Caso tenha formasPagamento, processa normalmente
+        if (venda.formasPagamento) {
+          return venda.formasPagamento.map((pagamento) => ({
+            vendaId: venda.id,
+            clienteId: venda.cliente,
+            cliente: venda.cliente || 'Não Informado',
+            tipo: venda.tipo,
+            dataVenda: venda.data,
+            formaPagamento: pagamento.formaPagamento,
+            valorPago: parseFloat(pagamento.vlrPago),
+          }));
+        }
 
-    setFilteredPagamentos(results);
-    setCurrentPage(1); // Resetar para a primeira página após a busca
+        // Caso seja débito ou crédito, processa separadamente
+        return {
+          vendaId: venda.id,
+          clienteId: venda.cliente || null,
+          cliente: venda.cliente || venda.descricao || 'Não Informado',
+          dataVenda: venda.data,
+          formaPagamento: venda.tipo, // Aqui o tipo será "débito" ou "crédito"
+          valorPago: parseFloat(venda.valor || 0), // Usa o valor diretamente
+        };
+      });
+
+      // Atualizar estado com os resultados
+      setFilteredPagamentos(pagamentos);
+      setCurrentPage(1); // Resetar para a primeira página após a busca
+      setLoading(false); // Desativa o estado de carregamento 
+    } catch (error) {
+      console.error('Erro ao buscar vendas:', error);
+      // Tratar erro conforme necessário
+      setToast({ message: 'Erro ao buscar vendas', type: 'error' });
+    } finally {
+      setLoading(false); // Desativa o estado de carregamento
+    }
   };
 
+  const handleCadastrarModal = () => {
+    if (!hasPermission(permissions, 'vendas', 'insert')) {
+      setToast({ message: "Você não tem permissão para lançar Vendas.", type: "error" });
+      return;
+    }
+    setIsModalOpen(true);
+    setIsEdit(false);
+    setSelectedVenda(null);
+  };
+
+  const handleAddVenda = async (e) => {
+    try {
+      const username = localStorage.getItem('username');
+      e.login = username;
+      await registravenda(e);
+      setToast({ message: "Venda cadastrada com sucesso!", type: "success" });
+      const response = await getVendas();
+      setVendas(response.data);
+      setFilteredVendas(response.data);
+      setIsModalOpen(false);
+      window.location.reload();
+
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || "Erro ao cadastrar Venda.";
+      setToast({ message: errorMessage, type: "error" });
+    }
+  };
+  const handleModalClose = async (vendaFinalizada) => {
+
+    setIsModalOpen(false);
+    if (vendaFinalizada) {
+      console.log("Venda foi finalizada com sucesso!");
+      // Aqui você pode adicionar qualquer lógica adicional pós-venda
+      setIsVendaFinalizada(false); // Reseta o status para futuras aberturas
+      const response = await getVendas();
+      setVendas(response.data);
+      setFilteredVendas(response.data);
+    }
+  };
+
+  const handleEditClick = async (os) => {
+    const vendaSelecionada = await getVendaById(os.id)
+    setSelectedVenda(vendaSelecionada);
+    setIsEdit(true);
+    setIsModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+
+    try {
+      const username = localStorage.getItem('username');
+      e.login = username;
+      await updateVenda(selectedVenda.id, e);
+      setToast({ message: "Venda atualizada com sucesso!", type: "success" });
+      setIsModalOpen(false);
+      const response = await getVendas();
+      setVendas(response.data);
+      setFilteredVendas(response.data);
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || "Erro ao atualizar Vendas.";
+      setToast({ message: errorMessage, type: "error" });
+    }
+  };
 
   const handleClear = () => {
     setNome('');
@@ -156,48 +264,8 @@ function Vendas() {
     .reduce((sum, venda) => sum + parseFloat(venda.valorPago), 0);
 
   const handlePrint = () => {
-    const doc = new jsPDF();
-
-    // Adiciona um título
-    const tituloRelatorio = somarLancamentosManuais ? 'Relatório de Vendas/Lançamentos' : 'Relatório de Vendas';
-    doc.text(tituloRelatorio, 14, 20);
-    // Configura as colunas e os dados da tabela
-    const tableColumn = [
-      'ID',
-      'Cliente',
-      'Total',
-      'Forma de Movimentação',
-      'Data de Criação'
-    ];
-
-    // Use filteredPagamentos diretamente para incluir todos os registros filtrados
-    const tableRows = filteredPagamentos.map(venda => [
-      venda.vendaId,
-      venda.cliente || venda.descricao || 'Não Informado',
-      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(venda.valorPago),
-      venda.formaPagamento,
-      new Date(venda.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
-    ]);
-
-    tableRows.push([
-      'Totais:',
-      '', // Cliente (vazio)
-      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPreco),
-      '', // Forma de Pagamento (vazio)
-      '' // Data de Criação (vazio)
-    ]);
-
-    // Adiciona a tabela ao PDF
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 30, // Posição inicial da tabela
-    });
-
-    // Salva o PDF
-    doc.save('relatorio_vendas.pdf');
+    vendaRealizadas(filteredPagamentos, totalPreco, somarLancamentosManuais);
   };
-
 
   const totalPages = Math.ceil(filteredPagamentos.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
@@ -256,6 +324,39 @@ function Vendas() {
     }
   };
 
+
+  const handleImprimeVenda = async (venda) => {
+    setLoading(true); // Ativa o estado de carregamento
+    imprimeVenda(venda.id)
+    if (imprimeVenda) {
+      setLoading(false)
+    }
+  };
+
+
+  const handlePrintClick = async (venda) => {
+    try {
+      imprimeVenda(venda.vendaId)
+
+    } catch (error) {
+      console.error("Erro ao gerar OS:", error);
+    }
+  };
+
+  const handleSearchClick = async (vendaId) => {
+    try {
+      const response = await getVendaById(vendaId);
+      response.tipo = 'venda';
+      setSelectedVenda(response); // Certifique-se que response.data tem a estrutura correta
+      setIsModalOpen(true);
+      setIsEdit(true); // Você está editando, então deve setar isso como true
+    } catch (error) {
+      console.error("Erro ao buscar venda:", error);
+      setToast({ message: "Erro ao carregar venda", type: "error" });
+    }
+  };
+
+
   function converterData(dataString) {
     const partes = dataString.split(/[\/ :]/); // Divide a string em dia, mês, ano, hora, minuto e segundo
     const dia = partes[0];
@@ -272,93 +373,92 @@ function Vendas() {
   return (
     <div id="vendas-container">
       <h1 className="title-page">Vendas Realizadas</h1>
-      {loading ? (
-        <div className="spinner-container">
-          <div className="spinner"></div>
-        </div>) : (
-        <>
-          <div id="search-vendas">
-            <div id="search-fields-vendas">
-              <div className="field-group">
-                <div className="field-line">
-                  <label htmlFor="cliente">Cliente</label>
+      <>
+        <div id="search-vendas">
+          <div id="search-fields-vendas">
+            <div className="field-group">
+              <div className="field-line">
+                <label htmlFor="cliente">Cliente</label>
+                <input
+                  className="input-consulta-vendas"
+                  type="text"
+                  id="cliente"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  maxLength="150"
+                />
+                <label htmlFor="cpf">CPF/CNPJ</label>
+                <input
+                  className="input-consulta-vendas"
+                  type="text"
+                  id="cpf"
+                  value={cpfCnpj}
+                  onChange={handleCpfChange}
+                />
+              </div>
+              <div className="field-line">
+                <label htmlFor="dataVendaInicial">Data Inicial</label>
+                <input
+                  className="input-consulta-vendas"
+                  type="date"
+                  id="dataVendaInicial"
+                  value={dataVendaInicial}
+                  onChange={(e) => setdataVendaInicial(e.target.value)}
+                />
+                <label htmlFor="dataVendaFinal">Data Final</label>
+                <input
+                  className="input-consulta-vendas"
+                  type="date"
+                  id="dataVendaFinal"
+                  value={dataVendaFinal}
+                  onChange={(e) => setdataVendaFinal(e.target.value)}
+                />
+              </div>
+              <div className="field-line">
+                <label htmlFor="tipoVenda">Tipo de Venda</label>
+                <select
+                  className="input-consulta-vendas"
+                  id="tipoVenda"
+                  value={tipoVenda}
+                  onChange={(e) => setTipoVenda(e.target.value)}
+                >
+                  <option value="">Todos</option>
+                  {tiposPagamento.map((tipo) => (
+                    <option key={tipo} value={tipo}>
+                      {tipo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label>
                   <input
                     className="input-consulta-vendas"
-                    type="text"
-                    id="cliente"
-                    value={nome}
-                    onChange={(e) => setNome(e.target.value)}
-                    maxLength="150"
+                    type="checkbox"
+                    checked={somarLancamentosManuais}
+                    onChange={() => setSomarLancamentosManuais(!somarLancamentosManuais)}
                   />
-                  <label htmlFor="cpf">CPF/CNPJ</label>
-                  <input
-                    className="input-consulta-vendas"
-                    type="text"
-                    id="cpf"
-                    value={cpfCnpj}
-                    onChange={handleCpfChange}
-                  />
-                </div>
-                <div className="field-line">
-                  <label htmlFor="dataVendaInicial">Data Inicial</label>
-                  <input
-                    className="input-consulta-vendas"
-                    type="date"
-                    id="dataVendaInicial"
-                    value={dataVendaInicial}
-                    onChange={(e) => setdataVendaInicial(e.target.value)}
-                  />
-                  <label htmlFor="dataVendaFinal">Data Final</label>
-                  <input
-                    className="input-consulta-vendas"
-                    type="date"
-                    id="dataVendaFinal"
-                    value={dataVendaFinal}
-                    onChange={(e) => setdataVendaFinal(e.target.value)}
-                  />
-                </div>
-                <div className="field-line">
-                  <label htmlFor="tipoVenda">Tipo de Venda</label>
-                  <select
-                    className="input-consulta-vendas"
-                    id="tipoVenda"
-                    value={tipoVenda}
-                    onChange={(e) => setTipoVenda(e.target.value)}
-                  >
-                    <option value="">Todos</option>
-                    {tiposPagamento.map((tipo) => (
-                      <option key={tipo} value={tipo}>
-                        {tipo}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label>
-                    <input
-                      className="input-consulta-vendas"
-                      type="checkbox"
-                      checked={somarLancamentosManuais}
-                      onChange={() => setSomarLancamentosManuais(!somarLancamentosManuais)}
-                    />
-                    Deseja Somar os Lançamentos Manuais?
-                  </label>
-                </div>
+                  Deseja Somar os Lançamentos Manuais?
+                </label>
               </div>
             </div>
-            <div id="button-vendas-group">
-              <button onClick={handleSearch} className="button-vendas">Pesquisar</button>
-              <button onClick={handleClear} className="button-vendas">Limpar</button>
-              <button onClick={handlePrint} className="button-vendas">Imprimir</button>
-            </div>
           </div>
+          <div id="button-vendas-group">
+            <button onClick={handleSearch} className="button-vendas">Pesquisar</button>
+            <button onClick={handleClear} className="button-vendas">Limpar</button>
+            <button onClick={handlePrint} className="button-vendas">Imprimir</button>
+            <button onClick={handleCadastrarModal} className="button-vendas">Lançar Venda</button>
 
-
-          <div id="separator-bar"></div>
-
-          <div id="results-container">
-            <div id="vendas-grid-container">
-              <table id="vendas-grid">
+          </div>
+        </div>
+        <div id="separator-bar"></div>
+        {loading ? (
+          <div className="spinner-container">
+            <div className="spinner"></div>
+          </div>) :
+          (<div id="results-container">
+            <div id="grid-padrao-container">
+              <table id="grid-padrao">
                 <thead>
                   <tr>
                     <th>ID</th>
@@ -384,13 +484,35 @@ function Vendas() {
                         {venda.formaPagamento} {/* Aqui pode ser exibido o tipo de pagamento */}
                       </td>
                       <td>{new Date(venda.dataVenda).toLocaleString().replace(",", "")}</td>
-                      {venda.tipo === "Venda" ? (
-                        <td>
-                          <button className="cancela-button" onClick={() => handleOpenModalCancelaVenda(venda.vendaId)}>Cancelar</button>
-                        </td>
-                      ) : (
-                        <td></td>
-                      )}
+                      <td>
+                        <div id="button-group">
+                          {venda.tipo === "Venda" ? (
+                            <>
+                              <button className="button" onClick={() => handleOpenModalCancelaVenda(venda.vendaId)}>🚫</button>
+                              <button
+                                onClick={() => handleSearchClick(venda.vendaId)} // Implemente este handler
+                                className="button"
+                                title="Pesquisar"
+                              >
+                                🔍
+                              </button>
+                            </>
+                          ) : (
+                            ''
+                          )}
+                          <div>
+                            <button
+                              onClick={() => handlePrintClick(venda)} // You'll need to implement this handler
+                              className="button"
+                              title="Impressão"
+                            >
+                              🖨️
+                            </button>
+                          </div>
+
+                        </div>
+                      </td>
+
                     </tr>
                   ))}
 
@@ -432,18 +554,26 @@ function Vendas() {
               </select>
               <label htmlFor="rows-select">por página</label>
             </div>
-          </div>
-          {isModalModalCancelaVendaOpen && (
-            <ModalCancelaVenda
-              isOpen={isModalModalCancelaVendaOpen}
-              onClose={handleCloseModalCancelaVenda}
-              onSubmit={handleSubmitLancamento}
-              idVenda={idVenda}
-            />
-          )}
-
-        </>
-      )}
+          </div>)}
+        {isModalOpen && (
+          <ModalCadastroOS
+            isOpen={isModalOpen}
+            onSubmit={isEdit ? handleEditSubmit : handleAddVenda}
+            os={selectedVenda}  // Mudei de 'os' para 'venda' - confira qual o nome correto
+            onClose={handleModalClose}
+            edit={isEdit}
+            tipo={'venda'}
+          />
+        )}
+        {isModalModalCancelaVendaOpen && (
+          <ModalCancelaVenda
+            isOpen={isModalModalCancelaVendaOpen}
+            onClose={handleCloseModalCancelaVenda}
+            onSubmit={handleSubmitLancamento}
+            idVenda={idVenda}
+          />
+        )}
+      </>
 
       {toast.message && <Toast type={toast.type} message={toast.message} />}
     </div>

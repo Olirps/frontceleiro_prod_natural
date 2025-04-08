@@ -3,8 +3,10 @@ import '../styles/ModalPesquisaCredor.css';
 import Toast from '../components/Toast';
 import { getFornecedoresByFiltro, getFuncionariosByFiltro, getClientesByFiltro } from '../services/api';  // Funções de consulta
 
-const ModalPesquisaCredor = ({ isOpen, onTipoCredor, onClose, onSelectCredor }) => {
-    const [tipoCredito, setTipoCredito] = useState('fornecedor'); // Estado para o tipo de crédito selecionado
+const ModalPesquisaCredor = ({ isOpen, onTipoCredor, onClose, onSelectCredor, tipoLancto }) => {
+    const [tipoCredito, setTipoCredito] = useState(
+        tipoLancto == 'credito' ? 'cliente' : 'fornecedor'
+    ); // Estado para o tipo de crédito selecionado
     const [funcionarioInputs, setFuncionarioInputs] = useState({ nome: '', cpf: '' });
     const [fornecedorInputs, setFornecedorInputs] = useState({ razaoSocial: '', nomeFantasia: '', cnpj: '' });
     const [clienteInputs, setClienteInputs] = useState({ razaoSocial: '', nomeFantasia: '', cpfCnpj: '' });
@@ -70,8 +72,7 @@ const ModalPesquisaCredor = ({ isOpen, onTipoCredor, onClose, onSelectCredor }) 
         <div className="modal-overlay">
             <div className="modal-content">
                 <button className="modal-close" onClick={onClose}>X</button>
-                <h2>Pesquisar Credor</h2>
-
+                {tipoLancto == 'credito' ? <h2> Pesquisar Pagador</h2> : <h2>Pesquisar Credor</h2>}
                 <div className="radio-group">
                     <div className="radio-option">
                         <input

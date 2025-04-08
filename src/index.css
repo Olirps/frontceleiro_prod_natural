@@ -393,9 +393,24 @@ select {
   background-color: #0056b3;
 }
 
+@media (min-width: 769px) {
+  .produto-card {
+    display: none; /* Oculta os cards no desktop */
+  }
+
+
+}
 
 /* Ajuste para telas menores */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+ 
+  .os-form-container {
+    width: 100% !important;
+    padding: 12px !important;
+    gap: 12px !important;
+    border-radius: 6px !important;
+  }
+
   #button-group {
     flex-direction: column;
     /* Empilha os botões em telas menores */
@@ -435,6 +450,16 @@ select {
   #show-more-container select {
     width: 20%;
   }
+  .tabela-produtos {
+    display: none; /* Oculta a tabela no mobile */
+  }
+
+  .cards-mobile {
+    display: block;
+  }
+
+
+
 }
 
 /*Aqui começa o css padrão dos modais*/
@@ -752,4 +777,206 @@ select {
 
 .form-group-new{
   flex-direction: row;
+}
+
+.workflow-history {
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-top: 1px solid #ddd;
+}
+
+.workflow-history h4 {
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+}
+
+.workflow-history ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.workflow-history li {
+  padding: 4px 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.autocomplete-wrapper {
+  position: relative;
+}
+
+/* Container principal */
+.os-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 98%;
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+/* Barra de busca e botão "Adicionar" */
+.busca-adicionar-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.input-busca {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc; /* Cor da borda padrão */
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none; /* Remove o contorno padrão do navegador ao focar */
+  transition: border-color 0.3s ease; /* Adiciona uma transição suave */
+}
+
+.input-busca:focus {
+  border-color: #007bff; /* Cor da borda quando o input está em foco */
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); /* Adiciona um efeito de sombra para destacar */
+}
+
+.botao-adicionar {
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.botao-adicionar:hover {
+  background-color: #0056b3;
+}
+
+/* Sugestões de autocompletar */
+.autocomplete-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  max-height: 150px;
+  overflow-y: auto;
+  position: relative;
+  width: 100%;
+  z-index: 1000;
+}
+
+.autocomplete-list li {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.autocomplete-list li.selected,
+.autocomplete-list li:hover {
+  background-color: #f0f0f0;
+}
+
+/* Lista de Produtos/Serviços Selecionados */
+.produtos-selecionados-container {
+  width: 98%;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 16px;
+  background-color: #fff;
+}
+
+.painel-titulo {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.tabela-produtos {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.tabela-produtos th,
+.tabela-produtos td {
+  padding: 8px;
+  border: 1px solid #ccc;
+  text-align: left;
+}
+
+.tabela-produtos th {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+.tabela-produtos tfoot td {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+
+/* Estilização dos cards (mobile) */
+
+/* Oculta os cards no desktop */
+.cards-mobile {
+  display: none;
+}
+
+.produto-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+  background: #fff;
+}
+
+.produto-card .produto-info {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+}
+
+.produto-card .produto-detalhes {
+  display: flex;
+  justify-content: space-between;
+  color: #555;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.produto-card .responsavel-select {
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.select-responsavel {
+  padding: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.botao-remover {
+  padding: 4px 8px;
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.botao-remover:hover {
+  background-color: #a71d2a;
+}
+
+.selected {
+    background-color: #dcdcdc; /* Cor de fundo para o item selecionado */
+    cursor: pointer;
 }

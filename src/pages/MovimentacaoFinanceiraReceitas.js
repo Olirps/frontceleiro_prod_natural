@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAllMovimentacaofinanceiraDespesa, addMovimentacaofinanceiraDespesa, getLancamentoCompletoById, updateLancamentoDespesa, getLancamentoDespesaById, getParcelaByID, pagamentoParcela, updateMovimentacaofinanceiraDespesa, addParcelasDespesa, getParcelasDespesa } from '../services/api';
 import '../styles/MovimentacaoFinanceiraDespesa.css';
-import ModalMovimentacaoFinanceiraDespesa from '../components/ModalMovimentacaoFinanceiraDespesa';
+import ModalMovimentacaoFinanceiraReceitas from '../components/ModalMovimentacaoFinanceiraReceitas';
 import { converterMoedaParaNumero, formatarData, dataAtual } from '../utils/functions';
 import ModalLancamentoCompleto from '../components/ModalLancamentoCompleto';
 import ModalUnificaLancamentos from '../components/ModalUnificaLancamentos';
@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
 
 
-function MovimentacaoFinanceiraDespesa() {
+function MovimentacaoFinanceiraReceitas() {
   const [movimentacoes, setMovimentacoes] = useState([]);
   const [filteredMovimentacoes, setFilteredMovimentacoes] = useState([]);
   const [valor, setValor] = useState('');
@@ -53,7 +53,7 @@ function MovimentacaoFinanceiraDespesa() {
   useEffect(() => {
     const fetchMovimentacao = async () => {
       try {
-        const response = await getAllMovimentacaofinanceiraDespesa({tipo :'debito'});
+        const response = await getAllMovimentacaofinanceiraDespesa({tipo :'credito'});
         setMovimentacoes(response.data);
         setFilteredMovimentacoes(response.data);
       } catch (err) {
@@ -71,8 +71,7 @@ function MovimentacaoFinanceiraDespesa() {
   const handleSearch = async () => {
     // Cria um objeto para armazenar os filtros apenas se estiverem preenchidos
     const filtros = {};
-    filtros.tipo = 'debito';
-
+    filtros.tipo = 'credito';
     if (descricao) filtros.descricao = descricao.trim();
     if (fornecedor) filtros.fornecedor = fornecedor;
     if (funcionario) filtros.funcionario = funcionario;
@@ -209,7 +208,7 @@ function MovimentacaoFinanceiraDespesa() {
       setToast({ message: "Movimentação financeira cadastrada com sucesso!", type: "success" });
       setIsModalOpen(false);
       setIsModalUnificaLancamentosOpen(false);
-      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'debito'});
+      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'credito'});
       setMovimentacoes(response.data);
       setFilteredMovimentacoes(response.data);
     } catch (err) {
@@ -276,7 +275,7 @@ function MovimentacaoFinanceiraDespesa() {
       // Aqui você pode enviar as parcelas para o backend ou processá-las conforme necessário
       setToast({ message: "Parcelas salvas com sucesso!", type: "success" });
       setIsModalLancaParcelasOpen(false);
-      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'debito'});
+      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'credito'});
       setMovimentacoes(response.data);
       setFilteredMovimentacoes(response.data);
 
@@ -306,7 +305,7 @@ function MovimentacaoFinanceiraDespesa() {
       // Aqui você pode enviar as parcelas para o backend ou processá-las conforme necessário
       setToast({ message: "Parcelas Liquidada com sucesso!", type: "success" });
       setIsModalPagarLancamentosOpen(false);
-      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'debito'});
+      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'credito'});
       setMovimentacoes(response.data);
       setFilteredMovimentacoes(response.data);
       toggleExpand(selectedParcela.financeiro_id)
@@ -346,7 +345,7 @@ function MovimentacaoFinanceiraDespesa() {
       setIsModalOpen(false);
       setSelectedMovimentacao(null);
       setIsEdit(false);
-      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'debito'});
+      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'credito'});
       setMovimentacoes(response.data);
       setFilteredMovimentacoes(response.data);
     } catch (err) {
@@ -371,7 +370,7 @@ function MovimentacaoFinanceiraDespesa() {
       setToast({ message: "Movimentação financeira atualizada com sucesso!", type: "success" });
       setIsModalLancamentoCompletoOpen(false);
       setIsEdit(false);
-      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'debito'});
+      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'credito'});
       setMovimentacoes(response.data);
       setFilteredMovimentacoes(response.data);
     } catch (err) {
@@ -438,7 +437,7 @@ function MovimentacaoFinanceiraDespesa() {
 
   return (
     <div id="movimentacoes-container">
-      <h1 className="title-page">Consulta de Movimentações Financeiras - Contas a Pagar</h1>
+      <h1 className="title-page">Consulta de Movimentações Financeiras - Contas a Receber</h1>
       {loading ? (
         <div className="spinner-container">
           <div className="spinner"></div>
@@ -663,7 +662,7 @@ function MovimentacaoFinanceiraDespesa() {
 
       {toast.message && <Toast type={toast.type} message={toast.message} />}
       {isModalOpen && (
-        <ModalMovimentacaoFinanceiraDespesa
+        <ModalMovimentacaoFinanceiraReceitas
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onConfirmar={handleConfirmacaoParcelas}
@@ -710,4 +709,4 @@ function MovimentacaoFinanceiraDespesa() {
   );
 }
 
-export default MovimentacaoFinanceiraDespesa;
+export default MovimentacaoFinanceiraReceitas;
