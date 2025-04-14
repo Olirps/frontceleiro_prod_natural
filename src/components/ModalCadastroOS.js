@@ -260,7 +260,7 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
             id: produto.id,
             xProd: produto.xProd,
             quantidade: qtdAdicionar,
-            vlrVenda: produto.vlrVenda,
+            valor_unitario: produto.vlrVenda,
             valorTotal: valor
         };
 
@@ -275,7 +275,8 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
 
     const handleRemover = async () => {
         try {
-            const produtoRemovido = await removerProdutoOS(produtoRetirado);
+            
+            const produtoRemovido = await removerProdutoOS(produtoRetirado,produtosSelecionados);
             setProdutosSelecionados(produtosSelecionados.filter(p => p.produto_id !== produtoRetirado));
             setToast({ message: "Item Removido com Sucesso !", type: "sucess" });
         } catch (error) {
@@ -288,10 +289,13 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
     }
     // Remove produto/serviço da lista
     const handleRemoverProduto = async (index) => {
-        if (edit) {
+        const produtoRemovido = produtosSelecionados[index];
+        const produto = produtoRemovido.os_produtoserice_id;
+
+        if (edit && produto) {
             // Modo edição: Pega o ID do produto no índice e marca para remoção
-            const produtoRemovido = produtosSelecionados[index];
             setProdutoRetirado(produtoRemovido.os_produtoserice_id); // Assume que `produtoRemovido.id` existe
+
             setIsConfirmationModalOpen(true);
         } else {
             // Modo normal: Remove diretamente pelo índice
@@ -756,6 +760,7 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
                 onClose={() => setShowMaoObraModal(false)}
                 onMOAdicionado={(mo) => {
                     mo.quantidade = 1;
+                    mo.valor_unitario = mo.valorTotal;
                     setProdutosSelecionados([...produtosSelecionados, mo]);
                     setToast({ message: "Mão de Obra cadastrada com sucesso!", type: "success" });
                 }}

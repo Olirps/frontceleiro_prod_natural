@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getVendas, cancelaVenda, getVendaById, updateVenda, addOS, registravenda } from '../services/api';
+import { getVendas, cancelaVenda, getVendaById, updateVenda, addOS, registravenda, getFormasPagamento } from '../services/api';
 import '../styles/Vendas.css';
 import ModalCliente from '../components/ModalCadastraCliente';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
@@ -46,7 +46,9 @@ function Vendas() {
   const fetchVendas = async () => {
     try {
       const response = await getVendas();
+      const responseTipos = await getFormasPagamento();
       const data = response.data.transacoes;
+      const tiposVenda = [{ id: 0, nome: 'Desconto' }, ...responseTipos.data];
 
       if (!data || !Array.isArray(data)) {
         throw new Error('A estrutura de dados das transações está incorreta');
@@ -85,7 +87,7 @@ function Vendas() {
 
       // Extrair tipos únicos, incluindo "débito" e "crédito"
       const tipos = Array.from(new Set(pagamentos.map((p) => p.formaPagamento)));
-      setTiposPagamento(tipos);
+      setTiposPagamento(tiposVenda); // Atualizado para usar a descrição correta
     } catch (err) {
       console.error('Erro ao buscar Vendas', err);
     } finally {
@@ -424,8 +426,8 @@ function Vendas() {
                 >
                   <option value="">Todos</option>
                   {tiposPagamento.map((tipo) => (
-                    <option key={tipo} value={tipo}>
-                      {tipo}
+                    <option key={tipo} value={tipo.id}>
+                      {tipo.nome}
                     </option>
                   ))}
                 </select>

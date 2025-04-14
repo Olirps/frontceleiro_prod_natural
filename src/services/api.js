@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Crie uma instância do axios com a URL base
 const api = axios.create({
-  baseURL: 'http://3.143.233.203:3001/api',
+  baseURL: 'http://3.13.205.247:3001/api',
 });
 
 // Função para definir o token de autenticação no header
@@ -651,12 +651,12 @@ export const aprovarOS = async (id, os) => {
   }
 };
 
-export const removerProdutoOS = async (id) => {
+export const removerProdutoOS = async (id,os) => {
   if (!id) {
     throw new Error('ID');
   }
   try {
-    const response = await api.put(`/osremove_item/${id}`);
+    const response = await api.put(`/osremove_item/${id}`,os);
     return response;
   } catch (error) {
     console.error('Erro ao aprovar O.S. :', error);

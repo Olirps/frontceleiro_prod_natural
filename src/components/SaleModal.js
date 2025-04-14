@@ -298,7 +298,7 @@ const SaleModal = ({
                 </div>
               </fieldset>
             </div>
-            <div class="form-row">
+            <div className="form-row">
               <fieldset>
                 <legend>
                   Pagamentos:
