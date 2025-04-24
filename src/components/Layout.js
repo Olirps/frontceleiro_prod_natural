@@ -79,7 +79,6 @@ function Layout() {
           {/* Main navigation menu */}
           <nav id="menu" className={isMenuOpen ? 'show' : ''}>
             {canViewMenuItem('home') && <Link to="/home" className="menu-item">Home</Link>}
-
             {/* Cadastros menu item with a submenu */}
             {canViewMenuItem('permissoes') || canViewMenuItem('clientes') || canViewMenuItem('funcionarios') || canViewMenuItem('fornecedores') || canViewMenuItem('produtos') || canViewMenuItem('veiculos')
               || canViewMenuItem('contasbancarias') || canViewMenuItem('osstatus') ? (

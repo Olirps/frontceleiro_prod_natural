@@ -120,7 +120,7 @@ function App() {
           <Route
             path="/contaspendentes"
             element={isAuthenticated && hasPermission(permissions, 'contaspendentes', 'view') ? <ContasPendentes /> : null} // Condicionalmente não renderiza
-          />
+          />        
         </Route>
       </Routes>
     </Router>

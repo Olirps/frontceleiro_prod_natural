@@ -407,6 +407,7 @@ export const updateSubGrupoProduto = (id, produto) => {
   return api.put(`/subgrupoproduto/${id}`, produto);
 };
 
+
 export const getSubGrupoProdutoById = async (id) => {
   return api.get(`/subgrupoproduto/${id}`);
 };
