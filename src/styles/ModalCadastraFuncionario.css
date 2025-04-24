@@ -1,0 +1,35 @@
+/* Botões abaixo dos inputs */
+#button-group-fun {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+    /* Espaçamento superior */
+  }
+  #button-group-fun .button-fun {
+    padding: 10px 15px;
+    background: none;
+    border-radius: 8px;
+    font-size: 16px;
+    border: 1px solid #007bff;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    /* Remove fundo */
+    color: #007bff;
+  }
+  
+  
+  #button-group-fun .button-fun:hover {
+    color: #fff;
+    transform: scale(1.05);
+    background: #007bff;
+
+  }
+
+  #button-group-fun .button-fun.active {
+    color: #fff;
+    transform: scale(1.05);
+    background: #007bff;
+  }
+  

@@ -4,11 +4,17 @@ import '../styles/Fornecedores.css';
 import Modal from '../components/ModalCadastroFornecedor';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
 import Toast from '../components/Toast';
+import { useAuth } from '../context/AuthContext';
+import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { formatarCelular } from '../utils/functions';
+
 
 function Fornecedores() {
   const [fornecedores, setFornecedores] = useState([]);
   const [filteredFornecedores, setFilteredFornecedores] = useState([]);
   const [nome, setNome] = useState('');
+  const [nomeFantasia, setNomeFantasia] = useState('');
+  const [fornecedorContato, setfornecedorContato] = useState('');
   const [cpfCnpj, setCpf] = useState('');
   const [loading, setLoading] = useState(true);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -17,6 +23,8 @@ function Fornecedores() {
   const [toast, setToast] = useState({ message: '', type: '' });
   const [selectedFornecedor, setSelectedFornecedor] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
+  const { permissions } = useAuth();
+
 
   useEffect(() => {
     const fetchFornecedores = async () => {
@@ -36,10 +44,12 @@ function Fornecedores() {
 
   const handleSearch = () => {
     const lowerNome = nome.toLowerCase();
+    const lowerNomeFantasia = nomeFantasia.toLowerCase();
     let lowerCpf = cpfCnpj.toLowerCase();
     lowerCpf = removeMaks(lowerCpf);
     const results = fornecedores.filter(fornecedor =>
       (lowerNome ? fornecedor.nome.toLowerCase().includes(lowerNome) : true) &&
+      (lowerNomeFantasia ? fornecedor.nomeFantasia.toLowerCase().includes(lowerNomeFantasia) : true)&&
       (lowerCpf ? fornecedor.cpfCnpj.toLowerCase().includes(lowerCpf) : true)
     );
 
@@ -50,6 +60,7 @@ function Fornecedores() {
   const handleClear = () => {
     setNome('');
     setCpf('');
+    setNomeFantasia('');
     setFilteredFornecedores(fornecedores);
     setCurrentPage(1); // Resetar para a primeira página ao limpar a busca
   };
@@ -64,12 +75,26 @@ function Fornecedores() {
     setCpf(cpfCnpjMask(value));
   };
 
+  const handleCadastrarModal = () => {
+    if (!hasPermission(permissions, 'fornecedores', 'insert')) {
+      setToast({ message: "Você não tem permissão para cadastrar fornecedores.", type: "error" });
+      return; // Impede a abertura do modal
+    }
+    setIsModalOpen(true);
+    setIsEdit(false);
+    setSelectedFornecedor(null);
+  };
+
   const handleAddFornecedor = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const newFornecedor = {
+      tipo_fornecedor: formData.get('tipofornecedor'),
       nome: formData.get('nome'),
+      nomeFantasia: formData.get('nomeFantasia'),
+      fornecedor_contato: formData.get('fornecedorContato'),
       cpfCnpj: formData.get('cpfCnpj'),
+      inscricaoestadual: formData.get('inscricaoestadual'),
       email: formData.get('email'),
       celular: formData.get('celular').replace(/\D/g, ''),
       logradouro: formData.get('logradouro'),
@@ -95,6 +120,13 @@ function Fornecedores() {
 
   const handleEditClick = async (fornecedor) => {
     try {
+      if (!hasPermission(permissions, 'fornecedores', 'viewcadastro')) {
+        setToast({ message: "Você não tem permissão para visualizar o cadastro de fornecedores.", type: "error" });
+        return; // Impede a abertura do modal
+      }
+      setIsModalOpen(true);
+      setIsEdit(true);
+      setSelectedFornecedor(null);
       const response = await getFornecedorById(fornecedor.id);
       setSelectedFornecedor(response.data);
       setIsEdit(true);
@@ -109,8 +141,12 @@ function Fornecedores() {
     e.preventDefault();
     const formData = new FormData(e.target);
     const updatedFornecedor = {
+      tipo_fornecedor: formData.get('tipofornecedor'),
       nome: formData.get('nome'),
+      nomeFantasia: formData.get('nomeFantasia'),
       cpfCnpj: formData.get('cpfCnpj'),
+      inscricaoestadual: formData.get('inscricaoestadual'),
+      fornecedor_contato: formData.get('fornecedorContato'),
       email: formData.get('email'),
       celular: formData.get('celular').replace(/\D/g, ''),
       logradouro: formData.get('logradouro'),
@@ -161,7 +197,7 @@ function Fornecedores() {
 
   return (
     <div id="fornecedores-container">
-      <h1 id="fornecedores-title">Consulta de Fornecedores</h1>
+      <h1 className='title-page'>Consulta de Fornecedores</h1>
       {loading ? (
         <div className="spinner-container">
           <div className="spinner"></div>
@@ -180,6 +216,16 @@ function Fornecedores() {
                 />
               </div>
               <div>
+                <label htmlFor="nomeFantasia">Nome Fantasia</label>
+                <input className="input-geral"
+                  type="text"
+                  id="nomeFantasia"
+                  value={nomeFantasia}
+                  onChange={(e) => setNomeFantasia(e.target.value)}
+                  maxLength="150"
+                />
+              </div>
+              <div>
                 <label htmlFor="cpfCnpj">CPF/CNPJ</label>
                 <input className="input-geral"
                   type="text"
@@ -194,11 +240,7 @@ function Fornecedores() {
               <div id="button-group">
                 <button onClick={handleSearch} className="button">Pesquisar</button>
                 <button onClick={handleClear} className="button">Limpar</button>
-                <button onClick={() => {
-                  setIsModalOpen(true);
-                  setIsEdit(false);
-                  setSelectedFornecedor(null);
-                }} className="button">Cadastrar</button>
+                <button onClick={handleCadastrarModal} className="button">Cadastrar</button>
               </div>
             </div>
           </div>
@@ -206,15 +248,16 @@ function Fornecedores() {
           <div id="separator-bar"></div>
 
           <div id="results-container">
-            <div id="fornecedores-grid-container">
-              <table id="fornecedores-grid">
+            <div id="grid-padrao-container">
+              <table id="grid-padrao">
                 <thead>
                   <tr>
                     <th>ID</th>
                     <th>Nome</th>
+                    <th>Contato</th>
                     <th>CPF/CNPJ</th>
                     <th>Email</th>
-                    <th>Data Criação</th>
+                    <th>Telefone</th>
                     <th>Ações</th>
                   </tr>
                 </thead>
@@ -223,15 +266,16 @@ function Fornecedores() {
                     <tr key={fornecedor.id}>
                       <td>{fornecedor.id}</td>
                       <td>{fornecedor.nome}</td>
+                      <td>{fornecedor.fornecedor_contato}</td>
                       <td>{cpfCnpjMask(fornecedor.cpfCnpj)}</td>
                       <td>{fornecedor.email}</td>
-                      <td>{new Date(fornecedor.createdAt).toLocaleDateString('pt-BR')}</td>
+                      <td>{formatarCelular(fornecedor.celular)}</td>
                       <td>
                         <button
                           onClick={() => handleEditClick(fornecedor)}
                           className="edit-button"
                         >
-                          Editar
+                          Visualizar
                         </button>
                       </td>
                     </tr>
@@ -270,6 +314,7 @@ function Fornecedores() {
           onClose={() => setIsModalOpen(false)}
           onSubmit={isEdit ? handleEditSubmit : handleAddFornecedor}
           fornecedor={selectedFornecedor}
+          isEdit={isEdit}
         />
       )}
     </div>

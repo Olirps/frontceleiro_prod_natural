@@ -1,0 +1,97 @@
+/* CSS para o Modal de Vinculação de Produto a Veículo */
+
+.modal-vincula-prod-veiculo-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    /* Fundo semitransparente */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    /* Garantir que o modal fique sobre todos os outros elementos */
+}
+
+.modal-vincula-prod-veiculo {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.3s ease-out;
+    position: relative;
+}
+
+.modal-close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #333;
+    transition: color 0.2s;
+}
+
+.modal-close-button:hover {
+    color: #d32f2f;
+}
+
+.h2-veiculo {
+    margin: 0 0 20px;
+    font-size: 1.5em;
+    color: #333;
+}
+
+.select-veiculo {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.vincular-button {
+    background-color: #4caf50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: block;
+    width: 100%;
+}
+
+.vincular-button:hover {
+    background-color: #45a049;
+}
+
+.filter-input {
+    margin-bottom: 10px;
+    padding: 5px;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+
+/* Animação de entrada suave */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}

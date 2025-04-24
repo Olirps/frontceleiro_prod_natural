@@ -1,82 +1,177 @@
 /* src/styles/Home.css */
 
 #header {
-    display: flex;
-    justify-content: flex-start; /* Alinha os itens à esquerda */
-    align-items: center;
-    background-color: #007bff;
-    color: #fff;
-    padding: 10px 20px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  }
+  display: flex;
+  justify-content: flex-start;
+  /* Alinha os itens à esquerda */
+  align-items: center;
+  background-color: #007bff;
+  color: #fff;
+  padding: 10px 20px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
 /* Container para pesquisa */
 .homeCenter {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 20px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background-image: url('../img/S&S.png'); /* Ajuste o caminho conforme necessário */
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 30%; /* Ajuste conforme necessário */
+  opacity: 0.2; /* Define a transparência da marca d'água */;
+}
+
+#home-container {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
 }
 
-  
-  #logo {
-    font-size: 1.5em;
-    font-weight: bold;
-    margin-right: 20px; /* Espaçamento entre o logo e o menu */
+.header-title {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #c51212; /* Ajuste conforme necessário */
+}
+
+.watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30%; /* Ajuste conforme necessário */
+  opacity: 0.2;
+  background-image: url('../img/S&S.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: -1; /* Mantém a marca d'água atrás de tudo */
+}
+
+
+#logo {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-right: 20px;
+  /* Espaçamento entre o logo e o menu */
+}
+
+#menu {
+  display: flex;
+  gap: 20px;
+}
+
+.menu-item {
+  position: relative;
+  padding: 10px;
+  font-size: 1em;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.menu-item:hover {
+  background-color: #0056b3;
+  border-radius: 4px;
+}
+
+#cadastros-submenu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #007bff;
+  padding: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  z-index: 1000;
+}
+
+.submenu-item {
+  padding: 10px;
+  color: #fff;
+  text-decoration: none;
+  display: block;
+}
+
+.submenu-item:hover {
+  background-color: #0056b3;
+  border-radius: 4px;
+}
+
+#cadastros:hover #cadastros-submenu {
+  display: block;
+}
+
+/* Posiciona o quadro no canto superior esquerdo */
+.contas-pagar-wrapper {
+  position: absolute;  /* Posiciona de forma fixa na tela */
+  top: 100px;           /* Distância do topo */
+  left: 70px;          /* Distância da esquerda */
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0px 10px 8px rgba(0, 0, 0, 0.1);
+  width: 500px;        /* Largura fixa para não espalhar demais */
+}
+
+.quadro-titulo {
+  font-size: 18px;
+  margin-bottom: 10px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.sem-contas {
+  text-align: center;
+  font-style: italic;
+  color: gray;
+}
+
+@media (max-width: 768px) {
+  #header {
+    flex-direction: column;
+    align-items: flex-start;
   }
   
+  
+#home-container {
+
+  background-size: 80%; /* Ajuste conforme necessário */
+  
+}
+
+  .header-title {
+    font-size: 20px;
+    top: 10px;
+    left: 10px;
+  }
+
+  .watermark {
+    width: 150px; /* Reduz um pouco a marca d'água */
+  }
+
   #menu {
-    display: flex;
-    gap: 20px;
+    flex-direction: column;
+    margin-top: 10px;
+    z-index: 1;
+    /* Adiciona espaço acima do menu em telas menores */
   }
-  
-  .menu-item {
-    position: relative;
-    padding: 10px;
-    font-size: 1em;
-    color: #fff;
-    text-decoration: none;
-    cursor: pointer;
-  }
-  
-  .menu-item:hover {
-    background-color: #0056b3;
-    border-radius: 4px;
-  }
-  
-  #cadastros-submenu {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: #007bff;
-    padding: 10px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-    z-index: 1000;
-  }
-  
-  .submenu-item {
-    padding: 10px;
-    color: #fff;
-    text-decoration: none;
-    display: block;
-  }
-  
-  .submenu-item:hover {
-    background-color: #0056b3;
-    border-radius: 4px;
-  }
-  
-  #cadastros:hover #cadastros-submenu {
-    display: block;
-  }
-  
-  @media (max-width: 768px) {
-    #header {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    
-    #menu {
-      flex-direction: column;
-      margin-top: 10px; /* Adiciona espaço acima do menu em telas menores */
-    }
-  }
-  
+
+}

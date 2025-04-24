@@ -1,0 +1,38 @@
+/* src/styles/ModalCadastroFornecedor.css */
+
+/* Conteúdo do Modal */
+.modal-content-cad-cli {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px; /* Aumentado o raio para um efeito mais suave */
+    width: 85%;
+    max-height: 90vh; /* Limita a altura do modal para 90% da altura da viewport */
+    overflow-y: auto; /* Adiciona rolagem vertical se necessário */
+    position: relative;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Adicionada sombra para profundidade */
+  }
+  
+  #cadastro-cliente {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Duas colunas */
+    gap: 20px; /* Espaçamento entre os elementos */
+    width: 100%;
+    position: relative;
+  
+  }
+  
+  #cadastro-cliente div {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  #cadastro-cliente input {
+    width: 100%; /* Ou o tamanho desejado */
+    box-sizing: border-box; /* Garante que o padding seja incluído no tamanho total */
+  }
+  
+  #cadastro-cliente button {
+    width: 25%; /* Ou o tamanho desejado */
+    box-sizing: border-box; /* Garante que o padding seja incluído no tamanho total */
+  }
+  

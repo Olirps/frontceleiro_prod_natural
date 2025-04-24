@@ -12,43 +12,105 @@ code {
     monospace;
 }
 
-
-/*Botões de Busca*/
-
-#search-container {
+.title-page {
+  text-align: center;
   margin-bottom: 20px;
-  border: 2px solid rgb(197, 193, 193);
-  padding: 20px;
-  border-radius: 5px;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  display: flex; /* ou block */
-  flex-direction: column; /* ou pode omitir se for padrão */
-  gap: 20px; /* adiciona espaço entre as divs internas */
-
+  color: #333;
 }
 
-/**/
+/* Centraliza o container na tela */
+#search-container {
+  display: flex;
+  flex-direction: column;  /* Botões abaixo do input */
+  align-items: center;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 12px;  /* Borda arredondada */
+  width: 70%;
+  max-width: 100%;
+  margin: 30px auto;  /* Centraliza vertical e horizontalmente */
+  border: 1px solid #ccc;  /* Adiciona borda para destacar */
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); /* Sombra inicial */
+}
 
+
+/* Container dos campos de pesquisa */
 #search-fields {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px; /* Espaço maior entre os elementos */
-  justify-content: flex-start; /* Alinha à esquerda */
+  gap: 20px;
+  /* Espaço maior entre os elementos */
+  justify-content: center;
+  /* Centraliza os inputs */
+  width: 100%;
+  /* Garante que o container ocupe toda a largura */
+  max-width: 800px;
+  /* Define um limite para o container */
+  margin: 0 auto;
+  /* Centraliza o container na tela */
 }
 
-#search-fields > div {
+/* Cada campo de input */
+#search-fields>div {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-width: 20%; /* Ajusta a largura mínima dos campos */
-  max-width: 250px; /* Limita o tamanho máximo */
+  /* Espaço entre o label e o input */
+  min-width: 220px;
+  /* Largura mínima para manter responsivo */
+  max-width: 250px;
+  /* Limita o tamanho máximo */
+  flex: 1;
+  /* Faz os itens crescerem de forma proporcional */
 }
 
-#search-fields input {
-  padding: 5px; /* Um bom padding interno para os inputs */
-  margin-bottom: 25px; /* Define o espaço entre os inputs */
+/* Ajustes nos inputs */
+#search-fields input,
+select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  /* Bordas arredondadas */
+  width: 90%;
+  /* Ocupa toda a largura disponível */
+  margin-bottom: 10px;
+  /* Espaço entre os inputs */
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+/* Quando o input estiver focado */
+#search-fields input[type="text"]:focus {
+  border-color: #007bff;
+  padding: 10 10px;
+  /* Espaçamento lateral */
+
+}
+
+#search-fields .buttons {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+#search-fields .button {
+  padding: 10px;
+  border: 1px solid #007bff;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  background: none;
+  /* Remove fundo */
+  color: #007bff;
+}
+
+#search-fields .button:hover {
+  background-color: #007bff;
+  color: #fff;
+  transform: scale(1.05);
 }
 
 /* Contêiner geral */
@@ -65,33 +127,101 @@ code {
 }
 
 
+/* Botões abaixo dos inputs */
 #button-group {
   display: flex;
   justify-content: center;
-  /* Alinha os botões ao centro */
   gap: 10px;
-  /* Espaçamento entre os botões */
-  margin-top: auto;
-  /* Empurra o grupo de botões para o rodapé */
-  
+  width: 100%;
+  margin-top: 10px;
+  /* Espaçamento superior */
 }
 
-.button {
+#button-group .button {
   padding: 10px 15px;
-  border: none;
-  border-radius: 4px;
+  border: 1px solid #007bff;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  background: none;
+  /* Remove fundo */
+  color: #007bff;
+}
+
+
+#button-group .button:hover {
   background-color: #007bff;
   color: #fff;
-  cursor: pointer;
-  font-size: 14px;
+  transform: scale(1.05);
 }
 
-.button:hover {
-  background-color: #0056b3;
+#button-group .cancel-button {
+  padding: 10px 15px;
+  border: 1px solid #ff0000;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  background: none;
+  /* Remove fundo */
+  color: #ff0000;
 }
+
+#button-group .cancel-button:hover {
+  background-color: #ff0000;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+
+
+#button-group .button-detalhes {
+  padding: 10px 15px;
+  border: 1px solid #27bd08;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  background: none;
+  /* Remove fundo */
+  color: #27bd08;
+}
+
+#button-group .button-detalhes:hover {
+  background-color: #187006;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+
+#button-group .lixeira-icon {
+  width: 20px;              /* Defina a largura do ícone */
+  height: 20px;             /* Defina a altura do ícone */
+  cursor: pointer;          /* Ícone clicável */
+}
+
 
 #button-action {
   padding: 10px 20px;
+}
+
+.button-excluir {
+  padding: 10px 15px;
+  border: 1px solid #f32f2f;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  background: #ff0000;
+  /* Remove fundo */
+  color: #fff;
+}
+
+.button-excluir:hover {
+  background-color: #810000;
+  color: #fff;
+  transform: scale(1.05);
 }
 
 .edit-button {
@@ -117,7 +247,25 @@ code {
   background-color: #e53935;
 }
 
+
+
 /* Botões de Paginação */
+
+#pagination-and-show-more {
+  position: flex;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #fff;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #ccc;
+  box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
+}
+
+
 #pagination-container {
   display: flex;
   align-items: center;
@@ -155,14 +303,23 @@ code {
 /* Mostrar mais linhas */
 #show-more-container {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
   gap: 10px;
   align-items: center;
+  justify-content: flex-end; /* Mantém alinhado à direita */
 }
 
 #show-more-container label {
   font-weight: bold;
+}
+
+#show-more-container select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  height: 36px; /* Ajusta a altura para ficar alinhado com outros elementos */
+  vertical-align: middle; /* Garante alinhamento com outros elementos */
+  width: 5%
 }
 
 #rows-select {
@@ -171,19 +328,6 @@ code {
   border: 1px solid #ddd;
   border-radius: 4px;
   cursor: pointer;
-}
-
-.input-geral {
-  padding: 6px;
-  /* Diminuir o padding */
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  width: 100%;
-  /* Ocupa toda a largura disponível */
-  font-size: 14px;
-  /* Ajustar o tamanho da fonte */
-  margin-bottom: 10px; /* Espaço entre os inputs */
-
 }
 
 .spinner-container {
@@ -234,6 +378,92 @@ code {
   cursor: pointer;
 }
 
+#btnsalvar {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  justify-content: center;
+}
+
+#btnsalvar:hover {
+  background-color: #0056b3;
+}
+
+@media (min-width: 769px) {
+  .produto-card {
+    display: none; /* Oculta os cards no desktop */
+  }
+
+
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 768px) {
+ 
+  .os-form-container {
+    width: 100% !important;
+    padding: 12px !important;
+    gap: 12px !important;
+    border-radius: 6px !important;
+  }
+
+  #button-group {
+    flex-direction: column;
+    /* Empilha os botões em telas menores */
+    align-items: center;
+  }
+
+  .button {
+    width: 100%;
+    /* Faz os botões ocuparem toda a largura do container */
+    max-width: none;
+    /* Remove limite de largura */
+  }
+
+  #cadastro-padrao {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #cadastro-padrao>div {
+    width: 100%;
+    max-width: none;
+  }
+
+  .modal-content {
+    max-width: 95%; /* Ajusta para ocupar melhor telas menores */
+    padding: 15px;
+    max-height: 80vh; 
+    overflow-y: auto; 
+  }
+
+  #show-more-container {
+    position: static; /* Remove o posicionamento absoluto */
+    display: flex;
+    justify-content: center;
+    margin-top: 20px; /* Adiciona um espaçamento */
+  }
+  #show-more-container select {
+    width: 20%;
+  }
+  .tabela-produtos {
+    display: none; /* Oculta a tabela no mobile */
+  }
+
+  .cards-mobile {
+    display: block;
+  }
+
+
+
+}
+
+/*Aqui começa o css padrão dos modais*/
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -245,8 +475,21 @@ code {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
-  /* Certifique-se de que está acima de outros elementos */
+  z-index: 1;
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 12px; /* Mantém o padrão arredondado do cadastro */
+  width: 100%;
+  max-width: 800px; /* Garante espaço suficiente para múltiplos inputs */
+  position: relative;
+  border: 1px solid #ccc;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  max-height: 90vh; 
+  overflow-y: auto; 
+
 }
 
 /* Botão de Fechar */
@@ -261,7 +504,6 @@ code {
   cursor: pointer;
   border-radius: 5px;
   justify-content: flex-end;
-  z-index: 1000;
   /* Certifique-se de que o botão está acima de outros elementos */
 
 }
@@ -271,26 +513,470 @@ code {
   /* Cor ao passar o mouse */
 }
 
-.modal-content {
-  background-color: #fff;
+/*Cadastro Padrão*/
+
+/* Estilização geral do modal de cadastro */
+/* Ajusta o container do cadastro */
+#cadastro-padrao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: space-between;
+  align-items: flex-start;
   padding: 20px;
-  border-radius: 5px;
-  width: 400px;
-  max-width: 90%;
-  position: relative;
+  border-radius: 12px;
+  width: 100%;
+  background: #fff;
+  box-sizing: border-box; /* Garante que padding não afete o tamanho total */
+}
+
+/* Cada campo de input */
+#cadastro-padrao > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: calc(50% - 15px); /* Garante que os campos preencham o container */
+  box-sizing: border-box;
+
+}
+/* Para garantir que alguns inputs ocupem toda a largura */
+#cadastro-padrao > div.full-width {
+  width: 100%;
+}
+
+/* Estilo dos inputs */
+.input-geral {
+  width: 97%; /* Faz com que os inputs preencham completamente os divs */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+/* Quando o input estiver focado */
+.input-geral:focus {
+  border-color: #007bff;
+}
+
+.select-geral {
+  display: block;
+  width: 97%; /* Faz com que os inputs preencham completamente os divs */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.3s ease;
+  margin-top: 5px; /* Adiciona um espaço entre a label e o select */
+}
+
+/* Quando o input estiver focado */
+.select-geral:focus {
+  border-color: #007bff;
+}
+
+/* Botão de salvar */
+#botao-salva {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
 }
 
 #btnsalvar {
-  padding: 10px 15px;
-  border: none;
-  border-radius: 4px;
+  padding: 10px 20px;
+  border: 1px solid #007bff;
+  border-radius: 8px;
   background-color: #007bff;
   color: #fff;
   cursor: pointer;
-  font-size: 14px;
-  justify-content: center;
+  font-size: 16px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 #btnsalvar:hover {
   background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+.button-geral {
+  padding: 10px 20px;
+  border: 1px solid #007bff;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.button-geral:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+}
+.radio-group {
+  display: flex; /* Coloca todos os radio-options em uma linha */
+  gap: 16px; /* Espaçamento entre os radio-options */
+  margin-top: auto;
+  margin-bottom: 10px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center; /* Alinha verticalmente o input e a label */
+  margin-bottom: 10px; /* Espaçamento entre os itens */
+}
+
+.radio-option input {
+  margin-right: 8px; /* Espaçamento entre o input e a label */
+  flex-direction: row;
+
+}
+
+/* Responsividade para telas menores */
+@media (max-width: 600px) {
+  #cadastro-padrao {
+    width: 100%; /* Torna os inputs de largura total */
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #cadastro-padrao > div {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+/*Tabela Grid */
+
+/* Tabela */
+#grid-padrao-container {
+  overflow-x: auto; /* Adiciona rolagem horizontal se necessário */
+}
+#grid-padrao {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#grid-padrao th, #grid-padrao td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+#grid-padrao th {
+  background-color: #f4f4f4;
+}
+
+#grid-padrao td #button-action {
+  text-align: center;
+}
+
+#grid-padrao tbody tr {
+  transition: background-color 0.3s ease;
+}
+
+#grid-padrao tbody tr:hover {
+  background-color: #f0f0f0; /* Cor de fundo ao passar o mouse */
+  cursor: pointer; /* Muda o cursor para indicar interatividade */
+}
+
+#grid-padrao tbody tr.selected {
+  background-color: #d1e7fd; /* Azul claro para destacar a linha selecionada */
+}
+
+
+.parcela-row {
+  background-color: #d1e7fd;
+  font-size: 14px;
+}
+
+
+.list-resultado {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+  max-height: 200px; /* Limite de altura para a lista */
+  overflow-y: auto; /* Barra de rolagem quando a lista ultrapassa o limite */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.list-resultado-item {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #ddd;
+}
+
+.list-resultado-item:hover {
+  background-color: #f0f0f0;
+}
+
+
+#motivo-cancelamento > * {
+  margin-bottom: 10px; /* Adiciona um espaço de 10px abaixo de cada elemento */
+}
+
+.modal-footer > button {
+  margin-right: 10px; /* Adiciona um espaço de 10px à direita de cada botão */
+}
+
+
+.form-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px; /* Espaçamento entre os campos */
+}
+
+.form-line div {
+  flex: 1 1 30%; /* Flexível, ocupa 30% do espaço disponível */
+}
+
+.form-line input {
+  box-sizing: border-box; /* Garante que o padding seja incluído no tamanho total */
+}
+
+.single-line {
+  width: 100%; /* Garantir que ocupe toda a largura disponível */
+}
+.expand-button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.home-content {
+  display: flex;
+  justify-content: space-between;
+  width: 80%;
+  gap: 20px;
+}
+
+.quadro-wrapper {
+  flex: 1;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  text-align: center;
+}
+
+.quadro-titulo {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+}
+
+.sem-dados {
+  color: #888;
+  text-align: center;
+}
+
+.form-group-new{
+  flex-direction: row;
+}
+
+.workflow-history {
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-top: 1px solid #ddd;
+}
+
+.workflow-history h4 {
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+}
+
+.workflow-history ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.workflow-history li {
+  padding: 4px 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.autocomplete-wrapper {
+  position: relative;
+}
+
+/* Container principal */
+.os-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 98%;
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+/* Barra de busca e botão "Adicionar" */
+.busca-adicionar-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.input-busca {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc; /* Cor da borda padrão */
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none; /* Remove o contorno padrão do navegador ao focar */
+  transition: border-color 0.3s ease; /* Adiciona uma transição suave */
+}
+
+.input-busca:focus {
+  border-color: #007bff; /* Cor da borda quando o input está em foco */
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); /* Adiciona um efeito de sombra para destacar */
+}
+
+.botao-adicionar {
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.botao-adicionar:hover {
+  background-color: #0056b3;
+}
+
+/* Sugestões de autocompletar */
+.autocomplete-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  max-height: 150px;
+  overflow-y: auto;
+  position: relative;
+  width: 100%;
+  z-index: 1000;
+}
+
+.autocomplete-list li {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.autocomplete-list li.selected,
+.autocomplete-list li:hover {
+  background-color: #f0f0f0;
+}
+
+/* Lista de Produtos/Serviços Selecionados */
+.produtos-selecionados-container {
+  width: 98%;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 16px;
+  background-color: #fff;
+}
+
+.painel-titulo {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.tabela-produtos {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.tabela-produtos th,
+.tabela-produtos td {
+  padding: 8px;
+  border: 1px solid #ccc;
+  text-align: left;
+}
+
+.tabela-produtos th {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+.tabela-produtos tfoot td {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+
+/* Estilização dos cards (mobile) */
+
+/* Oculta os cards no desktop */
+.cards-mobile {
+  display: none;
+}
+
+.produto-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+  background: #fff;
+}
+
+.produto-card .produto-info {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+}
+
+.produto-card .produto-detalhes {
+  display: flex;
+  justify-content: space-between;
+  color: #555;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.produto-card .responsavel-select {
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.select-responsavel {
+  padding: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.botao-remover {
+  padding: 4px 8px;
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.botao-remover:hover {
+  background-color: #a71d2a;
+}
+
+.selected {
+    background-color: #dcdcdc; /* Cor de fundo para o item selecionado */
+    cursor: pointer;
 }

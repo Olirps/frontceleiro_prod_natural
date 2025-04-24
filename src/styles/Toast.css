@@ -1,21 +1,47 @@
-/* src/styles/Toast.css */
 .toast {
-    position: fixed;
-    top: 20px; /* Ajuste conforme necessário */
-    right: 20px; /* Ajuste conforme necessário */
-    padding: 15px;
-    border-radius: 5px;
-    color: #fff;
-    font-size: 14px;
-    z-index: 2000; /* Ajuste para garantir que o toast esteja acima do modal */
-    transition: opacity 0.5s ease-in-out;
+  position: fixed;
+  top: 20px; /* Distância do topo */
+  right: 20px; /* Distância da direita */
+  background-color: #f44336; /* Cor padrão para erro */
+  color: white;
+  padding: 15px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.toast.success {
+  background-color: #4caf50; /* Cor para sucesso */
+}
+
+.toast.error {
+  background-color: #f44336; /* Cor para erro */
+}
+
+.toast-close-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  margin-left: auto;
+  cursor: pointer;
+}
+
+.toast-close-button:hover {
+  opacity: 0.8;
+}
+
+/* Animação opcional */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px); /* Ajusta para animar a partir de cima */
   }
-  
-  .toast.success {
-    background-color: #28a745; /* Verde para sucesso */
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  .toast.error {
-    background-color: #dc3545; /* Vermelho para erro */
-  }
-  
+}

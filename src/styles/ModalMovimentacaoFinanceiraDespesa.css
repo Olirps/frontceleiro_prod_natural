@@ -1,0 +1,33 @@
+.parcelas-container {
+    display: flex;
+    flex-direction: column;
+    /* Organiza as parcelas em colunas */
+    gap: 10px;
+    /* Espaçamento entre as parcelas */
+}
+
+.parcela {
+    display: flex;
+    justify-content: space-between;
+    /* Distribui os elementos de forma igual entre a linha */
+    align-items: center;
+    /* Alinha os itens verticalmente ao centro */
+    gap: 10px;
+    /* Espaçamento entre os campos na linha */
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.parcela span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Alinha os inputs e labels no centro */
+    gap: 5px;
+}
+
+.parcela label {
+    font-size: 12px;
+}
+

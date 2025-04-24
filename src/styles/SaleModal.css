@@ -1,0 +1,359 @@
+/* SaleModal.css */
+
+/* Estrutura Principal */
+.modal-overlay-sales {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content-sales {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.informacaoPagamento {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5%; /* Espaço pequeno entre seções */
+}
+
+.form-row {
+  display: flex;
+  gap: 20px; /* Espaço entre os fieldsets */
+}
+
+/* Faz os dois primeiros fieldsets ficarem lado a lado */
+.inline-fieldset {
+  flex: 1; /* Ocupa metade do espaço cada */
+  min-width: 0; /* Evita overflow */
+}
+
+/* Faz o fieldset de Serviços/Produtos ocupar 100% */
+fieldset:not(.inline-fieldset) {
+  width: 97%;
+}
+
+/* Estilo para a lista de produtos/serviços */
+.modal-field ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px; /* Altura máxima com scroll */
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.modal-field li {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-field li:last-child {
+  border-bottom: none;
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-content h2 {
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.modal-field-pgto {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Opcional: estilo para a lista de funcionários */
+.modal-field ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.modal-field label {
+  display: block;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.inf-venda {
+  display: flex;
+  flex-direction: line;
+  /* Alinha os itens verticalmente */
+  gap: 10px;
+  /* Adiciona um espaço de 10px entre os elementos */
+}
+
+.modal-field input,
+.modal-field select {
+  width: 95%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.modal-field-pgto select {
+  width: 100%;
+}
+.modal-field-pgto input
+{
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.modal-field input:disabled {
+  background-color: #f9f9f9;
+}
+
+.modal-field button {
+  margin-top: 10px;
+  padding: 10px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.modal-field button:hover {
+  background-color: #0056b3;
+}
+
+.pagamentos {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1%;
+  flex-wrap: wrap; /* Garante que o conteúdo se ajuste em caso de overflow */
+
+}
+
+.pagamento-info {
+  display: flex;
+  justify-content: space-between;
+}
+
+.pagamento-forma {
+  margin-right: 50px; /* Espaço entre o primeiro e o segundo item */
+}
+
+.coluna-pagamentos {
+  flex: 1 1 45%; /* Ajusta as colunas para ocupar até 45% da largura do pai */
+  margin: 10px;
+  box-sizing: border-box;
+  border-radius: 2%;
+}
+
+.conteudo-pagamentos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px; /* Espaçamento entre as colunas */
+}
+
+.desconto {
+  margin-bottom: 1%;
+}
+
+.desconto input {
+  width: 50%;
+  padding: 1px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;}
+
+.conteudo-pagamentos {
+  display: flex;
+  gap: 2rem;
+}
+
+.conteudo-pagamentos ul li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+
+.pagamentos button {
+  margin-top: 10px;
+  padding: 10px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.pagamentos button:hover {
+  background-color: #0056b3;
+}
+
+.pagamento-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+/* Coluna de Pagamentos (Grid) */
+.coluna-pagamentos {
+  flex: 2;
+}
+
+fieldset {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 15px;
+}
+
+
+.modal-actions-sale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+
+.confirm-btn,
+.cancel-btn {
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.confirm-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+}
+
+.confirm-btn:hover {
+  background-color: #0056b3;
+}
+
+.cancel-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+}
+
+.cancel-btn:hover {
+  background-color: #c82333;
+}
+
+.consulta-cliente {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  /* Semi-transparente */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  /* Garante que o modal fique acima de outros elementos */
+  /* Garante que o modal fique acima de outros elementos */
+}
+
+
+.consulta-cliente .modal-content {
+  width: 100%;
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  color: #333;
+}
+
+.cliente-table-wrapper {
+  overflow-y: auto;
+  border: 1px solid #ddd;
+}
+
+.client-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.client-table th,
+.client-table td {
+  text-align: left;
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+.client-table th {
+  background-color: #007bff;
+  color: white;
+}
+
+.client-table td button {
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.client-table td button:hover {
+  background-color: #138496;
+}

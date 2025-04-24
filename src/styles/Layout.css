@@ -37,6 +37,10 @@
   color: #fff;
   text-decoration: none;
   cursor: pointer;
+  display: inline-block; /* Faz o elemento se ajustar ao conteúdo */
+  white-space: nowrap; /* Impede que o texto quebre em várias linhas */
+  margin: 5px; /* Espaçamento entre os itens */
+  flex-shrink: 0; /* Impede que o item encolha */
 }
 
 .menu-item:hover {
@@ -44,7 +48,10 @@
   border-radius: 4px;
 }
 
-#cadastros-submenu, #movimentacao-submenu {
+#cadastros-submenu,
+#movimentacao-submenu,
+#gestao-financeira-submenu,
+#relatorios-submenu {
   display: none;
   position: absolute;
   top: 100%;
@@ -70,37 +77,66 @@
 
 /* Exibe os submenus ao passar o mouse sobre o item pai */
 #cadastros:hover #cadastros-submenu,
-#movimentacao:hover #movimentacao-submenu {
+#movimentacao:hover #movimentacao-submenu,
+#gestao-financeira:hover #gestao-financeira-submenu,
+#relatorios:hover #relatorios-submenu {
   display: block;
 }
+
+#logout-button {
+  padding: 10px;
+  background-color: #ff4b4b;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#logout-button:hover {
+  background-color: #ff1f1f;
+}
+#user-info {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+}
+
+
 
 /* Estilos específicos para a versão móvel */
 @media (max-width: 768px) {
   #header {
-      flex-direction: column;
-      align-items: flex-start;
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   #header-content {
-      width: 100%;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 10px;
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
 
   #menu {
-      display: none; /* Oculta o menu padrão em dispositivos móveis */
-      flex-direction: column;
-      width: 100%;
-      background-color: #007bff;
-      position: absolute;
-      top: 60px; /* Ajusta a posição conforme necessário */
-      left: 0;
-      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    display: none;
+    /* Oculta o menu padrão em dispositivos móveis */
+    flex-direction: column;
+    width: 100%;
+    background-color: #007bff;
+    position: absolute;
+    top: 60px;
+    /* Ajusta a posição conforme necessário */
+    left: 0;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   }
 
   #menu-button {
-    display: block; /* Mostra o botão apenas em dispositivos móveis */
+    display: block;
+    /* Mostra o botão apenas em dispositivos móveis */
     padding: 10px;
     background-color: #0056b3;
     color: #fff;
@@ -109,6 +145,7 @@
     cursor: pointer;
     text-align: center;
     width: 100%;
+    z-index: 1;
   }
 
   #menu-button:hover {
@@ -116,7 +153,8 @@
   }
 
   #menu.show {
-    display: flex; /* Exibe o menu quando ativado */
+    display: flex;
+    /* Exibe o menu quando ativado */
   }
 
   .menu-item {
@@ -138,12 +176,17 @@
     border-radius: 4px;
   }
 
-  #cadastros-submenu, #movimentacao-submenu {
+  #cadastros-submenu,
+  #gestao-financeira-submenu,
+  #movimentacao-submenu,
+  #relatorios-submenu {
     display: none;
-    position: static; /* Remove o posicionamento absoluto */
+    position: static;
+    /* Remove o posicionamento absoluto */
     background-color: #007bff;
     padding: 10px;
-    box-shadow: none; /* Remove a sombra */
+    box-shadow: none;
+    /* Remove a sombra */
     border-radius: 0;
   }
 
@@ -151,15 +194,22 @@
     width: 100%;
     justify-content: flex-start;
     display: flex;
-    flex-direction: column; /* Alinha itens na vertical */
-    gap: 10px; /* Espaçamento entre itens */
-    padding: 10px; /* Adiciona algum espaço ao redor */
-    box-sizing: border-box; /* Garante que padding não afete a largura total */
+    flex-direction: column;
+    /* Alinha itens na vertical */
+    gap: 10px;
+    /* Espaçamento entre itens */
+    padding: 10px;
+    /* Adiciona algum espaço ao redor */
+    box-sizing: border-box;
+    /* Garante que padding não afete a largura total */
   }
 
-  #user-text, #username, #logout-button {
+  #user-text,
+  #username,
+  #logout-button {
     text-align: left;
-    width: 100%; /* Garante que os itens ocupem toda a largura disponível */
+    width: 100%;
+    /* Garante que os itens ocupem toda a largura disponível */
   }
 
   #logout-button {
@@ -174,10 +224,24 @@
   #logout-button:hover {
     background-color: #ff1f1f;
   }
+
+  .contas-pagar-wrapper {
+    position: absolute;
+    top: 200px;
+    left: 10px;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0px 10px 8px rgba(0, 0, 0, 0.1);
+    width: 330px;
+    z-index: -1;
+  }
 }
 
 @media (min-width: 769px) {
   #menu-button {
-    display: none; /* Oculta o botão de menu em dispositivos maiores */
+    display: none;
+    z-index: 9999;
+    /* Oculta o botão de menu em dispositivos maiores */
   }
 }

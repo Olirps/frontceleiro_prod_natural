@@ -1,0 +1,101 @@
+/* PermissionsPage.css */
+
+/* Estilos gerais para a página */
+.permissions-page {
+    padding: 20px;
+    background-color: #f4f4f9;
+}
+
+/* Estilo do card */
+.card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+/* Cabeçalho do card */
+.card-header {
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+/* Conteúdo do card */
+.card-content {
+    padding: 20px;
+}
+
+/* Estilo do formulário */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+}
+
+.checkbox-group label {
+    font-size: 14px;
+}
+
+/* Botão de envio */
+.submit-button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.submit-button:hover {
+    background-color: #0056b3;
+}
+
+/* Estilo da tabela */
+.permissions-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.permissions-table th, .permissions-table td {
+    padding: 12px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+.permissions-table th {
+    background-color: #007bff;
+    color: white;
+}
+
+.permissions-table td {
+    background-color: #f9f9f9;
+}
+
+.permissions-table tr:nth-child(even) {
+    background-color: #f1f1f1;
+}
+
+.permissions-table tr:hover {
+    background-color: #f0f8ff;
+}
