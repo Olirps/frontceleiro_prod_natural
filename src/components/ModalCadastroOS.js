@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getClientes, getProdutos, getAllOSStatus, getVeiculos, getFuncionarios, removerProdutoOS, consultaItensVenda } from '../services/api';
+import { getClientes, getProdutos, registravenda, getAllOSStatus, getVeiculos, getFuncionarios, removerProdutoOS, consultaItensVenda } from '../services/api';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/hasPermission';
@@ -48,6 +48,7 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
     const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
     const [produtoRetirado, setProdutoRetirado] = useState();
     const [formDataTemp, setFormDataTemp] = useState();
+    const [vendaRegistrada, setVendaRegistrada] = useState();
     let [permiteVisualizar, setPermiteVisualizar] = useState(true);
 
     useEffect(() => {
@@ -275,8 +276,7 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
 
     const handleRemover = async () => {
         try {
-            
-            const produtoRemovido = await removerProdutoOS(produtoRetirado,produtosSelecionados);
+            const produtoRemovido = await removerProdutoOS(produtoRetirado, produtosSelecionados);
             setProdutosSelecionados(produtosSelecionados.filter(p => p.produto_id !== produtoRetirado));
             setToast({ message: "Item Removido com Sucesso !", type: "sucess" });
         } catch (error) {
@@ -419,6 +419,7 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
             status_id: statusId,
             observacoes: observacoes,
             veiculo_id: veiculoId,
+            status_id : 2,
             data_criacao: dataAjustada,
             funcionarios: funcionariosSelecionados, // 07-04-2025 removi .map(f => f.value),
             totalPrice: calcularValorTotal(), // Inclui o valor total da OS // 07-05-2025 Ajustado de valor_total para totalPrice para igualar o nome do banco
@@ -426,6 +427,9 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
         try {
 
             if (statusConcluido === 3) {
+                // Se o status for "Concluída", registra a venda
+               /* const registrandoVenda = await registravenda(formData);
+                formData.venda_id = registrandoVenda.data.id;*/
                 setFormDataTemp(formData);
                 setIsSaleModalOpen(true);
             } else {
