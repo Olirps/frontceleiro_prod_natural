@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { getClientes, getProdutos, registravenda, getAllOSStatus, getVeiculos, getFuncionarios, removerProdutoOS, consultaItensVenda } from '../services/api';
+import React, { useState, useEffect, useRef } from 'react';
+import { getClientes, getProdutosVenda, iniciarVenda, getAllOSStatus, getVeiculos, getFuncionarios, removerProdutoOS, consultaItensVenda } from '../services/api';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/hasPermission';
@@ -14,6 +14,8 @@ import ConfirmDialog from '../components/ConfirmDialog'; // Componente para o mo
 
 
 const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, tipo, venda, vendaFinalizada, onVendaFinalizada }) => {
+    const timerRef = useRef(null);
+    const itemRefs = useRef([]);
     const [termoBusca, setTermoBusca] = useState('');
     const [clientes, setClientes] = useState([]);
     const [clienteNome, setClienteNome] = useState('');
@@ -21,7 +23,7 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
     const [osStatuses, setOsStatuses] = useState([]);
     const [funcionariosSelecionados, setFuncionariosSelecionados] = useState([]);
     const [funcionarios, setFuncionarios] = useState([]);
-    const [clienteId, setClienteId] = useState('');
+    const [clienteId, setClienteId] = useState(1);
     const [veiculoId, setVeiculoId] = useState('');
     const [produtoServicoId, setProdutoServicoId] = useState('');
     const [statusId, setStatusId] = useState(tipo === 'venda' ? 3 : 1); // ID do status padrão (1 - Pendente)
@@ -50,6 +52,9 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
     const [formDataTemp, setFormDataTemp] = useState();
     const [vendaRegistrada, setVendaRegistrada] = useState();
     let [permiteVisualizar, setPermiteVisualizar] = useState(true);
+    const [paginaAtual, setPaginaAtual] = useState(1);
+    const [temMaisProdutos, setTemMaisProdutos] = useState(true);
+    const [preVenda, setPreVenda] = useState('');
 
     useEffect(() => {
         // Desabilita visualização se status_id = 3 ou status = 0
@@ -84,15 +89,18 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
     // Carrega dados iniciais
     useEffect(() => {
         const fetchData = async () => {
-
             try {
-                const [produtosServicosData, veiculosData, funcionariosData, osStatusesData] = await Promise.all([
-                    getProdutos(),
+
+                let dataHoje = new Date().toLocaleString().replace(',', '');
+                let DataHora = converterData(dataHoje);
+                setLoading(true);
+                const vendaIniciada = await iniciarVenda({ DataHora });
+                setPreVenda(vendaIniciada.id);
+                const [veiculosData, funcionariosData, osStatusesData] = await Promise.all([
                     getVeiculos(),
                     getFuncionarios(),
                     getAllOSStatus({ ativo: 1 }),
                 ]);
-                setProdutosServicos(produtosServicosData.data);
                 setVeiculos(veiculosData.data);
                 setFuncionarios(funcionariosData.data);
                 setOsStatuses(osStatusesData.data);
@@ -201,24 +209,45 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
 
 
     };
+
     const handleBuscarProduto = (termo) => {
         setBuscaProduto(termo);
 
-        const resultados = produtosServicos.filter((produto) => {
-            const codBarras = produto.cEAN ? String(produto.cEAN).toLowerCase() : "";
-            const codInterno = produto.cod_interno ? String(produto.cod_interno).toLowerCase() : "";
-            const nomeProduto = produto.xProd ? produto.xProd.toLowerCase() : "";
+        // Limpa o timer anterior se o usuário continuar digitando
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+        }
 
-            return (
-                codBarras.includes(termo) ||
-                codInterno.includes(termo) ||
-                nomeProduto.includes(termo.toLowerCase())
-            );
-        });
-
-        setSugestoes(resultados);
+        // Só vai chamar a API depois de 500ms sem digitar
+        timerRef.current = setTimeout(async () => {
+            if (termo.length >= 3) {
+                setPaginaAtual(1);
+                const produtosVenda = await getProdutosVenda({ termo }, 1);
+                setProdutosServicos(produtosVenda);
+                setSugestoes(produtosVenda);
+                setTemMaisProdutos(produtosVenda.length === 30);
+            } else if (termo.length === 0) {
+                setProdutosServicos([]);
+                setSugestoes([]);
+                setBuscaProduto('');
+                setTemMaisProdutos(false);
+            }
+        }, 500); // 500ms de atraso
     };
 
+
+
+    const handleCarregarMais = async () => {
+        const proximaPagina = paginaAtual + 1;
+        const novosProdutos = await getProdutosVenda({ termo: buscaProduto }, proximaPagina);
+
+        setProdutosServicos(prev => [...prev, ...novosProdutos]);
+        setSugestoes(prev => [...prev, ...novosProdutos]);
+        setPaginaAtual(proximaPagina);
+
+        // Se não trouxe 30 produtos, significa que já acabou
+        setTemMaisProdutos(novosProdutos.length === 30);
+    };
 
     const handleSelecionarProduto = (produto) => {
         if (produto) {
@@ -404,7 +433,9 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
         let dataAjustada = converterData(dataHoje);
 
         // 07-04-2025 alterado termoBusca para clienteNome 
+        // 29-04-2025 adicionado o campo preVenda para o objeto formData
         const formData = {
+            preVenda: preVenda,
             cliente_id: clienteId,
             cliente_nome: clienteNome ? clienteNome : termoBusca,
             products: produtosSelecionados.map(p => ({
@@ -419,17 +450,16 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
             status_id: statusId,
             observacoes: observacoes,
             veiculo_id: veiculoId,
-            status_id : 2,
+            status_id: 2,
             data_criacao: dataAjustada,
             funcionarios: funcionariosSelecionados, // 07-04-2025 removi .map(f => f.value),
             totalPrice: calcularValorTotal(), // Inclui o valor total da OS // 07-05-2025 Ajustado de valor_total para totalPrice para igualar o nome do banco
         };
         try {
-
             if (statusConcluido === 3) {
                 // Se o status for "Concluída", registra a venda
-               /* const registrandoVenda = await registravenda(formData);
-                formData.venda_id = registrandoVenda.data.id;*/
+                /* const registrandoVenda = await registravenda(formData);
+                 formData.venda_id = registrandoVenda.data.id;*/
                 setFormDataTemp(formData);
                 setIsSaleModalOpen(true);
             } else {
@@ -446,12 +476,10 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
         try {
             let dataHoje = new Date().toLocaleString().replace(',', '');
             let dataAjustada = converterData(dataHoje);
-
             dadosPagamento.tipoVenda = 'Venda';
             dadosPagamento.dataVenda = dataAjustada;
             dadosPagamento.status = 0;
             dadosPagamento.formapgto_id = dadosPagamento.id
-
             await onSubmit(dadosPagamento);
             setToast({ message: "Venda registrada com sucesso!", type: "success" });
         } catch (error) {
@@ -592,21 +620,37 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
                         </div>)}
 
                         {/* Sugestões de autocompletar */}
-                        {sugestoes.length > 0 && (
+                        {(sugestoes && sugestoes.length > 0) && (
                             <ul className="autocomplete-list">
                                 {sugestoes.map((produto, index) => (
                                     <li
                                         key={produto.id}
                                         onClick={() => handleSelecionarProduto(produto)}
                                         onMouseEnter={() => setSelectedIndex(index)}
+                                        ref={el => (itemRefs.current[index] = el)} // <- aqui
                                         className={selectedIndex === index ? 'selected' : ''}
                                     >
                                         {produto.xProd} - {formatarMoedaBRL(produto.vlrVenda)}
                                     </li>
                                 ))}
+
+                                {/* Botão carregar mais no final da lista */}
+                                {temMaisProdutos && (
+                                    <li
+                                        onClick={handleCarregarMais}
+                                        style={{
+                                            textAlign: 'center',
+                                            cursor: 'pointer',
+                                            padding: '10px',
+                                            color: '#007bff',
+                                            fontWeight: 'bold',
+                                        }}
+                                    >
+                                        Carregar mais...
+                                    </li>
+                                )}
                             </ul>
                         )}
-
                         {/* Lista de Produtos/Serviços Selecionados */}
                         <div className="produtos-selecionados-container">
                             <h4 className="painel-titulo">Produtos/Serviços Selecionados</h4>
@@ -628,7 +672,7 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
                                             <tr key={`${produto.id}-${index}`}>
                                                 <td>{produto.xProd}</td>
                                                 <td>{os?.tipo !== 'venda' ? produto.quantidade : produto.quantity}</td>
-                                                <td>{formatarMoedaBRL(edit ? (os?.tipo !== 'venda' ? produto.valor_unitario : produto.vlrUnitario) : produto.vlrVenda)}</td>
+                                                <td>{formatarMoedaBRL(edit ? (os?.tipo !== 'venda' ? produto.valor_unitario : produto.vlrUnitario) : produto.valor_unitario)}</td>
                                                 <td>{formatarMoedaBRL(os?.tipo !== 'venda' ? (produto.tipo === 'servico' ? produto.vlrVenda : produto.valorTotal) : produto.vlrVenda)}</td>
                                                 {funcionariosSelecionados.length > 1 && produtosSelecionados.length > 1 && (
                                                     <td>

@@ -166,6 +166,7 @@ const SaleModal = ({
       // 05-04-2025 Alterado produtos_servicos para products para ficar com o comportamento correto ao Lançar O.S.
       // 07-05-2025 Ajustado de valor_total para totalPrice para igualar o nome do banco
       await onSubmit({
+        preVenda: saleData.preVenda || null,
         cliente,
         cliente_id,
         veiculo_id,

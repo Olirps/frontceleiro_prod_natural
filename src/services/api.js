@@ -407,6 +407,7 @@ export const updateSubGrupoProduto = (id, produto) => {
   return api.put(`/subgrupoproduto/${id}`, produto);
 };
 
+
 export const getSubGrupoProdutoById = async (id) => {
   return api.get(`/subgrupoproduto/${id}`);
 };
@@ -418,6 +419,18 @@ export const deleteSubGrupoProduto = async (id) => {
 
 
 // Funções para gerenciar produtos
+export const getProdutosVenda = async (filters = {}, page = 1) => {
+  try {
+    const response = await api.get('/produtos-venda', {
+      params: { ...filters, page },
+    });
+    return response.data; // Retorna só os dados
+  } catch (error) {
+    console.error('Erro ao buscar produtos da venda:', error);
+    throw error; // Deixa o erro "subir" para quem chamou tratar
+  }
+};
+
 export const getProdutos = async (filters = {}) => {
   const response = await api.get('/produtos', { params: filters });
   return response;
@@ -465,6 +478,10 @@ export const getMunicipiosIBGE = async (id, codMunIBGE) => {
   return api.get(`/municipios/mun/${id}`, codMunIBGE);
 };
 
+export const getMunicipioById = async (id) => {
+  return api.get(`/municipios/id/${id}`);
+};
+
 export const getUFIBGE = async (codIBGE) => {
   return api.get(`/uf/uf/${codIBGE}`);
 };
@@ -484,6 +501,16 @@ export const getFormasPagamento = async (filtro = {}) => {
 
 
 // Vendas
+export const iniciarVenda = async (venda) => {
+  try {
+    const response = await api.post('/vendas-iniciar', venda);
+    return response.data; // Retorna os dados da venda iniciada
+  } catch (error) {
+    console.error('Erro ao iniciar venda:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+}
+
 export const registravenda = async (venda) => {
   return api.post('/vendas', venda);
 };
@@ -508,6 +535,23 @@ export const getVendaById = async (id) => {
     throw error; // Lança o erro para tratamento em outro lugar
   }
 };
+
+export const findByIdXml = async (id) => {
+  try {
+    const response = await api.get(`/xml/${id}`);
+    const xml = typeof response.data === 'string' ? response.data.trim() : '';
+
+    if (!xml.startsWith('<NFe') || !xml.endsWith('</NFe>')) {
+      console.warn('⚠️ XML com estrutura inesperada:', JSON.stringify(xml.slice(0, 200)));
+    }
+
+    return xml;
+  } catch (error) {
+    console.error('Erro ao buscar XML por ID:', error);
+    throw error;
+  }
+};
+
 
 export const updateVenda = async (id) => {
   try {
@@ -651,12 +695,12 @@ export const aprovarOS = async (id, os) => {
   }
 };
 
-export const removerProdutoOS = async (id,os) => {
+export const removerProdutoOS = async (id, os) => {
   if (!id) {
     throw new Error('ID');
   }
   try {
-    const response = await api.put(`/osremove_item/${id}`,os);
+    const response = await api.put(`/osremove_item/${id}`, os);
     return response;
   } catch (error) {
     console.error('Erro ao aprovar O.S. :', error);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getVendas, cancelaVenda, getVendaById, updateVenda, addOS, registravenda, getFormasPagamento } from '../services/api';
+import { getVendas, cancelaVenda, getVendaById, updateVenda, findByIdXml, registravenda, getFormasPagamento, getEmpresaById } from '../services/api';
 import '../styles/Vendas.css';
 import ModalCliente from '../components/ModalCadastraCliente';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
@@ -12,6 +12,7 @@ import { hasPermission } from '../utils/hasPermission'; // Certifique-se de impo
 import ModalCadastroOS from '../components/ModalCadastroOS'; // Componente para o modal de cadastro
 import vendaRealizadas from '../relatorios/vendaRealizadas'; // Importe a função de geração de PDF
 import imprimeVenda from '../utils/impressaovenda';
+import { replace } from 'react-router-dom';
 
 
 
@@ -181,7 +182,17 @@ function Vendas() {
   const handleAddVenda = async (e) => {
     try {
       const username = localStorage.getItem('username');
+      const empresa = await getEmpresaById(1);
+
+
+      const pagamentos = e.pagamentos.map((pagamento) => ({
+        formaId: pagamento.forma,
+        formaPagamentoNome: pagamento.formaPgtoNome,
+        vlrPago: pagamento.vlrPago,
+      }));
+
       e.login = username;
+      e.empresa = empresa.data;
       await registravenda(e);
       setToast({ message: "Venda cadastrada com sucesso!", type: "success" });
       const response = await getVendas();
@@ -303,7 +314,7 @@ function Vendas() {
 
   const handleSubmitLancamento = async (formElements) => {
     let dataHoje = new Date().toLocaleString().replace(',', '');
-    let dataAjustada = converterData(dataHoje)
+    let dataAjustada = converterData(dataHoje);
     // Extrai os valores dos elementos do formulário
     const motivo_cancelamento = formElements.motivo.value;
     const vendaId = formElements.idVenda;
@@ -355,6 +366,40 @@ function Vendas() {
     } catch (error) {
       console.error("Erro ao buscar venda:", error);
       setToast({ message: "Erro ao carregar venda", type: "error" });
+    }
+  };
+
+  const handleEmitirNFCe = async (vendaId) => {
+    try {
+      // 1. Recebe o XML como string do backend
+      const xml = await findByIdXml(vendaId.vendaId);
+
+      // 2. Verifica se o XML resultante é válido
+      if (!xml.startsWith('<NFe') || !xml.endsWith('</NFe>')) {
+        throw new Error('XML formatado incorretamente após ajuste');
+      }
+
+      // 3. Envia APENAS a string diretamente no body
+      const res = await fetch("http://localhost:5000/api/EmitirNFe/emitir", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", // Mantém como JSON
+        },
+        body: JSON.stringify(xml) // Envia a string pura, sem encapsular em objeto
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Erro na emissão');
+      }
+
+      setToast({ message: "NF-e enviada para processamento!", type: "success" });
+    } catch (error) {
+      console.error("Erro na emissão:", error);
+      setToast({
+        message: `Falha: ${error.message || 'Erro desconhecido'}`,
+        type: "error"
+      });
     }
   };
 
@@ -509,6 +554,15 @@ function Vendas() {
                               title="Impressão"
                             >
                               🖨️
+                            </button>
+                          </div>
+                          <div>
+                            <button
+                              onClick={() => handleEmitirNFCe(venda)} // Você vai implementar essa função
+                              className="button"
+                              title="Emitir NFC-e"
+                            >
+                              📤
                             </button>
                           </div>
 
