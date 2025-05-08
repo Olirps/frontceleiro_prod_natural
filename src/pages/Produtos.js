@@ -113,6 +113,8 @@ function Produtos() {
             uCom: e.uCom,
             qCom: e.qCom,
             NCM: e.ncm,
+            CFOP: e.cfop,
+            CEST: e.cest,
             vUnCom: Number(e.vUnCom),
             vlrVenda: Number(e.vlrVenda),
             vlrVendaAtacado: Number(e.vlrVendaAtacado),
@@ -165,6 +167,8 @@ function Produtos() {
             qCom: e.qCom,
             vUnCom: Number(e.vUnCom),
             NCM: e.ncm,
+            CFOP: e.cfop,
+            CEST: e.cest,
             vlrVenda: Number(e.vlrVenda),
             vlrVendaAtacado: Number(e.vlrVendaAtacado),
             pct_servico: Number(e.percentual)

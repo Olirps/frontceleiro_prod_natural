@@ -15,6 +15,8 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
   const [qCom, setqCom] = useState('');
   const [vUnCom, setvUnCom] = useState('');
   const [ncm, setNcm] = useState('');
+  const [cfop, setCfop] = useState('');
+  const [cest, setCest] = useState('');
   const [vlrVenda, setVlrVenda] = useState('');
   const [percentual, setPercentual] = useState('');
   const [vlrVendaAtacado, setvlrVendaAtacado] = useState('');
@@ -37,6 +39,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
     identificacao: true,
     precos: false,
     custoVendaPercentual: false,
+    contabeis: false,
   });
 
   useEffect(() => {
@@ -51,6 +54,8 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
       setqCom(produto.qCom || '');
       setvUnCom(produto.vUnCom || '');
       setNcm(produto.NCM || '');
+      setCfop(produto.CFOP || '');
+      setCest(produto.CEST || '');
       setVlrVenda(produto.vlrVenda || '');
       setvlrVendaAtacado(produto.vlrVendaAtacado || '');
       setmargemSobreVlrCusto(produto.margemSobreVlrCusto || '');
@@ -66,6 +71,8 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
       setuCom('');
       setvUnCom('');
       setNcm('');
+      setCfop('');
+      setCest('');
       setVlrVenda('');
       setvlrVendaAtacado('');
       setmargemSobreVlrCusto('');
@@ -190,6 +197,8 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
         vlrVenda,
         margemSobreVlrCusto,
         ncm,
+        cfop,
+        cest,
         vlrVendaAtacado,
         margemSobreVlrCustoAtacado,
         percentual
@@ -315,19 +324,58 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
                         disabled={!permiteEditar}
                       />
                     </div>
-                    <div>
-                      <label htmlFor="ncm">NCM</label>
-                      <input
-                        className="input-geral"
-                        type="text"
-                        id="ncm"
-                        name="ncm"
-                        value={ncm}
-                        onChange={(e) => { setNcm(e.target.value) }} // Atualiza o estado do nome
-                        maxLength="150"
-                        disabled={!permiteEditar}
-                      />
-                    </div>
+                  </div>
+                </div>
+              )}
+            </fieldset>
+            {/* Seção de Dados Contábeis */}
+            <fieldset>
+              <legend>
+                Dados Contábeis
+                <button
+                  type="button"
+                  onClick={() => toggleSection('contabeis')}
+                  className="expand-button"
+                >
+                  {isExpanded.contabeis ? '-' : '+'}
+                </button>
+              </legend>
+              {isExpanded.contabeis && (
+                <div>
+                  <div className="form-line">
+                    <label htmlFor="ncm">NCM</label>
+                    <input
+                      className="input-geral"
+                      type="text"
+                      id="ncm"
+                      name="ncm"
+                      value={ncm}
+                      onChange={(e) => { setNcm(e.target.value) }} // Atualiza o estado do nome
+                      maxLength="150"
+                      disabled={!permiteEditar}
+                    />
+                  </div>
+                  <div className="form-line">
+                    <label htmlFor="cfop">CFOP</label>
+                    <input
+                      className="input-geral"
+                      type="text"
+                      id="cfop"
+                      name="cfop"
+                      value={cfop}
+                      onChange={(e) => { setCfop(e.target.value) }}
+                    />
+                  </div>
+                  <div className="form-line">
+                    <label htmlFor="cest">CEST</label>
+                    <input
+                      className="input-geral"
+                      type="text"
+                      id="cest"
+                      name="cest"
+                      value={cest}
+                      onChange={(e) => { setCest(e.target.value) }}
+                    />
                   </div>
                 </div>
               )}
