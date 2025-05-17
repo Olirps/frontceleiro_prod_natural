@@ -511,6 +511,17 @@ export const iniciarVenda = async (venda) => {
   }
 }
 
+export const retornaXMLAssinado = async (id, xmlEnviado, xmlRespostaSefaz) => {
+  return api.put(`/returnoxmlassinado/${id}`, {
+    xmlEnviado,
+    xmlRespostaSefaz
+  }, {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+};
+
 export const registravenda = async (venda) => {
   return api.post('/vendas', venda);
 };
@@ -536,6 +547,16 @@ export const getVendaById = async (id) => {
   }
 };
 
+export const statusNfe = async (id) => {
+  try {
+    const response = await api.get(`/nfe-status/${id}`);
+    return response.data; // Retorna os dados do status
+  } catch (error) {
+    console.error('Erro ao buscar status NFe por ID:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+}
+
 export const findByIdXml = async (id) => {
   try {
     const response = await api.get(`/xml/${id}`);
@@ -551,6 +572,32 @@ export const findByIdXml = async (id) => {
     throw error;
   }
 };
+
+export const cancelaNf = async (id, motivo) => {
+  try {
+    const response = await api.post(`/cancela-nf/${id}`, { motivo });
+
+    return response;
+  } catch (error) {
+    console.error('Erro ao buscar XML por ID:', error);
+    throw error;
+  }
+};
+
+export const geraXml = async (id) => {
+  try {
+    const response = await api.get(`/geraxml/${id}`, {
+      validateStatus: function (status) {
+        return true; // Aceita qualquer status e permite você tratar no .status depois
+      }
+    });
+    return response;
+  } catch (error) {
+    console.error('Erro ao buscar XML por ID:', error);
+    throw error;
+  }
+};
+
 
 
 export const updateVenda = async (id) => {

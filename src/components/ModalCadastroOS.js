@@ -28,6 +28,7 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
     const [produtoServicoId, setProdutoServicoId] = useState('');
     const [statusId, setStatusId] = useState(tipo === 'venda' ? 3 : 1); // ID do status padrão (1 - Pendente)
     const [observacoes, setObservacoes] = useState('');
+    const [chaveAcesso, setChaveAcesso] = useState('');
     const [veiculos, setVeiculos] = useState([]);
     const [veiculoNome, setVeiculoNome] = useState('');
     const [produtosSelecionados, setProdutosSelecionados] = useState([]);
@@ -149,6 +150,7 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
                     console.error("Erro ao buscar itens da venda:", error);
                 }
                 setClienteNome(os.cliente || 'Não Informado');
+                setChaveAcesso(os.chave_acesso || '');
             }
         };
 
@@ -764,6 +766,17 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
                             className="os-form-textarea"
                             maxLength="500"
                         />
+                    </div>
+                    <div className="os-form-group">
+                        <label htmlFor="chaveAcesso" className="os-form-label">Chave de Acesso NFe</label>
+                        <input
+                            type="text"
+                            id="chaveAcesso"
+                            name="chaveAcesso"
+                            value={chaveAcesso}
+                            onChange={(e) => setChaveAcesso(e.target.value)}
+                            disabled={!permiteEditar}
+                            className="os-form-input" />
                     </div>
                     {/* Botão de Salvar */}
                     <div className="os-form-actions">

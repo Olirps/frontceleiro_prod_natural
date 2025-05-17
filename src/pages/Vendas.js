@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { getVendas, cancelaVenda, getVendaById, updateVenda, findByIdXml, registravenda, getFormasPagamento, getEmpresaById } from '../services/api';
+import { getVendas, cancelaVenda, getVendaById, updateVenda, findByIdXml, registravenda, getFormasPagamento, getEmpresaById, statusNfe, retornaXMLAssinado, cancelaNf, geraXml } from '../services/api';
 import '../styles/Vendas.css';
 import ModalCliente from '../components/ModalCadastraCliente';
+import ComunicacaoSEFAZ from '../components/ComunicacaoSEFAZ';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
 import Toast from '../components/Toast';
 import jsPDF from 'jspdf';
@@ -13,7 +14,7 @@ import ModalCadastroOS from '../components/ModalCadastroOS'; // Componente para 
 import vendaRealizadas from '../relatorios/vendaRealizadas'; // Importe a função de geração de PDF
 import imprimeVenda from '../utils/impressaovenda';
 import { replace } from 'react-router-dom';
-
+import ConfirmDialog from '../components/ConfirmDialog'; // Componente para o modal de confirmação
 
 
 
@@ -37,7 +38,10 @@ function Vendas() {
   const [tipoPagamento, setTipoPagamento] = useState('');
   const [tiposPagamento, setTiposPagamento] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+
   const [isModalModalCancelaVendaOpen, setIsModalCancelaVendaOpen] = useState(false);
+  const [isComunicacaoSefazOpen, setIsComunicacaoSEFAZOpen] = useState(false);
   const [isVendaFinalizada, setIsVendaFinalizada] = useState(false);
   const [somarLancamentosManuais, setSomarLancamentosManuais] = useState(false);
   const { permissions } = useAuth();
@@ -99,6 +103,10 @@ function Vendas() {
   useEffect(() => {
     fetchVendas();
   }, []);
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
 
   const handleSearch = async () => {
     try {
@@ -322,14 +330,48 @@ function Vendas() {
       motivo_cancelamento: motivo_cancelamento,
       dataCancelamento: dataAjustada
     };
-
     try {
-      const response = await cancelaVenda(vendaId, lancamentoData);
-      if (response.status === 200) {
-        setToast({ message: 'Registrado(s) cancelado(s) com sucesso!', type: 'success' });
-        setIsModalCancelaVendaOpen(false);
-        fetchVendas();
-        console.log("Lançamento registrado com sucesso:", lancamentoData);
+      const status = await statusNfe(vendaId);
+      if (status.response === 'ANDAMENTO') {
+        const response = await cancelaVenda(vendaId, lancamentoData);
+        if (response.status === 200) {
+          setToast({ message: 'Registrado(s) cancelado(s) com sucesso!', type: 'success' });
+          setIsModalCancelaVendaOpen(false);
+          fetchVendas();
+        } else {
+          setToast({ message: 'Erro ao cancelar venda!', type: 'error' });
+        }
+      } else {
+        const response = await cancelaNf(vendaId, motivo_cancelamento);
+        if (response.status === 200) {
+          try {
+            const res = await fetch(`http://3.13.205.247:5000/api/AssinaturaController_A1/assinar-xml?cnpj=45393325000110&tipoEvento=cancel`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "text/xml" // Define o tipo de conteúdo como XML
+              },
+              body: response.data // Envia o XML limpo no corpo da requisição
+            });
+
+            if (!res.ok) {
+              throw new Error(`Erro na requisição: ${response.status} ${response.statusText}`);
+            } else {
+              const xmlAssinado = await res.text();
+
+              const response = await cancelaVenda(vendaId, lancamentoData);
+
+              setToast({ message: 'Registrado(s) cancelado(s) com sucesso!', type: 'success' });
+              setIsModalCancelaVendaOpen(false);
+              fetchVendas();
+            }
+          } catch (error) {
+            setToast({ message: 'Erro ao cancelar venda!', type: 'error' });
+            console.error("Erro ao registrar lançamento:", error);
+          } finally {
+            setIsModalCancelaVendaOpen(false);
+          }
+        }
+
       }
     } catch (error) {
       setToast({ message: 'Erro ao cancelar venda!', type: 'error' });
@@ -369,40 +411,53 @@ function Vendas() {
     }
   };
 
-  const handleEmitirNFCe = async (vendaId) => {
-    try {
-      // 1. Recebe o XML como string do backend
-      const xml = await findByIdXml(vendaId.vendaId);
-
-      // 2. Verifica se o XML resultante é válido
-      if (!xml.startsWith('<NFe') || !xml.endsWith('</NFe>')) {
-        throw new Error('XML formatado incorretamente após ajuste');
-      }
-
-      // 3. Envia APENAS a string diretamente no body
-      const res = await fetch("http://localhost:5000/api/EmitirNFe/emitir", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json", // Mantém como JSON
-        },
-        body: JSON.stringify(xml) // Envia a string pura, sem encapsular em objeto
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Erro na emissão');
-      }
-
-      setToast({ message: "NF-e enviada para processamento!", type: "success" });
-    } catch (error) {
-      console.error("Erro na emissão:", error);
-      setToast({
-        message: `Falha: ${error.message || 'Erro desconhecido'}`,
-        type: "error"
-      });
+  const handleConfirmacaoEmitirNFe = (venda_id) => {
+    if (!hasPermission(permissions, 'emitir-nf', 'insert')) {
+      setToast({ message: "Você não tem permissão para Emitir Nota Fiscal.", type: "error" });
+      return; // Impede a abertura do modal
+    } else {
+      setIdVenda(venda_id);
+      setIsConfirmationModalOpen(true);
     }
+  }
+  const handleCancel = () => {
+    setIsConfirmationModalOpen(false); // Fechar o modal sem realizar nada
   };
 
+  const handleEmitirNFCe = async () => {
+
+    setIsConfirmationModalOpen(false);
+    setIsComunicacaoSEFAZOpen(true);
+
+    try {
+      const response = await geraXml(idVenda.vendaId);
+      // supondo que geraxml faça a requisição fetch e retorne a resposta completa
+      if (response.status === 200) {
+        setToast({
+          message: "NF-e autorizada com sucesso!",
+          type: "success",
+        });
+      } else if (response.status === 412) {
+        const data = await response.data;
+        setToast({
+          message: `NF-e rejeitada: ${data.motivo || "Motivo não informado"}`,
+          type: "error",
+        });
+      } else {
+        setToast({
+          message: "Erro inesperado na emissão da NF-e.",
+          type: "error",
+        });
+      }
+    } catch (error) {
+      setToast({
+        message: `Erro na comunicação: ${error.message}`,
+        type: "error",
+      });
+    } finally {
+      setIsComunicacaoSEFAZOpen(false);
+    }
+  };
 
   function converterData(dataString) {
     const partes = dataString.split(/[\/ :]/); // Divide a string em dia, mês, ano, hora, minuto e segundo
@@ -558,12 +613,13 @@ function Vendas() {
                           </div>
                           <div>
                             <button
-                              onClick={() => handleEmitirNFCe(venda)} // Você vai implementar essa função
+                              onClick={() => handleConfirmacaoEmitirNFe(venda)} // Você vai implementar essa função
                               className="button"
                               title="Emitir NFC-e"
                             >
                               📤
                             </button>
+                            <ComunicacaoSEFAZ isOpen={isComunicacaoSefazOpen} onClose={handleCloseModal} />
                           </div>
 
                         </div>
@@ -629,6 +685,14 @@ function Vendas() {
             idVenda={idVenda}
           />
         )}
+        {/* Modal de Confirmação */}
+        <ConfirmDialog
+          isOpen={isConfirmationModalOpen}
+          onClose={handleCancel}
+          onConfirm={() => handleEmitirNFCe()}
+          onCancel={() => setIsConfirmationModalOpen(false)}
+          message="Você tem certeza que deseja Emitir a NFe desta venda ?"
+        />
       </>
 
       {toast.message && <Toast type={toast.type} message={toast.message} />}
