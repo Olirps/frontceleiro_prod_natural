@@ -1,58 +1,92 @@
-// utils/generatePdf.js
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-const vendaRealizadas = (filteredPagamentos, totalPreco, somarLancamentosManuais) => {
+const vendaRealizadas = (filteredPagamentos, totalPreco, totalDesconto, somarLancamentosManuais) => {
     const doc = new jsPDF();
 
-    // Adiciona um título
     const tituloRelatorio = somarLancamentosManuais ? 'Relatório de Vendas/Lançamentos' : 'Relatório de Vendas';
     doc.text(tituloRelatorio, 14, 20);
 
-    // Configura as colunas da tabela
-    const tableColumn = [
-        'ID',
-        'Cliente',
-        'Total',
-        'Data de Criação'
-    ];
+    const tableColumn = ['ID', 'Cliente', 'Valor Pago', 'Desconto', 'Data de Criação'];
 
-    let startY = 30; // Posição inicial da primeira tabela
+    let startY = 30;
 
-    // Agrupa vendas por forma de pagamento
-    const vendasPorTipo = filteredPagamentos.reduce((acc, venda) => {
-        const tipo = venda.formaPagamento;
-        if (!acc[tipo]) {
-            acc[tipo] = [];
+    const pagamentosAgrupados = {};
+
+    for (const venda of filteredPagamentos) {
+        // Verifica se é um lançamento manual (sem formasPagamento)
+        const formasPagamento = venda.formasPagamento || [];
+
+        // Se for um lançamento manual e o modo está ativado
+        if (somarLancamentosManuais && formasPagamento.length === 0 && venda.tipo) {
+            const forma = venda.tipo.toLowerCase() === 'crédito' ? 'Lançamento Crédito' : 'Lançamento Débito';
+
+            if (!pagamentosAgrupados[forma]) {
+                pagamentosAgrupados[forma] = [];
+            }
+
+            pagamentosAgrupados[forma].push({
+                id: venda.id || '-',
+                cliente: venda.descricao || 'Lançamento Manual',
+                data: new Date(venda.data || venda.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
+                valor: parseFloat(venda.valor || 0),
+                desconto: 0
+            });
+
+            continue;
         }
-        acc[tipo].push(venda);
-        return acc;
-    }, {});
 
-    // Para cada tipo de venda, cria uma tabela separada
-    Object.entries(vendasPorTipo).forEach(([formaPagamento, vendas]) => {
-        // Adiciona o cabeçalho do grupo
+        // Processamento normal das vendas com formas de pagamento
+        const descontoTotal = parseFloat(venda.desconto || 0);
+        const totalVenda = formasPagamento.reduce((acc, p) => acc + parseFloat(p.vlrPago || 0), 0);
+
+        for (const pagamento of formasPagamento) {
+            const forma = pagamento.formaPagamento;
+
+            if (forma.toLowerCase() === 'desconto') continue;
+
+            const valorPago = parseFloat(pagamento.vlrPago || 0);
+            const proporcao = totalVenda ? valorPago / totalVenda : 0;
+            const descontoProporcional = descontoTotal * proporcao;
+
+            if (!pagamentosAgrupados[forma]) {
+                pagamentosAgrupados[forma] = [];
+            }
+
+            pagamentosAgrupados[forma].push({
+                id: venda.id || venda.vendaId,
+                cliente: venda.cliente || venda.descricao || 'Não Informado',
+                data: new Date(venda.data || venda.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
+                valor: valorPago,
+                desconto: descontoProporcional
+            });
+        }
+    }
+
+    // Criar uma tabela por forma de pagamento
+    for (const [formaPagamento, registros] of Object.entries(pagamentosAgrupados)) {
         doc.text(`Forma de Pagamento: ${formaPagamento}`, 14, startY);
         startY += 10;
 
-        // Prepara as linhas da tabela para este grupo
-        const tableRows = vendas.map(venda => [
-            venda.vendaId,
-            venda.cliente || venda.descricao || 'Não Informado',
-            new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(venda.valorPago),
-            new Date(venda.dataVenda).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
+        const tableRows = registros.map(r => [
+            r.id,
+            r.cliente,
+            new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(r.valor),
+            new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(r.desconto),
+            r.data
         ]);
 
-        // Calcula subtotal para o grupo
-        const subtotal = vendas.reduce((sum, venda) => sum + venda.valorPago, 0);
+        const subtotal = registros.reduce((acc, r) => acc + r.valor, 0);
+        const subtotalDesconto = registros.reduce((acc, r) => acc + r.desconto, 0);
+
         tableRows.push([
             'Subtotal:',
             '',
             new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(subtotal),
+            new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(subtotalDesconto),
             ''
         ]);
 
-        // Adiciona a tabela ao PDF
         doc.autoTable({
             head: [tableColumn],
             body: tableRows,
@@ -60,19 +94,22 @@ const vendaRealizadas = (filteredPagamentos, totalPreco, somarLancamentosManuais
             margin: { top: 10 }
         });
 
-        // Atualiza a posição Y para a próxima tabela
         startY = doc.lastAutoTable.finalY + 10;
-    });
+    }
 
-    // Adiciona o total geral no final
+    // Total geral
     doc.autoTable({
-        head: [['Total Geral:', '', new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPreco), '']],
+        head: [[
+            'Total Geral:',
+            '',
+            new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPreco),
+            new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalDesconto),
+            ''
+        ]],
         startY: startY,
-        margin: { top: 10 },
         styles: { fontStyle: 'bold' }
     });
 
-    // Salva o PDF
     doc.save('relatorio_vendas.pdf');
 };
 

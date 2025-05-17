@@ -34,6 +34,7 @@ function Vendas() {
   const [currentPage, setCurrentPage] = useState(1);
   const [toast, setToast] = useState({ message: '', type: '' });
   const [pagamentosDetalhados, setPagamentosDetalhados] = useState([]);
+  const [pagamentosComTransacoes, setPagamentosComTransacoes] = useState([]);
   let [filteredPagamentos, setFilteredPagamentos] = useState([]);
   const [tipoPagamento, setTipoPagamento] = useState('');
   const [tiposPagamento, setTiposPagamento] = useState([]);
@@ -61,27 +62,29 @@ function Vendas() {
 
       // Processar todas as transações
       const pagamentos = data.flatMap((venda) => {
-        // Caso tenha formasPagamento, processa normalmente
+        let valorPago = 0;
+        let descontoTotal = 0;
+
         if (venda.formasPagamento) {
-          return venda.formasPagamento.map((pagamento) => ({
-            vendaId: venda.id,
-            clienteId: venda.cliente,
-            cliente: venda.cliente || 'Não Informado',
-            tipo: venda.tipo,
-            dataVenda: venda.data,
-            formaPagamento: pagamento.formaPagamento,
-            valorPago: parseFloat(pagamento.vlrPago),
-          }));
+          venda.formasPagamento.forEach(pagamento => {
+            if (pagamento.formaPagamento.toLowerCase() === 'desconto') {
+              descontoTotal += parseFloat(pagamento.vlrPago);
+            } else {
+              valorPago += parseFloat(pagamento.vlrPago);
+            }
+          });
+        } else {
+          valorPago += parseFloat(venda.valor || 0); // caso não tenha formasPagamento
         }
 
-        // Caso seja débito ou crédito, processa separadamente
         return {
           vendaId: venda.id,
           clienteId: venda.cliente || null,
           cliente: venda.cliente || venda.descricao || 'Não Informado',
           dataVenda: venda.data,
-          formaPagamento: venda.tipo, // Aqui o tipo será "débito" ou "crédito"
-          valorPago: parseFloat(venda.valor || 0), // Usa o valor diretamente
+          tipo: venda.tipo,
+          valorPago,
+          descontoTotal
         };
       });
 
@@ -137,30 +140,31 @@ function Vendas() {
 
       // Enviar requisição para o backend
       const response = await getVendas(params);
+      setPagamentosComTransacoes(response.data.transacoes);
+      const pagamentos = response.data.transacoes.map((venda) => {
+        let valorPago = 0;
+        let descontoTotal = 0;
 
-      // Processar todas as transações
-      const pagamentos = response.data.transacoes.flatMap((venda) => {
-        // Caso tenha formasPagamento, processa normalmente
         if (venda.formasPagamento) {
-          return venda.formasPagamento.map((pagamento) => ({
-            vendaId: venda.id,
-            clienteId: venda.cliente,
-            cliente: venda.cliente || 'Não Informado',
-            tipo: venda.tipo,
-            dataVenda: venda.data,
-            formaPagamento: pagamento.formaPagamento,
-            valorPago: parseFloat(pagamento.vlrPago),
-          }));
+          venda.formasPagamento.forEach(pagamento => {
+            if (pagamento.formaPagamento.toLowerCase() === 'desconto') {
+              descontoTotal += parseFloat(pagamento.vlrPago);
+            } else {
+              valorPago += parseFloat(pagamento.vlrPago);
+            }
+          });
+        } else {
+          valorPago += parseFloat(venda.valor || 0); // caso não tenha formasPagamento
         }
 
-        // Caso seja débito ou crédito, processa separadamente
         return {
           vendaId: venda.id,
           clienteId: venda.cliente || null,
           cliente: venda.cliente || venda.descricao || 'Não Informado',
           dataVenda: venda.data,
-          formaPagamento: venda.tipo, // Aqui o tipo será "débito" ou "crédito"
-          valorPago: parseFloat(venda.valor || 0), // Usa o valor diretamente
+          tipo: venda.tipo,
+          valorPago,
+          descontoTotal
         };
       });
 
@@ -280,12 +284,31 @@ function Vendas() {
 
   //const totalPreco = filteredPagamentos.reduce((sum, venda) => sum + parseFloat(venda.valorPago), 0);
 
-  const totalPreco = filteredPagamentos
+  /*const totalPreco = filteredPagamentos
     .filter(venda => venda.tipo === "Venda" || (somarLancamentosManuais && venda.tipo !== "Venda")) // Filtra conforme a condição de somarLancamentosManuais
-    .reduce((sum, venda) => sum + parseFloat(venda.valorPago), 0);
+    .reduce((sum, venda) => sum + parseFloat(venda.valorPago), 0);*/
+
+  const totalPreco = filteredPagamentos
+    .filter(venda => venda.tipo === "Venda" || (somarLancamentosManuais && venda.tipo !== "Venda"))
+    .reduce((sum, venda) => {
+      const valorPago = Number(venda.valorPago) || 0;
+      const desconto = Math.abs(Number(venda.descontoTotal) || 0);
+      console.log({ valorPago, desconto, calculado: valorPago - desconto });
+      return sum + (valorPago );
+    }, 0);
+
+  const totalDescontos = filteredPagamentos
+    .filter(venda => venda.tipo === "Venda" || (somarLancamentosManuais && venda.tipo !== "Venda"))
+    .reduce((sum, venda) => {
+      const desconto = Math.abs(Number(venda.descontoTotal) || 0);
+      return sum + desconto;
+    }, 0);
+
+
+
 
   const handlePrint = () => {
-    vendaRealizadas(filteredPagamentos, totalPreco, somarLancamentosManuais);
+    vendaRealizadas(pagamentosComTransacoes, totalPreco, totalDescontos, somarLancamentosManuais);
   };
 
   const totalPages = Math.ceil(filteredPagamentos.length / rowsPerPage);
@@ -565,8 +588,8 @@ function Vendas() {
                   <tr>
                     <th>ID</th>
                     <th>Cliente</th>
-                    <th>Total</th>
-                    <th>Forma de Movimentação</th>
+                    <th>Valor Recebido</th>
+                    <th>Desconto</th>
                     <th>Data do Lançamento</th>
                     <th>Ações</th>
                   </tr>
@@ -583,7 +606,10 @@ function Vendas() {
                         }).format(venda.valorPago)}
                       </td>
                       <td>
-                        {venda.formaPagamento} {/* Aqui pode ser exibido o tipo de pagamento */}
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        }).format(venda.descontoTotal)}
                       </td>
                       <td>{new Date(venda.dataVenda).toLocaleString().replace(",", "")}</td>
                       <td>
@@ -638,9 +664,16 @@ function Vendas() {
                         {new Intl.NumberFormat('pt-BR', {
                           style: 'currency',
                           currency: 'BRL',
-                        }).format(totalPreco)}</strong>
-                      </td>
-                      <td colSpan="3"></td>
+                        }).format(totalPreco)}
+                      </strong></td>
+                      <td><strong>
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        }).format(totalDescontos)}
+                      </strong></td>
+
+                      <td></td>
                     </tr>
                   </tfoot>
                 )}
