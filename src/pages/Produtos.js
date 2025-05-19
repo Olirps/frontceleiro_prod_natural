@@ -60,8 +60,8 @@ function Produtos() {
     };
 
     const handleSearch = () => {
-        const lowerNome = xProd ? xProd.toLowerCase() : '';
-        const lowercEAN = cEAN ? cEAN.toLowerCase() : '';
+        const lowerNome = xProd ? xProd.toLowerCase().trim() : '';
+        const lowercEAN = cEAN ? cEAN.toLowerCase().trim() : '';
 
         const tipoProduto = tipo;
 

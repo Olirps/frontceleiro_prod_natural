@@ -282,19 +282,13 @@ function Vendas() {
     }
   }, [toast]);
 
-  //const totalPreco = filteredPagamentos.reduce((sum, venda) => sum + parseFloat(venda.valorPago), 0);
-
-  /*const totalPreco = filteredPagamentos
-    .filter(venda => venda.tipo === "Venda" || (somarLancamentosManuais && venda.tipo !== "Venda")) // Filtra conforme a condição de somarLancamentosManuais
-    .reduce((sum, venda) => sum + parseFloat(venda.valorPago), 0);*/
-
   const totalPreco = filteredPagamentos
     .filter(venda => venda.tipo === "Venda" || (somarLancamentosManuais && venda.tipo !== "Venda"))
     .reduce((sum, venda) => {
       const valorPago = Number(venda.valorPago) || 0;
       const desconto = Math.abs(Number(venda.descontoTotal) || 0);
       console.log({ valorPago, desconto, calculado: valorPago - desconto });
-      return sum + (valorPago );
+      return sum + (valorPago);
     }, 0);
 
   const totalDescontos = filteredPagamentos
@@ -463,7 +457,7 @@ function Vendas() {
       } else if (response.status === 412) {
         const data = await response.data;
         setToast({
-          message: `NF-e rejeitada: ${data.motivo || "Motivo não informado"}`,
+          message: `NF-e rejeitada: ${data.motivo || data.erro || "Motivo não informado"}`,
           type: "error",
         });
       } else {
