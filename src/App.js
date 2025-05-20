@@ -24,6 +24,7 @@ import Empresa from './pages/Empresa';
 import ContasPendentes from './pages/ContasPendentes';
 import OSStatus from './pages/OSStatus';
 import OSPage from './pages/OSPage';
+import RelatorioSaldoEstoquePage from './pages/RelatorioSaldoEstoquePage';
 
 
 import { hasPermission } from './utils/hasPermission'; // Importar a função
@@ -120,6 +121,10 @@ function App() {
           <Route
             path="/contaspendentes"
             element={isAuthenticated && hasPermission(permissions, 'contaspendentes', 'view') ? <ContasPendentes /> : null} // Condicionalmente não renderiza
+          />        
+          <Route
+            path="/estoque"
+            element={isAuthenticated && hasPermission(permissions, 'estoque', 'view') ? <RelatorioSaldoEstoquePage /> : null} // Condicionalmente não renderiza
           />        
         </Route>
       </Routes>

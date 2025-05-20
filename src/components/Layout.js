@@ -131,6 +131,7 @@ function Layout() {
                   {canViewMenuItem('produtosvendidos') && <Link to="/produtosvendidos" className="submenu-item">Produtos Vendidos</Link>}
                   {canViewMenuItem('contaspendentes') && <Link to="/contaspendentes" className="submenu-item">Contas Pendentes</Link>}
                   {canViewMenuItem('contasliquidadas') && <Link to="/contasliquidadas" className="submenu-item">Contas/Parcelas Liquidadas</Link>}
+                  {canViewMenuItem('estoque') && <Link to="/estoque" className="submenu-item">Estoque</Link>}
 
                 </div>
               </div>

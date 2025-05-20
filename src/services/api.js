@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { dataAtual } from '../utils/functions';
 
 // Crie uma instância do axios com a URL base
 const api = axios.create({
@@ -356,6 +357,71 @@ export const getNFeById = async (id) => {
 
 export const updateNFe = async (id, notafiscal) => {
   return api.put(`/notafiscal/${id}`, notafiscal);
+};
+
+export const produtosSimilares = async (id) => {
+  try {
+    const response = await api.get(`produtos-similares/${id}`,);
+    return response.data; // Retorna os dados
+  } catch (error) {
+    console.error('Erro ao buscar produtos similares:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+}
+
+
+export const getProdutosEstoque = async (filters = {}, page = 1, limit = 20) => {
+  try {
+    const response = await api.get('/produtosestoque', {
+      params: {
+        filters,
+        page,
+        limit
+      }
+    });
+    return response;
+  } catch (error) {
+    console.error('Erro ao buscar produtos em estoque:', error);
+    throw error;
+  } finally {
+    // Pode adicionar lógica de limpeza aqui, se necessário
+  }
+};
+
+export const getSaldoPorProduto = async (data, nome, page = 1, limit = 20) => {
+  try {
+    if (!data) {
+      const dataAtualFormatada = dataAtual();
+      data = dataAtualFormatada;
+    }
+
+
+    const response = await api.get(`/saldo-por-produto/${data}`, {
+      params: {
+        ...(nome && { nome }),   // Só inclui nome se estiver definido
+        page,
+        limit
+      }
+    });
+
+    return response;
+  } catch (error) {
+    console.error('Erro ao buscar saldo por produto:', error);
+    throw error;
+  }
+};
+
+
+export const getResumoAteData = async (data) => {
+  try {
+    const response = await api.get(`/resumo-ate-data/${data}`);
+    return response;
+  } catch (error) {
+    console.error('Erro ao buscar resumo até data:', error);
+    throw error;
+  } finally {
+    // Pode adicionar lógica de limpeza aqui, se necessário
+  }
 };
 
 export const getProdutoNFById = async (id) => {

@@ -203,6 +203,8 @@ function Produtos() {
         } catch (err) {
             console.error('Erro ao inativar produto', err);
             setToast({ message: "Erro ao inativar produto.", type: "error" });
+        }finally {
+            setLoading(false);
         }
 
     };

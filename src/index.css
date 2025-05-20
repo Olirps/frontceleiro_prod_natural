@@ -113,6 +113,24 @@ select {
   transform: scale(1.05);
 }
 
+/* Estilo para botão desabilitado */
+#button-group .button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-color: #cccccc;
+  color: #cccccc;
+  background-color: transparent;
+  transform: none; /* Remove o scale do hover */
+}
+
+/* Garante que o hover não afete o botão desabilitado */
+#button-group .button:disabled:hover {
+  background-color: transparent;
+  color: #cccccc;
+  transform: none;
+}
+
+
 /* Contêiner geral */
 #results-container {
   width: 100%;
@@ -483,7 +501,7 @@ select {
   padding: 20px;
   border-radius: 12px; /* Mantém o padrão arredondado do cadastro */
   width: 100%;
-  max-width: 800px; /* Garante espaço suficiente para múltiplos inputs */
+  max-width: 850px; /* Garante espaço suficiente para múltiplos inputs */
   position: relative;
   border: 1px solid #ccc;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
@@ -557,6 +575,22 @@ select {
 
 /* Quando o input estiver focado */
 .input-geral:focus {
+  border-color: #007bff;
+}
+
+/* Estilo dos inputs-table */
+.input-geral-table {
+  width: 70%; /* Faz com que os inputs preencham completamente os divs */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+/* Quando o input estiver focado */
+.input-geral-table:focus {
   border-color: #007bff;
 }
 

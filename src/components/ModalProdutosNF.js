@@ -3,9 +3,9 @@ import '../styles/ModalProdutosNF.css';
 import ModalTratarProdutosNF from '../components/ModalTratarProdutosNF';
 import ModalDetalhesProdutosNF from '../components/ModalDetalhesProdutosNF';
 import Toast from '../components/Toast';
-import { getNFeById, getProdutoNFById, getQuantidadeRestanteProdutoNF, updateNFe, vinculaProdutoNF, desvinculaProdutoNF, obterVinculoPorProdutoId } from '../services/api';
+import { getNFeById, getProdutoNFById, getQuantidadeRestanteProdutoNF, updateNFe, vinculaProdutoNF, desvinculaProdutoNF, obterVinculoPorProdutoId, produtosSimilares } from '../services/api';
 import ModalCadastraProduto from '../components/ModalCadastraProduto';
-import {formatarMoedaBRL,converterMoedaParaNumero } from '../utils/functions';
+import { formatarMoedaBRL, converterMoedaParaNumero } from '../utils/functions';
 import lixeiraIcon from '../img/lixeira.png';
 import ConfirmDialog from '../components/ConfirmDialog'; // Importe o ConfirmDialog
 import ModalPesquisaGN from '../components/ModalPesquisaGN';
@@ -13,7 +13,7 @@ import ModalVinculaProdVeiculo from '../components/ModalVinculaProdVeiculo'; // 
 
 
 
-const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen,onVinculoSuccess }) => {
+const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen, onVinculoSuccess }) => {
   const [produtos, setProdutos] = useState([]);
   const [quantidade, setQuantidade] = useState('');
   const [quantidadeVinculada, setQuantidadeVinculada] = useState('');
@@ -43,6 +43,9 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen,onVinculoSuccess }) =
   const [isVinculaVeiculoModalOpen, setIsVinculaVeiculoModalOpen] = useState(false);
   const [produtoParaVincular, setProdutoParaVincular] = useState(null);
   const [mensagem, setMensagem] = useState('');
+  const [produtosSimilaresFound, setProdutosSimilaresFound] = useState(null);
+  const [sugestaoValorVenda, setSugestaoValorVenda] = useState({});
+
 
 
 
@@ -55,6 +58,13 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen,onVinculoSuccess }) =
     } else {
       setFormError(false);
     }
+  };
+
+  const handleSugestaoValorChange = (produtoId, valor) => {
+    setSugestaoValorVenda(prev => ({
+      ...prev,
+      [produtoId]: valor
+    }));
   };
   // Função para buscar produtos da nota fiscal
   const handleValorUnitChange = (e) => {
@@ -70,7 +80,7 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen,onVinculoSuccess }) =
   // Função para buscar produtos da nota fiscal
   const fetchProdutosNF = async (notaId) => {
     try {
-      onNFOpen=true;
+      onNFOpen = true;
       const response = await getProdutoNFById(notaId);
       setProdutos(response.data);
       setLoading(false);
@@ -153,12 +163,24 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen,onVinculoSuccess }) =
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
-  const handleActionClick = (produto) => {
+  const handleActionClick = async (produto) => {
+    setLoading(true);
     setSelectedProduct(produto);
-    if (produto.identificador == 0) {
-      setIsTratarModalOpen(true);
-    } else if (produto.identificador == 1) {
-      setIsDetalhesModalOpen(true);
+
+    try {
+      const produtosSimilaresRetorno = await produtosSimilares(produto.id);
+      setProdutosSimilaresFound(produtosSimilaresRetorno);
+      console.log('produtosSimilaresRetorno', produtosSimilaresRetorno);
+
+      if (produto.identificador == 0) {
+        setIsTratarModalOpen(true);
+      } else if (produto.identificador == 1) {
+        setIsDetalhesModalOpen(true);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar produtos similares:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -392,6 +414,7 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen,onVinculoSuccess }) =
                           <th>Descrição</th>
                           <th>Quantidade</th>
                           <th>Valor Unitário</th>
+                          <th>Sugestão Valor Venda</th>
                           <th>Ação</th>
                         </tr>
                       </thead>
@@ -406,26 +429,37 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen,onVinculoSuccess }) =
                             <td>{parseFloat(produto.quantidade).toFixed(3)}</td>
                             <td>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.valor_unit)}</td>
                             <td>
+                              <input
+                                type="text"
+                                value={sugestaoValorVenda[produto.id] ||
+                                  (produto.sugestao_valor_venda ?
+                                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.sugestao_valor_venda) :
+                                    '')
+                                }
+                                onChange={(e) => handleSugestaoValorChange(produto.id, e.target.value)}
+                                onBlur={(e) => {
+                                  // Formata o valor quando o campo perde o foco
+                                  const valorNumerico = converterMoedaParaNumero(e.target.value);
+                                  if (!isNaN(valorNumerico)) {
+                                    handleSugestaoValorChange(
+                                      produto.id,
+                                      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorNumerico)
+                                    );
+                                  }
+                                }}
+                                className="input-geral-table"
+                                disabled={produto.status == 1}
+                              />
+                            </td>
+                            <td>
                               <div id="button-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <button
-                                  className="button-detalhes"
+                                  className="button-geral"
                                   onClick={() => handleActionClick(produto)}
                                   disabled={produto.status == 1} // Desabilitar botão se o produto estiver inativo
                                 >
                                   {produto.identificador == 0 ? 'Tratar' : 'Detalhes'}
                                 </button>
-                                {/* Novo botão Vincular Veículo */}
-                                {produto.identificador == 1 && (
-                                  <div id='button-group'>
-                                    <button
-                                      className="button"
-                                      onClick={() => handleVincularVeiculo(produto)}
-                                      disabled={produto.status == 1} // Desabilitar botão se o produto estiver inativo
-                                    >
-                                      Vincular Veículo
-                                    </button>
-                                  </div>
-                                )}
                                 {produto.identificador == 1 && produto.status !== 1 && prod.lancto !== 'automatico' && !isNFClosed && (
                                   <img
                                     src={lixeiraIcon}
@@ -471,6 +505,7 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen,onVinculoSuccess }) =
           isOpen={isTratarModalOpen}
           onClose={() => setIsTratarModalOpen(false)}
           product={selectedProduct}
+          similares={produtosSimilaresFound}
           onVinculoSuccess={handleVinculoSuccess}
         />
       )}
