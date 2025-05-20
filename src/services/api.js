@@ -412,6 +412,17 @@ export const getSaldoPorProduto = async (data, nome, page = 1, limit = 20) => {
 };
 
 
+export const efetivarProduto = async (produto) => {
+  try {
+    const response = await api.post('/efetivar-produto-nf/', produto);
+    return response;
+  } catch (error) {
+    console.error('Erro ao efetivar produto:', error);
+    throw error;
+  }
+};
+
+
 export const getResumoAteData = async (data) => {
   try {
     const response = await api.get(`/resumo-ate-data/${data}`);

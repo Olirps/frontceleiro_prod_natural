@@ -501,7 +501,7 @@ select {
   padding: 20px;
   border-radius: 12px; /* Mantém o padrão arredondado do cadastro */
   width: 100%;
-  max-width: 850px; /* Garante espaço suficiente para múltiplos inputs */
+  max-width: 1000px; /* Garante espaço suficiente para múltiplos inputs */
   position: relative;
   border: 1px solid #ccc;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);

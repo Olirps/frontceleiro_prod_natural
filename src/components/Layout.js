@@ -124,7 +124,7 @@ function Layout() {
               </div>
             ) : null}
             {/* Relatórios */}
-            {canViewMenuItem('relatorios') || canViewMenuItem('produtosvendidos') || canViewMenuItem('contaspendentes')? (
+            {canViewMenuItem('relatorios') || canViewMenuItem('produtosvendidos') || canViewMenuItem('contaspendentes') || canViewMenuItem('estoque')? (
               <div id="relatorios" className="menu-item" onClick={toggleRelatorios}>
                 <span>Relatórios</span>
                 <div id="relatorios-submenu" className={isRelatoriosOpen ? 'submenu' : ''}>
@@ -132,7 +132,6 @@ function Layout() {
                   {canViewMenuItem('contaspendentes') && <Link to="/contaspendentes" className="submenu-item">Contas Pendentes</Link>}
                   {canViewMenuItem('contasliquidadas') && <Link to="/contasliquidadas" className="submenu-item">Contas/Parcelas Liquidadas</Link>}
                   {canViewMenuItem('estoque') && <Link to="/estoque" className="submenu-item">Estoque</Link>}
-
                 </div>
               </div>
             ) : null}

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import ModalPesquisaGN from '../components/ModalPesquisaGN';
-import { vinculaProdutoNF, addProdutos } from '../services/api';
+import { vinculaProdutoNF, addProdutos, getEmpresaById } from '../services/api';
 import '../styles/ModalTratarProdutosNF.css'; // Certifique-se de criar este CSS também
 import Toast from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog'; // Componente para o modal de confirmação
+import { use } from 'react';
+import ModalInputCFOP from '../components/ModalInputCFOP';
 
 
 const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSuccess, similares }) => {
@@ -19,6 +21,12 @@ const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSu
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false); // Novo estado
     const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+    const [confirmAction, setConfirmAction] = useState(null); // 'delete' | 'efetivar'
+    const [mensagem, setMensagem] = useState('');
+    const [empresa, setEmpresa] = useState('');
+    const [isCFOPModalOpen, setIsCFOPModalOpen] = useState(false);
+    const [cfopInformado, setCfopInformado] = useState('');
+
 
 
 
@@ -31,8 +39,27 @@ const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSu
         setProduto(selectedProduto.xProd);
         setProdutoId(selectedProduto.id);
 
+        setConfirmAction('vincular');
         setIsConfirmationModalOpen(true);
+        setMensagem(`Deseja Vincular o produto o CFOP Padrão ID: ${selectedProduto.id} ${selectedProduto.xProd} ?`);
+
     };
+
+
+
+    useEffect(() => {
+        if (isOpen) {
+            const fetchEmpresa = async () => {
+                try {
+                    const response = await getEmpresaById(1);
+                    setEmpresa(response.data);
+                } catch (error) {
+                    console.error('Erro ao buscar empresa:', error);
+                }
+            };
+            fetchEmpresa();
+        }
+    }, [isOpen]);
 
     // Filtra produtos existentes com base na pesquisa
     // Exibe o toast por 3 segundos e depois o oculta
@@ -55,10 +82,10 @@ const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSu
     const handleSave = async () => {
         try {
             setIsSaving(true); // Desabilita o botão
-            const produto_ori_id = { produto_ori_id: product.id };
-            await addProdutos(produto_ori_id);
-            onVinculoSuccess("Produto Cadastrado com sucesso!"); // Chama a função do modal pai
-            onClose();
+
+            setConfirmAction('salvar');
+            setIsConfirmationModalOpen(true);
+            setMensagem(`Deseja utilizar o CFOP Padrão ? ${empresa.cfop_padrao}`);
 
         } catch (err) {
             const errorMessage = err.response?.data?.error || "Erro ao cadastrar produto.";
@@ -68,6 +95,23 @@ const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSu
 
         }
     };
+
+    const handleConfirmDialog = async () => {
+        if (confirmAction === 'salvar') {
+            // lógica de exclusão
+            await handleConfirm();
+        } else if (confirmAction === 'vincular') {
+            // lógica de efetivação
+            await handleVincular();
+        }
+
+        setIsConfirmationModalOpen(false);
+        setConfirmAction(null);
+    };
+
+    const handleConfirm = async () => {
+        await addProdutos(product, novoNome, empresa.cfop_padrao);
+    }
 
     // Função para vincular produto
     const handleVincular = async () => {
@@ -93,6 +137,31 @@ const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSu
 
         }
     };
+
+    const handleCancelConfirm = () => {
+        setIsConfirmationModalOpen(false); // Fecha o modal de confirmação
+        setIsCFOPModalOpen(true); // Abre o modal para informar CFOP
+    };
+
+    const handleCFOPConfirm = async (cfop) => {
+        setIsCFOPModalOpen(false);
+        setCfopInformado(cfop);
+
+        try {
+            product.produto_ori_id = product.id; // Atualiza o ID do produto original
+            product.cfop = cfop; // Atualiza o CFOP do produto
+            // Aqui você pode usar o CFOP informado para continuar o fluxo,
+            // por exemplo, chamar addProdutos com o CFOP informado
+            await addProdutos(product);
+            setToast({ message: `Produto salvo com CFOP: ${cfop}`, type: 'success' });
+            onClose();
+        } catch (error) {
+            const errorMessage = error.response?.data?.error || "Erro ao salvar com CFOP informado.";
+            setToast({ message: errorMessage, type: 'error' });
+        }
+    };
+
+
 
     const handleCancel = () => {
         setIsConfirmationModalOpen(false); // Fechar o modal sem realizar nada
@@ -197,10 +266,17 @@ const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSu
             <ConfirmDialog
                 isOpen={isConfirmationModalOpen}
                 onClose={handleCancel}
-                onConfirm={() => handleVincular()}
-                onCancel={() => setIsConfirmationModalOpen(false)}
-                message={`Você tem certeza que deseja Vincular o Produto ID: ${produtoId || ''} -  ${produto || ''} na NFe?`}
+                message={mensagem}
+                onConfirm={() => handleConfirmDialog()}
+                onCancel={() => handleCancelConfirm()}
             />
+            <ModalInputCFOP
+                isOpen={isCFOPModalOpen}
+                onClose={() => setIsCFOPModalOpen(false)}
+                onConfirm={handleCFOPConfirm}
+                cfop={0}
+            />
+
             {/* Exibir Toast */}
             <Toast message={toast.message} type={toast.type} />
         </div>

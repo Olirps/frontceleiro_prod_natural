@@ -3,7 +3,7 @@ import '../styles/ModalProdutosNF.css';
 import ModalTratarProdutosNF from '../components/ModalTratarProdutosNF';
 import ModalDetalhesProdutosNF from '../components/ModalDetalhesProdutosNF';
 import Toast from '../components/Toast';
-import { getNFeById, getProdutoNFById, getQuantidadeRestanteProdutoNF, updateNFe, vinculaProdutoNF, desvinculaProdutoNF, obterVinculoPorProdutoId, produtosSimilares } from '../services/api';
+import { getNFeById, getProdutoNFById, getQuantidadeRestanteProdutoNF, updateNFe, vinculaProdutoNF, desvinculaProdutoNF, obterVinculoPorProdutoId, produtosSimilares, efetivarProduto } from '../services/api';
 import ModalCadastraProduto from '../components/ModalCadastraProduto';
 import { formatarMoedaBRL, converterMoedaParaNumero } from '../utils/functions';
 import lixeiraIcon from '../img/lixeira.png';
@@ -31,6 +31,7 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen, onVinculoSuccess }) 
   const [isCadastraProdutoModalOpen, setIsCadastraProdutoModalOpen] = useState(false);
   const [selectedNFe, setSelectedNFe] = useState(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false); // Estado para a modal de confirmação
+  const [confirmAction, setConfirmAction] = useState(null); // 'delete' | 'efetivar'
   const [produtoToDelete, setProdutoToDelete] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,6 +50,7 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen, onVinculoSuccess }) 
 
 
 
+
   const handleQuantidadeChange = (e) => {
     //setQuantidade(e.target.value); // Atualiza o estado do nome
     const value = e.target.value;
@@ -60,12 +62,28 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen, onVinculoSuccess }) 
     }
   };
 
-  const handleSugestaoValorChange = (produtoId, valor) => {
+  const handleSugestaoValorChange = (produtoId, index, valor) => {
+    const key = `${produtoId}-${index}`;
+
+    // Atualiza sugestão de valor (controle de inputs)
     setSugestaoValorVenda(prev => ({
       ...prev,
-      [produtoId]: valor
+      [key]: valor
     }));
+
+    // Atualiza também no array de produtos (valor real)
+    setProdutos(prevProdutos => {
+      const novos = [...prevProdutos];
+      novos[index] = {
+        ...novos[index],
+        sugestao_valor_venda: valor // ou outro campo que você estiver usando
+      };
+      return novos;
+    });
   };
+
+
+
   // Função para buscar produtos da nota fiscal
   const handleValorUnitChange = (e) => {
     //setQuantidade(e.target.value); // Atualiza o estado do nome
@@ -168,14 +186,15 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen, onVinculoSuccess }) 
     setSelectedProduct(produto);
 
     try {
-      const produtosSimilaresRetorno = await produtosSimilares(produto.id);
-      setProdutosSimilaresFound(produtosSimilaresRetorno);
-      console.log('produtosSimilaresRetorno', produtosSimilaresRetorno);
-
-      if (produto.identificador == 0) {
+      if (produto.identificador == 1) {
+        setConfirmAction('efetivar');
+        setIsConfirmDialogOpen(true);
+        setMensagem("Deseja efetivar o produto?");
+      } else {
+        const produtosSimilaresRetorno = await produtosSimilares(produto.id);
+        setProdutosSimilaresFound(produtosSimilaresRetorno);
+        console.log('produtosSimilaresRetorno', produtosSimilaresRetorno);
         setIsTratarModalOpen(true);
-      } else if (produto.identificador == 1) {
-        setIsDetalhesModalOpen(true);
       }
     } catch (error) {
       console.error('Erro ao buscar produtos similares:', error);
@@ -224,48 +243,64 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen, onVinculoSuccess }) 
 
   const handleExcluirProdNf = (produto) => {
     setProdutoToDelete(produto);
+    setConfirmAction('delete');
     setMensagem("Deseja excluir o Produto da Nota Fiscal?");
-
     setIsConfirmDialogOpen(true);
   };
 
-  const confirmDelete = async () => {
+  const handleConfirmDialog = async () => {
+    if (confirmAction === 'delete') {
+      // lógica de exclusão
+      await handleDeleteProduto();
+    } else if (confirmAction === 'efetivar') {
+      // lógica de efetivação
+      await handleEfetivarProduto();
+    }
+
+    setIsConfirmDialogOpen(false);
+    setConfirmAction(null);
+  };
+
+  const handleDeleteProduto = async () => {
     try {
       if (produtoToDelete) {
-        // Atualize o status do produto para 'desabilitado' ou 'inativo' (exemplo: status: false)
-        const retornaVinculo = await obterVinculoPorProdutoId(produtoToDelete.id, produtoToDelete.nota_id)
-        if (retornaVinculo.data.length > 0) {
+        const vinculo = await obterVinculoPorProdutoId(produtoToDelete.id, produtoToDelete.nota_id);
+        if (vinculo.data.length > 0) {
           setToast({ message: 'Não é possível excluir o produto pois ele possui vínculos.', type: 'error' });
-          setIsConfirmDialogOpen(false);
-          setProdutoToDelete(null);
           return;
         }
-        const updateData = { nota_id: prod.id, status: 1, id: produtoToDelete.idx }; // ou 'false', dependendo de como está modelado no backend
+        const updateData = { nota_id: prod.id, status: 1, id: produtoToDelete.idx };
         await desvinculaProdutoNF(produtoToDelete.id, updateData);
 
         setToast({ message: 'Produto desabilitado com sucesso!', type: 'success' });
-
-        // Atualize a lista de produtos para refletir a mudança
-        const updatedProducts = produtos.map(prod =>
-          prod.id === produtoToDelete.id ? { ...prod, status: 1 } : prod
-        );
-        setProdutos(updatedProducts);
-        fetchProdutosNF(produtoToDelete.nota_id)
+        fetchProdutosNF(produtoToDelete.nota_id);
       }
     } catch (error) {
-      console.error('Erro ao desabilitar o produto', error);
+      console.error('Erro ao excluir produto:', error);
       setToast({ message: "Erro ao desabilitar o produto.", type: "error" });
     }
-    setIsConfirmDialogOpen(false);
-    setProdutoToDelete(null);
   };
+
+
+  const handleEfetivarProduto = async () => {
+    setLoading(true);
+    try {
+      await efetivarProduto(selectedProduct);
+      setToast({ message: 'Produto efetivado com sucesso!', type: 'success' });
+      fetchProdutosNF(selectedProduct.nota_id)
+    } catch (error) {
+      console.error('Erro ao efetivar produto:', error);
+      setToast({ message: "Erro ao efetivar o produto.", type: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const cancelDelete = () => {
     setIsConfirmDialogOpen(false);
     setProdutoToDelete(null);
   };
-
-  const handleSearchChange = (event) => setSearchQuery(event.target.value);
 
   // Atualiza o produto selecionado
   const handleSelectProduto = (selectedProduto) => {
@@ -422,138 +457,150 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen, onVinculoSuccess }) 
                         {currentProducts.map((produto, index) => (
                           <tr
                             key={`${produto.id}-${index}`}
-                            className={produto.identificador == 0 ? 'highlight-red' : produto.status == 1 ? 'disabled-row' : ''}
+                            className={produto.efetivado ? 'linha-efetivada': produto.identificador == 0 ? 'highlight-red' : produto.status == 1 ? 'disabled-row' : ''}
                           >
-                            <td>{produto.id}</td>
-                            <td className="descricao-col">{produto.descricao}</td>
-                            <td>{parseFloat(produto.quantidade).toFixed(3)}</td>
-                            <td>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.valor_unit)}</td>
-                            <td>
-                              <input
-                                type="text"
-                                value={sugestaoValorVenda[produto.id] ||
-                                  (produto.sugestao_valor_venda ?
-                                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.sugestao_valor_venda) :
-                                    '')
-                                }
-                                onChange={(e) => handleSugestaoValorChange(produto.id, e.target.value)}
-                                onBlur={(e) => {
-                                  // Formata o valor quando o campo perde o foco
-                                  const valorNumerico = converterMoedaParaNumero(e.target.value);
-                                  if (!isNaN(valorNumerico)) {
-                                    handleSugestaoValorChange(
-                                      produto.id,
-                                      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorNumerico)
-                                    );
-                                  }
-                                }}
-                                className="input-geral-table"
-                                disabled={produto.status == 1}
-                              />
-                            </td>
-                            <td>
-                              <div id="button-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <button
-                                  className="button-geral"
-                                  onClick={() => handleActionClick(produto)}
-                                  disabled={produto.status == 1} // Desabilitar botão se o produto estiver inativo
-                                >
-                                  {produto.identificador == 0 ? 'Tratar' : 'Detalhes'}
-                                </button>
-                                {produto.identificador == 1 && produto.status !== 1 && prod.lancto !== 'automatico' && !isNFClosed && (
-                                  <img
-                                    src={lixeiraIcon}
-                                    alt="Excluir"
-                                    className="lixeira-icon"
-                                    onClick={() => handleExcluirProdNf(produto)}
-                                    style={{ cursor: 'pointer', width: '20px', height: '20px' }}
-                                  />
-                                )}
-                              </div>
-                            </td>
+                        <td>{produto.id}</td>
+                        <td className="descricao-col">{produto.descricao}</td>
+                        <td>{parseFloat(produto.quantidade).toFixed(3)}</td>
+                        <td>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.valor_unit)}</td>
+                        <td>
+                          <input
+                            type="text"
+                            value={
+                              sugestaoValorVenda[`${produto.id}-${index}`] ||
+                              (produto.efetivado ?
+                                new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.vlrVenda) :
+                                new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.sugestao_valor_venda))
+                            }
+                            onChange={(e) => handleSugestaoValorChange(produto.id, index, e.target.value)}
+                            onBlur={(e) => {
+                              const valorNumerico = converterMoedaParaNumero(e.target.value);
+                              if (!isNaN(valorNumerico)) {
+                                handleSugestaoValorChange(
+                                  produto.id,
+                                  index,
+                                  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorNumerico)
+                                );
+                              }
+                            }}
+                            className="input-geral-table"
+                            disabled={produto.efetivado === true}
+                          />
 
-                          </tr>
+                        </td>
+                        <td>
+                          <div id="button-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <button
+                              className="button-geral"
+                              onClick={() => handleActionClick(produto)}
+                              disabled={produto.status == 1} // Desabilitar botão se o produto estiver inativo
+                            >
+                              {produto.identificador == 0 ? 'Tratar' : 'Efetivar'}
+                            </button>
+                            {produto.identificador == 1 && produto.status !== 1 && prod.lancto !== 'automatico' && !isNFClosed && (
+                              <img
+                                src={lixeiraIcon}
+                                alt="Excluir"
+                                className="lixeira-icon"
+                                onClick={() => handleExcluirProdNf(produto)}
+                                style={{ cursor: 'pointer', width: '20px', height: '20px' }}
+                              />
+                            )}
+                          </div>
+                        </td>
+
+                      </tr>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
+                    </tbody>
+                  </table>
                 </div>
-                <div className="pagination">
-                  {pageNumbers.map((number) => (
-                    <button
-                      key={number}
-                      onClick={() => handlePageChange(number)}
-                      className={number === currentPage ? 'active' : ''}
-                    >
-                      {number}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+              </div>
+            <div className="pagination">
+              {pageNumbers.map((number) => (
+                <button
+                  key={number}
+                  onClick={() => handlePageChange(number)}
+                  className={number === currentPage ? 'active' : ''}
+                >
+                  {number}
+                </button>
+              ))}
+            </div>
           </>
         )}
-      </div>
-
-      {/* Exibir Toast */}
-      {toast.message && <Toast type={toast.type} message={toast.message} />}
-
-
-      {isTratarModalOpen && (
-        <ModalTratarProdutosNF
-          key={modalKey}
-          isOpen={isTratarModalOpen}
-          onClose={() => setIsTratarModalOpen(false)}
-          product={selectedProduct}
-          similares={produtosSimilaresFound}
-          onVinculoSuccess={handleVinculoSuccess}
-        />
-      )}
-
-      {isDetalhesModalOpen && (
-        <ModalDetalhesProdutosNF
-          isOpen={isDetalhesModalOpen}
-          onClose={() => setIsDetalhesModalOpen(false)}
-          product={selectedProduct}
-        />
-      )}
-
-      {isCadastraProdutoModalOpen && (
-        <ModalCadastraProduto
-          isOpen={isCadastraProdutoModalOpen}
-          onClose={() => setIsCadastraProdutoModalOpen(false)}
-          onSubmit={() => handleVinculoSuccess('Produto cadastrado com sucesso!')}
-          prod={selectedNFe}
-          additionalFields={additionalFields}
-        />
-      )}
-      {/* Modal de confirmação */}
-      {isConfirmDialogOpen && (
-        <ConfirmDialog
-          isOpen={isConfirmDialogOpen}
-          message={mensagem}
-          onConfirm={confirmDelete}
-          onCancel={cancelDelete}
-        />
-      )}
-      {/* Modal de pesquisa de produtos */}
-      <ModalPesquisaGN
-        isOpen={isPesquisaGNModalOpen}
-        onClose={closePesquisaGNModal}
-        onSelectProduto={handleSelectProduto}
-      />
-      {/* Modal de Vinculação de Veículos */}
-      {isVinculaVeiculoModalOpen && (
-        <ModalVinculaProdVeiculo
-          isOpen={isVinculaVeiculoModalOpen}
-          onClose={closeVinculaVeiculoModal}
-          onNFOpen={true}
-          produto={produtoParaVincular}
-          quantidadeRestante={quantidadeVinculada}
-          onVinculoSuccess={handleVinculoSuccess} // Atualiza lista de produtos ao sucesso
-        />
-      )}
+      </>
+        )}
     </div>
+
+      {/* Exibir Toast */ }
+  { toast.message && <Toast type={toast.type} message={toast.message} /> }
+
+
+  {
+    isTratarModalOpen && (
+      <ModalTratarProdutosNF
+        key={modalKey}
+        isOpen={isTratarModalOpen}
+        onClose={() => setIsTratarModalOpen(false)}
+        product={selectedProduct}
+        similares={produtosSimilaresFound}
+        onVinculoSuccess={handleVinculoSuccess}
+      />
+    )
+  }
+
+  {
+    isDetalhesModalOpen && (
+      <ModalDetalhesProdutosNF
+        isOpen={isDetalhesModalOpen}
+        onClose={() => setIsDetalhesModalOpen(false)}
+        product={selectedProduct}
+      />
+    )
+  }
+
+  {
+    isCadastraProdutoModalOpen && (
+      <ModalCadastraProduto
+        isOpen={isCadastraProdutoModalOpen}
+        onClose={() => setIsCadastraProdutoModalOpen(false)}
+        onSubmit={() => handleVinculoSuccess('Produto cadastrado com sucesso!')}
+        prod={selectedNFe}
+        additionalFields={additionalFields}
+      />
+    )
+  }
+  {/* Modal de confirmação */ }
+  {
+    isConfirmDialogOpen && (
+      <ConfirmDialog
+        isOpen={isConfirmDialogOpen}
+        message={mensagem}
+        onConfirm={handleConfirmDialog}
+        onCancel={cancelDelete}
+      />
+    )
+  }
+  {/* Modal de pesquisa de produtos */ }
+  <ModalPesquisaGN
+    isOpen={isPesquisaGNModalOpen}
+    onClose={closePesquisaGNModal}
+    onSelectProduto={handleSelectProduto}
+  />
+  {/* Modal de Vinculação de Veículos */ }
+  {
+    isVinculaVeiculoModalOpen && (
+      <ModalVinculaProdVeiculo
+        isOpen={isVinculaVeiculoModalOpen}
+        onClose={closeVinculaVeiculoModal}
+        onNFOpen={true}
+        produto={produtoParaVincular}
+        quantidadeRestante={quantidadeVinculada}
+        onVinculoSuccess={handleVinculoSuccess} // Atualiza lista de produtos ao sucesso
+      />
+    )
+  }
+    </div >
   );
 
 };

@@ -72,6 +72,13 @@
   /* Cor de fundo vermelho claro para destacar */
 }
 
+.linha-efetivada {
+  opacity: 0.6;
+  pointer-events: none;
+  background-color: #f5f5f5;
+}
+
+
 /* Adicione estilos para a paginação */
 .pagination {
   margin-top: 20px;
