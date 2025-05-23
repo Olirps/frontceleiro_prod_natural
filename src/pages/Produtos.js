@@ -5,19 +5,12 @@ import '../styles/Fornecedores.css';
 import ModalCadastraProduto from '../components/ModalCadastraProduto';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
-import { converterMoedaParaNumero } from '../utils/functions';
-
+import { hasPermission } from '../utils/hasPermission';
 
 function Produtos() {
     const [produtos, setProdutos] = useState([]);
-    const [cEAN, setcEAN] = useState('');
     const [filteredProdutos, setFilteredProdutos] = useState([]);
-    const [xProd, setxProd] = useState('');
-    const [tipo, setTipo] = useState('');
     const [loading, setLoading] = useState(true);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [currentPage, setCurrentPage] = useState(1);
     const [toast, setToast] = useState({ message: '', type: '' });
     const [selectedProduto, setSelectedProduto] = useState(null);
     const [isCadastraProdutoModalOpen, setIsCadastraProdutoModalOpen] = useState(false);
@@ -25,31 +18,102 @@ function Produtos() {
     const [isInativar, setIsInativar] = useState(false);
     const [importSuccess, setCadastroSuccess] = useState(false);
     const { permissions } = useAuth();
+    const [searchParams, setSearchParams] = useState({
+        nome: '',
+        cEAN: '',
+        tipo: ''
+    });
 
+    const [appliedFilters, setAppliedFilters] = useState({});
+    const [needsRefresh, setNeedsRefresh] = useState(false);
 
+    // Estados para filtros
+    const [filters, setFilters] = useState({
+        nome: '',
+        cEAN: '',
+        tipo: ''
+    });
+
+    // Estados para paginação
+    const [pagination, setPagination] = useState({
+        currentPage: 1,
+        itemsPerPage: 10,
+        totalItems: 0,
+        totalPages: 1
+    });
+
+    // Busca produtos com paginação
     useEffect(() => {
         const fetchProdutos = async () => {
             try {
-                const response = await getProdutos();
-                setProdutos(response.data);
-                setFilteredProdutos(response.data);
+                setLoading(true);
+                const { data, pagination: apiPagination } = await getProdutos({
+                    ...appliedFilters,
+                    page: pagination.currentPage,
+                    pageSize: pagination.itemsPerPage
+                });
+
+                setProdutos(data);
+                setFilteredProdutos(data);
+                setPagination(prev => ({
+                    ...prev,
+                    totalItems: apiPagination.totalItems,
+                    totalPages: apiPagination.totalPages
+                }));
             } catch (err) {
                 console.error('Erro ao buscar produtos', err);
+                setToast({ message: err.message || 'Erro ao carregar produtos', type: 'error' });
             } finally {
                 setLoading(false);
+                setNeedsRefresh(false);
             }
         };
 
         fetchProdutos();
-    }, [importSuccess]);
+    }, [pagination.currentPage, pagination.itemsPerPage, appliedFilters, importSuccess]);
 
-
+    // Limpa toast após 3 segundos
     useEffect(() => {
         if (toast.message) {
             const timer = setTimeout(() => setToast({ message: '', type: '' }), 3000);
             return () => clearTimeout(timer);
         }
     }, [toast]);
+
+    const handleSearch = () => {
+        setAppliedFilters({
+            nome: searchParams.nome.trim(),
+            cEAN: searchParams.cEAN.trim(),
+            tipo: searchParams.tipo.trim()
+        });
+        setPagination(prev => ({ ...prev, currentPage: 1 }));
+    };
+
+    const handleClear = () => {
+        setSearchParams({
+            nome: '',
+            cEAN: '',
+            tipo: ''
+        });
+        setAppliedFilters({
+            nome: '',
+            cEAN: '',
+            tipo: ''
+        });
+        setPagination(prev => ({ ...prev, currentPage: 1 }));
+    };
+
+    const handleRowsChange = (e) => {
+        setPagination(prev => ({
+            ...prev,
+            itemsPerPage: Number(e.target.value),
+            currentPage: 1
+        }));
+    };
+
+    const handlePageChange = (newPage) => {
+        setPagination(prev => ({ ...prev, currentPage: newPage }));
+    };
 
     const openCadastraProdutoModal = () => {
         setIsCadastraProdutoModalOpen(true);
@@ -59,51 +123,18 @@ function Produtos() {
         setIsCadastraProdutoModalOpen(false);
     };
 
-    const handleSearch = () => {
-        const lowerNome = xProd ? xProd.toLowerCase().trim() : '';
-        const lowercEAN = cEAN ? cEAN.toLowerCase().trim() : '';
-
-        const tipoProduto = tipo;
-
-        const results = produtos.filter(produto =>
-            (produto.xProd ? produto.xProd.toLowerCase().includes(lowerNome) : !lowerNome) &&
-            (produto?.cEAN ? produto.cEAN.toLowerCase().includes(lowercEAN) : !lowercEAN) &&
-            (produto?.tipo ? produto.tipo.includes(tipoProduto) : !tipoProduto));
-        setFilteredProdutos(results);
-        setCurrentPage(1); // Resetar para a primeira página após a busca
-    };
-
-    const handleClear = () => {
-        setxProd('');
-        setcEAN('');
-        setTipo('');
-        setFilteredProdutos(produtos);
-        setCurrentPage(1); // Resetar para a primeira página ao limpar a busca
-    };
-
-    const handleRowsChange = (e) => {
-        setRowsPerPage(Number(e.target.value));
-        setCurrentPage(1); // Resetar para a primeira página ao alterar o número de linhas
-    };
-
-    const handlecEanChange = (e) => {
-        setcEAN(e.target.value);
-    };
-
     const handleCadastrarModal = () => {
         if (!hasPermission(permissions, 'clientes', 'insert')) {
             setToast({ message: "Você não tem permissão para cadastrar clientes.", type: "error" });
-            return; // Impede a abertura do modal
+            return;
         }
         openCadastraProdutoModal();
         setIsEdit(false);
         setSelectedProduto(null);
-
     };
 
     const handleaddProdutos = async (e) => {
-
-        const tipo = e.isService === true ? 'servico' : 'produto'
+        const tipo = e.isService === true ? 'servico' : 'produto';
         const newProduto = {
             xProd: e.xProd,
             tipo: tipo,
@@ -124,13 +155,11 @@ function Produtos() {
         try {
             const newProd = await addProdutos(newProduto);
             setToast({ message: `Produto: ${newProd.data.id} - ${newProd.data.xProd}`, type: "success" });
-            const response = await getProdutos();
             handleClear();
-            setProdutos(response.data);
+            setCadastroSuccess(prev => !prev);
             closeCadastraProdutoModal();
-            setCadastroSuccess(prev => !prev); // Atualiza o estado para acionar re-renderização
         } catch (err) {
-            const errorMessage = err.response.data.erro;
+            const errorMessage = err.response?.data?.erro || 'Erro ao cadastrar produto';
             setToast({ message: errorMessage, type: "error" });
         }
     };
@@ -139,7 +168,7 @@ function Produtos() {
         try {
             if (!hasPermission(permissions, 'produtos', 'viewcadastro')) {
                 setToast({ message: "Você não tem permissão para visualizar o cadastro de produtos/serviços.", type: "error" });
-                return; // Impede a abertura do modal
+                return;
             }
             const response = await getProdutoById(produto.id);
             setSelectedProduto(response.data);
@@ -152,11 +181,11 @@ function Produtos() {
     };
 
     const handleEditSubmit = async (e) => {
-        //e.preventDefault();
-        //const formData = new FormData(e.target);
         if (!hasPermission(permissions, 'produtos', 'edit')) {
-            return; // Impede a abertura do modal
+            setToast({ message: "Você não tem permissão para editar produtos.", type: "error" });
+            return;
         }
+
         const updatedProduto = {
             xProd: e.xProd,
             cod_interno: e.cod_interno,
@@ -179,82 +208,65 @@ function Produtos() {
             setToast({ message: "Produto atualizado com sucesso!", type: "success" });
             setIsEdit(false);
             closeCadastraProdutoModal();
-            handleClear();
-            setCadastroSuccess(prev => !prev); // Atualiza o estado para acionar re-renderização
+            setCadastroSuccess(prev => !prev);
         } catch (err) {
-            const errorMessage = err.response.data.erro;
+            const errorMessage = err.response?.data?.erro || 'Erro ao atualizar produto';
             setToast({ message: errorMessage, type: "error" });
         }
     };
 
     const handleInativarProduto = async (produtoId, novoStatus) => {
-
-        // Aqui faz uma chamada à API para atualizar o status do produto no backend
         try {
             setLoading(true);
-            const produtoInativado = await inativarProduto(produtoId);
-            setToast({ message: `Produto ${produtoId} foi ${novoStatus ? 'inativado' : 'reativado'} com sucesso!`, type: "success" });
+            await inativarProduto(produtoId);
+            setToast({
+                message: `Produto ${produtoId} foi ${novoStatus ? 'inativado' : 'reativado'} com sucesso!`,
+                type: "success"
+            });
             closeCadastraProdutoModal();
-            const response = await getProdutos();
-            setProdutos(response.data);
-            handleClear();
-            setCadastroSuccess(prev => !prev); // Atualiza o estado para acionar re-renderização
-            setLoading(false);
+            setCadastroSuccess(prev => !prev);
         } catch (err) {
             console.error('Erro ao inativar produto', err);
             setToast({ message: "Erro ao inativar produto.", type: "error" });
-        }finally {
+        } finally {
             setLoading(false);
-        }
-
-    };
-
-    const totalPages = Math.ceil(filteredProdutos.length / rowsPerPage);
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const currentProdutos = filteredProdutos.slice(startIndex, startIndex + rowsPerPage);
-
-    const handleNextPage = () => {
-        if (currentPage < totalPages) {
-            setCurrentPage(currentPage + 1);
-        }
-    };
-
-    const handlePreviousPage = () => {
-        if (currentPage > 1) {
-            setCurrentPage(currentPage - 1);
         }
     };
 
     return (
         <div id="produtos-container">
             <h1 className="title-page">Consulta de Produtos</h1>
+
+            {toast.message && <Toast type={toast.type} message={toast.message} />}
+
             {loading ? (
                 <div className="spinner-container">
                     <div className="spinner"></div>
-                </div>) : (
+                </div>
+            ) : (
                 <>
                     <div id="search-container">
                         <div id="search-fields">
                             <div>
-                                <label htmlFor="tipo">Status</label>
+                                <label htmlFor="tipo">Tipo</label>
                                 <select
                                     id="tipo"
-                                    value={tipo}
-                                    onChange={(e) => setTipo(e.target.value)}
+                                    value={searchParams.tipo}
+                                    onChange={(e) => setSearchParams({ ...searchParams, tipo: e.target.value })}
                                 >
                                     <option value="">Todos</option>
                                     <option value="servico">Serviço</option>
                                     <option value="produto">Produto</option>
                                 </select>
                             </div>
-                            <div >
+                            <div>
                                 <label htmlFor="xProd">Nome</label>
                                 <input
                                     className="input-geral"
                                     type="text"
                                     id="xProd"
-                                    value={xProd}
-                                    onChange={(e) => setxProd(e.target.value)}
+                                    value={searchParams.nome}
+                                    onChange={(e) => setSearchParams({ ...searchParams, nome: e.target.value })}
                                     maxLength="150"
                                 />
                             </div>
@@ -264,8 +276,8 @@ function Produtos() {
                                     className="input-geral"
                                     type="text"
                                     id="cEAN"
-                                    value={cEAN}
-                                    onChange={handlecEanChange}
+                                    value={searchParams.cEAN}
+                                    onChange={(e) => setSearchParams({ ...searchParams, cEAN: e.target.value })}
                                     maxLength="14"
                                 />
                             </div>
@@ -274,9 +286,7 @@ function Produtos() {
                             <div id="button-group">
                                 <button onClick={handleSearch} className="button">Pesquisar</button>
                                 <button onClick={handleClear} className="button">Limpar</button>
-                                <button onClick={() => {
-                                    handleCadastrarModal();
-                                }} className="button">Cadastrar</button>
+                                <button onClick={handleCadastrarModal} className="button">Cadastrar</button>
                             </div>
                         </div>
                     </div>
@@ -295,13 +305,18 @@ function Produtos() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {currentProdutos.map((produto) => (
+                                    {filteredProdutos.map((produto) => (
                                         <tr key={produto.id}>
                                             <td>{produto.id}</td>
                                             <td>{produto.xProd}</td>
                                             <td>{produto.cEAN}</td>
                                             <td>
-                                                <button onClick={() => handleEditClick(produto)} className="edit-button">Visualizar</button>
+                                                <button
+                                                    onClick={() => handleEditClick(produto)}
+                                                    className="edit-button"
+                                                >
+                                                    Visualizar
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
@@ -310,18 +325,30 @@ function Produtos() {
                         </div>
 
                         <div id="pagination-container">
-                            <button onClick={handlePreviousPage} disabled={currentPage === 1}>
+                            <button
+                                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                                disabled={pagination.currentPage === 1}
+                            >
                                 Anterior
                             </button>
-                            <span>Página {currentPage} de {totalPages}</span>
-                            <button onClick={handleNextPage} disabled={currentPage === totalPages}>
+                            <span>
+                                Página {pagination.currentPage} de {pagination.totalPages}
+                            </span>
+                            <button
+                                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                                disabled={pagination.currentPage === pagination.totalPages}
+                            >
                                 Próxima
                             </button>
                         </div>
 
                         <div id="show-more-container">
                             <label htmlFor="rows-select">Mostrar</label>
-                            <select id="rows-select" value={rowsPerPage} onChange={handleRowsChange}>
+                            <select
+                                id="rows-select"
+                                value={pagination.itemsPerPage}
+                                onChange={handleRowsChange}
+                            >
                                 <option value={10}>10</option>
                                 <option value={25}>25</option>
                                 <option value={50}>50</option>
@@ -332,7 +359,6 @@ function Produtos() {
                 </>
             )}
 
-            {toast.message && <Toast type={toast.type} message={toast.message} />}
             {isCadastraProdutoModalOpen && (
                 <ModalCadastraProduto
                     isOpen={isCadastraProdutoModalOpen}
@@ -341,7 +367,7 @@ function Produtos() {
                     edit={isEdit}
                     produto={selectedProduto}
                     inativar={isInativar}
-                    onInativar={handleInativarProduto} // Passamos a função como callback
+                    onInativar={handleInativarProduto}
                 />
             )}
         </div>

@@ -5,6 +5,8 @@ import Home from './pages/Home';
 import Fornecedores from './pages/Fornecedores';
 import SubgrupoPage from './pages/SubgrupoPage';
 import GrupoPage from './pages/GrupoPage';
+import TipoContratoLayout from './pages/TipoContratoLayout';
+import ContratosLayout from './pages/ContratosLayout';
 import Produtos from './pages/Produtos';
 import LancaNFe from './pages/LancaNFe';
 import MovimentacaoProdutos from './pages/MovimentacaoProdutos';
@@ -125,6 +127,14 @@ function App() {
           <Route
             path="/estoque"
             element={isAuthenticated && hasPermission(permissions, 'estoque', 'view') ? <RelatorioSaldoEstoquePage /> : null} // Condicionalmente não renderiza
+          />        
+          <Route
+            path="/tipolayout"
+            element={isAuthenticated && hasPermission(permissions, 'tipolayout', 'view') ? <TipoContratoLayout /> : null} // Condicionalmente não renderiza
+          />        
+          <Route
+            path="/contratolayout"
+            element={isAuthenticated && hasPermission(permissions, 'contratolayout', 'view') ? <ContratosLayout /> : null} // Condicionalmente não renderiza
           />        
         </Route>
       </Routes>

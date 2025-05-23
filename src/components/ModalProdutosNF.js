@@ -358,6 +358,19 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen, onVinculoSuccess }) 
     }
   };
 
+  const handleProdutoVinculado = (produtoVinculado) => {
+    console.log('Produto vinculado retornado:', produtoVinculado);
+
+
+    setProdutos((prevProdutos) =>
+      prevProdutos.map((produto) =>
+        produto.id === produtoVinculado.id
+          ? { ...produto, sugestao_valor_venda: produtoVinculado.valor_venda || produtoVinculado.vlrVenda }
+          : produto
+      )
+    );
+  };
+
 
   const canDisplayTable = prod?.status === 'andamento';
   const canCadastrarProdutos = prod?.status === 'aberta' || prod?.status === 'andamento';
@@ -454,152 +467,155 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen, onVinculoSuccess }) 
                         </tr>
                       </thead>
                       <tbody>
-                        {currentProducts.map((produto, index) => (
-                          <tr
-                            key={`${produto.id}-${index}`}
-                            className={produto.efetivado ? 'linha-efetivada': produto.identificador == 0 ? 'highlight-red' : produto.status == 1 ? 'disabled-row' : ''}
-                          >
-                        <td>{produto.id}</td>
-                        <td className="descricao-col">{produto.descricao}</td>
-                        <td>{parseFloat(produto.quantidade).toFixed(3)}</td>
-                        <td>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.valor_unit)}</td>
-                        <td>
-                          <input
-                            type="text"
-                            value={
-                              sugestaoValorVenda[`${produto.id}-${index}`] ||
-                              (produto.efetivado ?
-                                new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.vlrVenda) :
-                                new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.sugestao_valor_venda))
-                            }
-                            onChange={(e) => handleSugestaoValorChange(produto.id, index, e.target.value)}
-                            onBlur={(e) => {
-                              const valorNumerico = converterMoedaParaNumero(e.target.value);
-                              if (!isNaN(valorNumerico)) {
-                                handleSugestaoValorChange(
-                                  produto.id,
-                                  index,
-                                  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorNumerico)
-                                );
-                              }
-                            }}
-                            className="input-geral-table"
-                            disabled={produto.efetivado === true}
-                          />
-
-                        </td>
-                        <td>
-                          <div id="button-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <button
-                              className="button-geral"
-                              onClick={() => handleActionClick(produto)}
-                              disabled={produto.status == 1} // Desabilitar botão se o produto estiver inativo
+                        {produtos
+                          .slice(indexOfLastProduct - itemsPerPage, indexOfLastProduct)
+                          .map((produto, index) => (
+                            <tr
+                              key={`${produto.id}-${index}`}
+                              className={produto.efetivado ? 'linha-efetivada' : produto.identificador == 0 ? 'highlight-red' : produto.status == 1 ? 'disabled-row' : ''}
                             >
-                              {produto.identificador == 0 ? 'Tratar' : 'Efetivar'}
-                            </button>
-                            {produto.identificador == 1 && produto.status !== 1 && prod.lancto !== 'automatico' && !isNFClosed && (
-                              <img
-                                src={lixeiraIcon}
-                                alt="Excluir"
-                                className="lixeira-icon"
-                                onClick={() => handleExcluirProdNf(produto)}
-                                style={{ cursor: 'pointer', width: '20px', height: '20px' }}
-                              />
-                            )}
-                          </div>
-                        </td>
+                              <td>{produto.id}</td>
+                              <td className="descricao-col">{produto.descricao}</td>
+                              <td>{parseFloat(produto.quantidade).toFixed(3)}</td>
+                              <td>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.valor_unit)}</td>
+                              <td>
+                                <input
+                                  type="text"
+                                  value={
+                                    sugestaoValorVenda[`${produto.id}-${index}`] ||
+                                    (produto.efetivado ?
+                                      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.vlrVenda) :
+                                      produto.vlrVenda ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.vlrVenda) : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.sugestao_valor_venda))
+                                  }
+                                  onChange={(e) => handleSugestaoValorChange(produto.id, index, e.target.value)}
+                                  onBlur={(e) => {
+                                    const valorNumerico = converterMoedaParaNumero(e.target.value);
+                                    if (!isNaN(valorNumerico)) {
+                                      handleSugestaoValorChange(
+                                        produto.id,
+                                        index,
+                                        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorNumerico)
+                                      );
+                                    }
+                                  }}
+                                  className="input-geral-table"
+                                  disabled={produto.efetivado === true}
+                                />
 
-                      </tr>
-                        ))}
-                    </tbody>
-                  </table>
+                              </td>
+                              <td>
+                                <div id="button-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <button
+                                    className="button-geral"
+                                    onClick={() => handleActionClick(produto)}
+                                    disabled={produto.status == 1} // Desabilitar botão se o produto estiver inativo
+                                  >
+                                    {produto.identificador == 0 ? 'Tratar' : 'Efetivar'}
+                                  </button>
+                                  {produto.identificador == 1 && produto.status !== 1 && prod.lancto !== 'automatico' && !isNFClosed && (
+                                    <img
+                                      src={lixeiraIcon}
+                                      alt="Excluir"
+                                      className="lixeira-icon"
+                                      onClick={() => handleExcluirProdNf(produto)}
+                                      style={{ cursor: 'pointer', width: '20px', height: '20px' }}
+                                    />
+                                  )}
+                                </div>
+                              </td>
+
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            <div className="pagination">
-              {pageNumbers.map((number) => (
-                <button
-                  key={number}
-                  onClick={() => handlePageChange(number)}
-                  className={number === currentPage ? 'active' : ''}
-                >
-                  {number}
-                </button>
-              ))}
-            </div>
+                <div className="pagination">
+                  {pageNumbers.map((number) => (
+                    <button
+                      key={number}
+                      onClick={() => handlePageChange(number)}
+                      className={number === currentPage ? 'active' : ''}
+                    >
+                      {number}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </>
         )}
-      </>
-        )}
-    </div>
+      </div>
 
-      {/* Exibir Toast */ }
-  { toast.message && <Toast type={toast.type} message={toast.message} /> }
+      {/* Exibir Toast */}
+      {toast.message && <Toast type={toast.type} message={toast.message} />}
 
 
-  {
-    isTratarModalOpen && (
-      <ModalTratarProdutosNF
-        key={modalKey}
-        isOpen={isTratarModalOpen}
-        onClose={() => setIsTratarModalOpen(false)}
-        product={selectedProduct}
-        similares={produtosSimilaresFound}
-        onVinculoSuccess={handleVinculoSuccess}
-      />
-    )
-  }
+      {
+        isTratarModalOpen && (
+          <ModalTratarProdutosNF
+            key={modalKey}
+            isOpen={isTratarModalOpen}
+            onClose={() => setIsTratarModalOpen(false)}
+            product={selectedProduct}
+            similares={produtosSimilaresFound}
+            onVinculoSuccess={handleVinculoSuccess}
+            onProdutoVinculado={handleProdutoVinculado}
+          />
+        )
+      }
 
-  {
-    isDetalhesModalOpen && (
-      <ModalDetalhesProdutosNF
-        isOpen={isDetalhesModalOpen}
-        onClose={() => setIsDetalhesModalOpen(false)}
-        product={selectedProduct}
-      />
-    )
-  }
+      {
+        isDetalhesModalOpen && (
+          <ModalDetalhesProdutosNF
+            isOpen={isDetalhesModalOpen}
+            onClose={() => setIsDetalhesModalOpen(false)}
+            product={selectedProduct}
+          />
+        )
+      }
 
-  {
-    isCadastraProdutoModalOpen && (
-      <ModalCadastraProduto
-        isOpen={isCadastraProdutoModalOpen}
-        onClose={() => setIsCadastraProdutoModalOpen(false)}
-        onSubmit={() => handleVinculoSuccess('Produto cadastrado com sucesso!')}
-        prod={selectedNFe}
-        additionalFields={additionalFields}
+      {
+        isCadastraProdutoModalOpen && (
+          <ModalCadastraProduto
+            isOpen={isCadastraProdutoModalOpen}
+            onClose={() => setIsCadastraProdutoModalOpen(false)}
+            onSubmit={() => handleVinculoSuccess('Produto cadastrado com sucesso!')}
+            prod={selectedNFe}
+            additionalFields={additionalFields}
+          />
+        )
+      }
+      {/* Modal de confirmação */}
+      {
+        isConfirmDialogOpen && (
+          <ConfirmDialog
+            isOpen={isConfirmDialogOpen}
+            message={mensagem}
+            onConfirm={handleConfirmDialog}
+            onCancel={cancelDelete}
+          />
+        )
+      }
+      {/* Modal de pesquisa de produtos */}
+      <ModalPesquisaGN
+        isOpen={isPesquisaGNModalOpen}
+        onClose={closePesquisaGNModal}
+        onSelectProduto={handleSelectProduto}
       />
-    )
-  }
-  {/* Modal de confirmação */ }
-  {
-    isConfirmDialogOpen && (
-      <ConfirmDialog
-        isOpen={isConfirmDialogOpen}
-        message={mensagem}
-        onConfirm={handleConfirmDialog}
-        onCancel={cancelDelete}
-      />
-    )
-  }
-  {/* Modal de pesquisa de produtos */ }
-  <ModalPesquisaGN
-    isOpen={isPesquisaGNModalOpen}
-    onClose={closePesquisaGNModal}
-    onSelectProduto={handleSelectProduto}
-  />
-  {/* Modal de Vinculação de Veículos */ }
-  {
-    isVinculaVeiculoModalOpen && (
-      <ModalVinculaProdVeiculo
-        isOpen={isVinculaVeiculoModalOpen}
-        onClose={closeVinculaVeiculoModal}
-        onNFOpen={true}
-        produto={produtoParaVincular}
-        quantidadeRestante={quantidadeVinculada}
-        onVinculoSuccess={handleVinculoSuccess} // Atualiza lista de produtos ao sucesso
-      />
-    )
-  }
+      {/* Modal de Vinculação de Veículos */}
+      {
+        isVinculaVeiculoModalOpen && (
+          <ModalVinculaProdVeiculo
+            isOpen={isVinculaVeiculoModalOpen}
+            onClose={closeVinculaVeiculoModal}
+            onNFOpen={true}
+            produto={produtoParaVincular}
+            quantidadeRestante={quantidadeVinculada}
+            onVinculoSuccess={handleVinculoSuccess} // Atualiza lista de produtos ao sucesso
+          />
+        )
+      }
     </div >
   );
 

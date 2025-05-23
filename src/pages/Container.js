@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { getResumoAteData, getSaldoPorProduto, getProdutosEstoque } from '../services/api';
+import { listarContainers } from '../services/api';
 import Pagination from '../utils/Pagination';
-import { gerarPDFRelatorioEstoque } from '../relatorios/gerarPDFRelatorioEstoque';
 import Toast from '../components/Toast';
 
 
-const RelatorioSaldoEstoquePage = () => {
+const Container = () => {
     const dataAtual = () => {
         const hoje = new Date();
         const ano = hoje.getFullYear();
@@ -16,23 +15,16 @@ const RelatorioSaldoEstoquePage = () => {
     const [data, setData] = useState('');
     const [dataImpressao, setDataImpressao] = useState('');
     const [loading, setLoading] = useState(false);
-    const [tipoRelatorio, setTipoRelatorio] = useState('saldo'); // 'resumo', 'saldo', 'estoque'
+    const [tipoContainer, setTipoContainer] = useState(); // 'resumo', 'saldo', 'estoque'
+    const [tiposContainer, setTiposContainer] = useState([]); // 'resumo', 'saldo', 'estoque'
+    const [containers, setContainers] = useState([]); // 'resumo', 'saldo', 'estoque'
     const [nomeProduto, setNomeProduto] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [toast, setToast] = useState({ message: '', type: '' });
-    const [relatorio, setRelatorio] = useState([]);
     const [totalPages, setTotalPages] = useState(1);
+    const [filter, setFilter] = useState({});
     const [executarBusca, setExecutarBusca] = useState(false);
-
-
-    useEffect(() => {
-        setRelatorio([]);
-        setCurrentPage(1);
-        setData(dataAtual());
-        setDataImpressao('');
-        setNomeProduto('');
-    }, [tipoRelatorio]);
 
     useEffect(() => {
         if (toast.message) {
@@ -43,33 +35,28 @@ const RelatorioSaldoEstoquePage = () => {
 
     useEffect(() => {
         if (executarBusca) {
-            fetchRelatorio();
+            fetchContainer();
         }
-    }, [currentPage, rowsPerPage, executarBusca]);
+    }, [currentPage, rowsPerPage]);
 
 
 
-    const fetchRelatorio = async () => {
-        if (!data && tipoRelatorio === 'resumo') return;
-
+    const fetchContainer = async () => {
         try {
             setLoading(true);
             setDataImpressao(data);
-            let response;
 
-            if (tipoRelatorio === 'resumo') {
-                response = await getResumoAteData(data, currentPage, rowsPerPage);
-            } else if (tipoRelatorio === 'saldo') {
-                response = await getSaldoPorProduto(data, nomeProduto.trim(), currentPage, rowsPerPage);
-            } else if (tipoRelatorio === 'estoque') {
-                response = await getProdutosEstoque(data, currentPage, rowsPerPage);
-            }
+            const response = await listarContainers({
+                filter,
+                page: currentPage,
+                limit: rowsPerPage
+            });
 
             const { dados, totalPaginas, totalRegistros } = response.data;
 
             if (dados.length === 0) {
                 setToast({ message: 'Nenhum resultado encontrado.', type: 'warning' });
-                setRelatorio([]);
+                setContainers([]);
                 setTotalPages(1);
             } else {
                 setToast({ message: 'Relatório gerado com sucesso.', type: 'success' });
@@ -85,45 +72,15 @@ const RelatorioSaldoEstoquePage = () => {
         }
     };
 
-    const fetchRelatorioCompleto = async () => {
-        try {
-            let response;
-
-            if (tipoRelatorio === 'saldo') {
-                response = await getSaldoPorProduto(data, nomeProduto, 1, 0); // limit 0 = sem paginação
-            } else if (tipoRelatorio === 'resumo') {
-                response = await getResumoAteData(data, 1, 0);
-            } else if (tipoRelatorio === 'estoque') {
-                response = await getProdutosEstoque(1, 0);
-            }
-
-            const { dados } = response.data;
-
-            gerarPDFRelatorioEstoque({
-                tipoRelatorio,
-                dataImpressao,
-                relatorio: dados,
-                nomeProduto
-            });
-
-        } catch (error) {
-            setToast({ message: 'Erro ao gerar PDF', type: 'warning' });
-            console.error('Erro ao buscar dados completos para PDF:', error);
-        }
-    };
-
-    // const totalPages = Math.ceil(relatorioCompleto.length / rowsPerPage);
-
     return (
         <div className="p-6">
-            <h1 className='title-page'>Relatório de Saldo de Estoque</h1>
-
+            <h1 className='title-page'>Containers</h1>
             <div id="search-container">
                 <div id="search-fields">
                     <select
                         className="border p-2 rounded"
                         value={tipoRelatorio}
-                        onChange={(e) => setTipoRelatorio(e.target.value)}
+                        onChange={(e) => setTipoContainer(e.target.value)}
                     >
                         <option value="resumo">Resumo até data</option>
                         <option value="saldo">Saldo por Produto</option>
@@ -277,4 +234,4 @@ const RelatorioSaldoEstoquePage = () => {
     );
 };
 
-export default RelatorioSaldoEstoquePage;
+export default Container;

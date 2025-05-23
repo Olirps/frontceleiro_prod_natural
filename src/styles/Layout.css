@@ -63,6 +63,49 @@
   z-index: 1000;
 }
 
+#contrato-submenu {
+  display: none;
+  position: absolute;
+  top: 0; /* ajustar se precisar para alinhar com o pai */
+  left: 100%; /* aparece à direita do item Contrato */
+  background-color: #007bff;
+  padding: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  z-index: 1000;
+  white-space: nowrap;
+}
+
+#clientes-submenu {
+  display: none;
+  position: absolute;
+  top: 0; /* ajustar se precisar para alinhar com o pai */
+  left: 100%; /* aparece à direita do item Contrato */
+  background-color: #007bff;
+  padding: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  z-index: 1000;
+  white-space: nowrap;
+}
+
+/* Mostrar submenu Contrato ao passar o mouse no item Contrato */
+#contrato:hover #contrato-submenu {
+  display: block;
+}
+
+#clientes:hover #clientes-submenu {
+  display: block;
+}
+
+/* Ajustar posição submenu Contrato para ficar dentro do submenu Cadastros */
+#cadastros-submenu #contrato {
+  position: relative;
+}
+#cadastros-submenu #clientes {
+  position: relative;
+}
+
 .submenu-item {
   padding: 10px;
   color: #fff;
@@ -236,6 +279,36 @@
     width: 330px;
     z-index: -1;
   }
+  #contrato-submenu {
+  display: none;
+  position: absolute;
+  top: 100; /* ajustar se precisar para alinhar com o pai */
+  left: 50%; /* aparece à direita do item Contrato */
+  background-color: #007bff;
+  padding: 10px;
+  box-shadow: 6px 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  z-index: 1000;
+  white-space: nowrap;
+}
+#clientes-submenu {
+  display: none;
+  position: absolute;
+  top: 100; /* ajustar se precisar para alinhar com o pai */
+  left: 50%; /* aparece à direita do item Contrato */
+  background-color: #007bff;
+  padding: 10px;
+  box-shadow: 6px 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  z-index: 1000;
+  white-space: nowrap;
+}
+
+/* Mostrar submenu Contrato ao passar o mouse no item Contrato */
+
+/* Ajustar posição submenu Contrato para ficar dentro do submenu Cadastros */
+
+
 }
 
 @media (min-width: 769px) {

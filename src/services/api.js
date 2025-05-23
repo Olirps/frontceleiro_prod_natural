@@ -443,8 +443,18 @@ export const getQuantidadeRestanteProdutoNF = async (id) => {
 };
 
 export const vinculaProdutoNF = async (id, produto) => {
-  return api.put(`/produtosnf/vincular/${id}`, produto);
+  try {
+    const response = await api.put(`/produtosnf/vincular/${id}`, produto);
+    return response.data; // Retorna os dados da resposta
+  } catch (error) {
+    console.error("Erro ao vincular produto à NF:", error);
+    throw error; // Propaga o erro para o chamador tratar
+  } finally {
+    // Caso queira adicionar algum comportamento de finalização no futuro
+    // console.log('Requisição de vínculo finalizada.');
+  }
 };
+
 
 export const desvinculaProdutoNF = async (id, produto) => {
   return api.put(`/produtosnf/desvincular/${id}`, produto);
@@ -508,9 +518,50 @@ export const getProdutosVenda = async (filters = {}, page = 1) => {
   }
 };
 
+
 export const getProdutos = async (filters = {}) => {
-  const response = await api.get('/produtos', { params: filters });
-  return response;
+  try {
+    // Valores padrão para paginação
+    const params = {
+      page: 1,
+      pageSize: 10,
+      ...filters
+    };
+
+    // Validação básica dos parâmetros
+    if (params.page && (isNaN(params.page) || params.page < 1)) {
+      throw new Error('O parâmetro "page" deve ser um número maior que 0');
+    }
+
+    if (params.pageSize && (isNaN(params.pageSize) || params.pageSize < 1)) {
+      throw new Error('O parâmetro "pageSize" deve ser um número maior que 0');
+    }
+
+    const response = await api.get('/produtos', { params });
+
+    // Retorna tanto os dados quanto os metadados de paginação
+    return {
+      data: response.data.data, // Array de produtos
+      pagination: response.data.pagination // Metadados de paginação
+    };
+  } catch (error) {
+    console.error('Erro ao buscar produtos:', error);
+
+    // Para erros de resposta da API, retornamos o erro completo
+    if (error.response) {
+      throw {
+        status: error.response.status,
+        message: error.response.data.erro || 'Erro ao buscar produtos',
+        details: error.response.data.detalhes
+      };
+    }
+
+    // Para outros tipos de erros (como os de validação acima)
+    throw {
+      status: 400,
+      message: error.message
+    };
+  }
 };
 
 export const addProdutos = async (produto) => {
@@ -535,6 +586,140 @@ export const getProdutosVendidos = async (id) => {
 
 export const getProdutosVendidosSemana = async (id) => {
   return api.get('produtos/vendidos-semana');
+};
+
+
+// ENDPOINT - CONTRATO LAYOUT
+export const getTipoContratosLayout = async (dados, page = 1, limit = 20) => {
+  try {
+    // Valores padrão para paginação
+    const { descricao, status } = dados;
+    const params = {
+      page,
+      limit,
+      status
+    };
+    const response = await api.get('/tipos-contrato-layout', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar contratos:', error);
+    throw error; // Repassa o erro para tratamento
+  }
+};
+
+export const addTipoContratosLayout = async (tipoContrato) => {
+  try {
+    const response = await api.post('/tipos-contrato-layout', tipoContrato);
+    return response.data; // Retorna os dados da venda iniciada
+  } catch (error) {
+    console.error('Erro ao criar novo tipo layout contrato:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+}
+
+export const alterarTipoContratosLayout = async (id, tipoContrato) => {
+  try {
+    const response = await api.put(`/tipos-contrato-layout/${id}`, tipoContrato);
+    return response.data; // Retorna os dados da venda iniciada
+  } catch (error) {
+    console.error('Erro ao alterar o  tipo contrato layout:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+}
+
+export const getContratosLayout = async (dados = {}, page = 1, limit = 20) => {
+  try {
+    const { titulo_contrato, status,IdtituloLayout } = dados;
+
+    const params = {
+      page,
+      limit
+    };
+
+    if (titulo_contrato) {
+      params.titulo_contrato = titulo_contrato;
+    }
+
+    if (status !== undefined) {
+      params.status = status;
+    }
+    
+    if (IdtituloLayout) {
+      params.id_tipo_contrato = IdtituloLayout;
+    }
+
+    const response = await api.get('/contratos-layout', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar contratos:', error);
+    throw error;
+  }
+};
+
+export const addContratosLayout = async (Contrato) => {
+  try {
+    const response = await api.post('/contratos-layout', Contrato);
+    return response.data; // Retorna os dados da venda iniciada
+  } catch (error) {
+    console.error('Erro ao criar novo contrato layout:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+}
+
+export const alterarContratosLayout = async (id, Contrato) => {
+  try {
+    const response = await api.put(`/contratos-layout/${id}`, Contrato);
+    return response.data; // Retorna os dados da venda iniciada
+  } catch (error) {
+    console.error('Erro ao alterar o contrato layout:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+}
+
+// ENDPOINT - CONTAINER
+export const listarContainers = async (filters = {}) => {
+  try {
+    // Valores padrão para paginação
+    const params = {
+      page: 1,
+      pageSize: 10,
+      ...filters
+    };
+
+    // Validação básica dos parâmetros
+    if (params.page && (isNaN(params.page) || params.page < 1)) {
+      throw new Error('O parâmetro "page" deve ser um número maior que 0');
+    }
+
+    if (params.pageSize && (isNaN(params.pageSize) || params.pageSize < 1)) {
+      throw new Error('O parâmetro "pageSize" deve ser um número maior que 0');
+    }
+
+    const response = await api.get('/containers', { params });
+
+    // Retorna tanto os dados quanto os metadados de paginação
+    return {
+      data: response.data.data, // Array de produtos
+      pagination: response.data.pagination // Metadados de paginação
+    };
+  } catch (error) {
+    console.error('Erro ao buscar Containers:', error);
+
+    // Para erros de resposta da API, retornamos o erro completo
+    if (error.response) {
+      throw {
+        status: error.response.status,
+        message: error.response.data.erro || 'Erro ao buscar Containers',
+        details: error.response.data.detalhes
+      };
+    }
+
+    // Para outros tipos de erros (como os de validação acima)
+    throw {
+      status: 400,
+      message: error.message
+    };
+  }
 };
 
 

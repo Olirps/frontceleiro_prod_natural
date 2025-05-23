@@ -8,7 +8,7 @@ import { use } from 'react';
 import ModalInputCFOP from '../components/ModalInputCFOP';
 
 
-const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSuccess, similares }) => {
+const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSuccess, similares, onProdutoVinculado }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState(null);
@@ -26,6 +26,7 @@ const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSu
     const [empresa, setEmpresa] = useState('');
     const [isCFOPModalOpen, setIsCFOPModalOpen] = useState(false);
     const [cfopInformado, setCfopInformado] = useState('');
+    const [valorVenda, setValorVenda] = useState(0);
 
 
 
@@ -38,11 +39,10 @@ const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSu
     const handleSelectProduto = (selectedProduto) => {
         setProduto(selectedProduto.xProd);
         setProdutoId(selectedProduto.id);
-
+        setValorVenda(selectedProduto.vlrVenda);
         setConfirmAction('vincular');
         setIsConfirmationModalOpen(true);
         setMensagem(`Deseja Vincular o produto o CFOP Padrão ID: ${selectedProduto.id} ${selectedProduto.xProd} ?`);
-
     };
 
 
@@ -110,7 +110,11 @@ const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSu
     };
 
     const handleConfirm = async () => {
-        await addProdutos(product, novoNome, empresa.cfop_padrao);
+        const response = await addProdutos(product, novoNome, empresa.cfop_padrao);
+        if (response) {
+            onVinculoSuccess(response); // Chama a função do modal pai
+            onClose();
+        }
     }
 
     // Função para vincular produto
@@ -125,8 +129,11 @@ const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSu
         const produtoVinculado = { produto_ori_id, nota_id, produto, valor_total: valor_unit, produto_id: produtoId, tipo_movimentacao, quantidade };
 
         try {
-            await vinculaProdutoNF(produto_ori_id, produtoVinculado);
+            const prodVinculado = await vinculaProdutoNF(produto_ori_id, produtoVinculado);
             onVinculoSuccess("Produto vinculado com sucesso!"); // Chama a função do modal pai
+            if (onProdutoVinculado) {
+                onProdutoVinculado(prodVinculado); // <-- Retorno ao componente pai
+            }
             onClose();
         } catch (err) {
             const errorMessage = err.response?.data?.error || "Erro ao atualizar produto.";

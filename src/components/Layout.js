@@ -65,7 +65,8 @@ function Layout() {
 
   // Função que retorna true se o usuário tem permissão para visualizar o item de menu
   const canViewMenuItem = (pageName) => {
-    return hasPermission(permissions, pageName, 'view');
+    const permite = hasPermission(permissions, pageName, 'view');
+    return permite;
   };
 
   return (
@@ -87,44 +88,62 @@ function Layout() {
                 <div id="cadastros-submenu" className={isCadastrosOpen ? 'submenu' : ''}>
                   {canViewMenuItem('permissoes') && <Link to="/permissoes" className="submenu-item">Permissões</Link>}
                   {canViewMenuItem('empresas') && <Link to="/empresas" className="submenu-item">Empresas</Link>}
-                  {canViewMenuItem('clientes') && <Link to="/clientes" className="submenu-item">Clientes</Link>}
-                  {canViewMenuItem('funcionarios') && <Link to="/funcionarios" className="submenu-item">Funcionários</Link>}
-                  {canViewMenuItem('fornecedores') && <Link to="/fornecedores" className="submenu-item">Fornecedores</Link>}
+
+                  {(canViewMenuItem('clientes') || canViewMenuItem('funcionarios') || canViewMenuItem('fornecedores')) && (
+                    <div id="clientes" className="submenu-item submenu-parent">
+                      <span>Pessoas</span>
+                      <div id="clientes-submenu" className="submenu">
+                        {canViewMenuItem('clientes') && <Link to="/clientes" className="submenu-item">Clientes</Link>}
+                        {canViewMenuItem('funcionarios') && <Link to="/funcionarios" className="submenu-item">Funcionários</Link>}
+                        {canViewMenuItem('fornecedores') && <Link to="/fornecedores" className="submenu-item">Fornecedores</Link>}
+                      </div>
+                    </div>
+                  )}
                   {canViewMenuItem('produtos') && <Link to="/produtos" className="submenu-item">Produtos/Serviços</Link>}
                   {canViewMenuItem('osstatus') && <Link to="/osstatus" className="submenu-item">Status O.S.</Link>}
                   {canViewMenuItem('veiculos') && <Link to="/veiculos" className="submenu-item">Veículos</Link>}
                   {canViewMenuItem('contasbancarias') && <Link to="/contasbancarias" className="submenu-item">Contas Bancárias</Link>}
+                  {/* Novo submenu Contrato */}
+                  {(canViewMenuItem('tipolayout') || canViewMenuItem('contratolayout')) && (
+                    <div id="contrato" className="submenu-item submenu-parent">
+                      <span>Contrato</span>
+                      <div id="contrato-submenu" className="submenu">
+                        {canViewMenuItem('tipolayout') && <Link to="/tipolayout" className="submenu-item">Tipo Layout</Link>}
+                        {canViewMenuItem('contratolayout') && <Link to="/contratolayout" className="submenu-item">Contrato Layout</Link>}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : null}
 
             {/* Movimentação menu item with a submenu */}
-            {canViewMenuItem('notafiscal') || canViewMenuItem('movimentacaoprodutos') || canViewMenuItem('vendas') || canViewMenuItem('os')?
-            (
-              <div id="movimentacao" className="menu-item" onClick={toggleMovimentacao}>
-                <span>Movimentação</span>
-                <div id="movimentacao-submenu" className={isMovimentacaoOpen ? 'submenu' : ''}>
-                  {canViewMenuItem('notafiscal') && <Link to="/notafiscal" className="submenu-item">Lançar NF-e</Link>}
-                  {canViewMenuItem('vendas') && <Link to="/vendas" className="submenu-item">Vendas</Link>}
-                  {canViewMenuItem('os') && <Link to="/os" className="submenu-item">Ordem de Serviço</Link>}
-                  {canViewMenuItem('movimentacaoprodutos') && <Link to="/movimentacaoprodutos" className="submenu-item">Movimentação de Produtos</Link>}
+            {canViewMenuItem('notafiscal') || canViewMenuItem('movimentacaoprodutos') || canViewMenuItem('vendas') || canViewMenuItem('os') ?
+              (
+                <div id="movimentacao" className="menu-item" onClick={toggleMovimentacao}>
+                  <span>Movimentação</span>
+                  <div id="movimentacao-submenu" className={isMovimentacaoOpen ? 'submenu' : ''}>
+                    {canViewMenuItem('notafiscal') && <Link to="/notafiscal" className="submenu-item">Lançar NF-e</Link>}
+                    {canViewMenuItem('vendas') && <Link to="/vendas" className="submenu-item">Vendas</Link>}
+                    {canViewMenuItem('os') && <Link to="/os" className="submenu-item">Ordem de Serviço</Link>}
+                    {canViewMenuItem('movimentacaoprodutos') && <Link to="/movimentacaoprodutos" className="submenu-item">Movimentação de Produtos</Link>}
+                  </div>
                 </div>
-              </div>
-            ) : null}
+              ) : null}
 
             {/* Gestão Financeira menu item with a submenu */}
-            {canViewMenuItem('contaspagar') || canViewMenuItem('movimentacaofinanceiradespesas')|| canViewMenuItem('movimentacaofinanceirareceitas')? 
-            (
-              <div id="gestao-financeira" className="menu-item" onClick={toggleGestaoFinanceira}>
-                <span>Gestão Financeira</span>
-                <div id="gestao-financeira-submenu" className={isGestaoFinanceiraOpen ? 'submenu' : ''}>
-                  {canViewMenuItem('movimentacaofinanceiradespesas') && <Link to="/movimentacaofinanceiradespesas" className="submenu-item">Contas a Pagar</Link>}
-                  {canViewMenuItem('movimentacaofinanceirareceitas') && <Link to="/movimentacaofinanceirareceitas" className="submenu-item">Contas a Receber</Link>}
+            {canViewMenuItem('contaspagar') || canViewMenuItem('movimentacaofinanceiradespesas') || canViewMenuItem('movimentacaofinanceirareceitas') ?
+              (
+                <div id="gestao-financeira" className="menu-item" onClick={toggleGestaoFinanceira}>
+                  <span>Gestão Financeira</span>
+                  <div id="gestao-financeira-submenu" className={isGestaoFinanceiraOpen ? 'submenu' : ''}>
+                    {canViewMenuItem('movimentacaofinanceiradespesas') && <Link to="/movimentacaofinanceiradespesas" className="submenu-item">Contas a Pagar</Link>}
+                    {canViewMenuItem('movimentacaofinanceirareceitas') && <Link to="/movimentacaofinanceirareceitas" className="submenu-item">Contas a Receber</Link>}
+                  </div>
                 </div>
-              </div>
-            ) : null}
+              ) : null}
             {/* Relatórios */}
-            {canViewMenuItem('relatorios') || canViewMenuItem('produtosvendidos') || canViewMenuItem('contaspendentes') || canViewMenuItem('estoque')? (
+            {canViewMenuItem('relatorios') || canViewMenuItem('produtosvendidos') || canViewMenuItem('contaspendentes') || canViewMenuItem('estoque') ? (
               <div id="relatorios" className="menu-item" onClick={toggleRelatorios}>
                 <span>Relatórios</span>
                 <div id="relatorios-submenu" className={isRelatoriosOpen ? 'submenu' : ''}>
