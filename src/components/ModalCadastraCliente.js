@@ -13,6 +13,7 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
     const [nome, setNome] = useState('');
     const [nomeFantasia, setNomeFantasia] = useState('');
     const [cpfCnpj, setCpf] = useState('');
+    const [inscricao_estadual, setInscricaoEstadual] = useState('');
     const [email, setEmail] = useState('');
     const [celular, setCelular] = useState('');
     const [logradouro, setLogradouro] = useState('');
@@ -48,6 +49,7 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
                 setNome(cliente.nome || '');
                 setNomeFantasia(cliente.nomeFantasia || '');
                 setCpf(cliente.cpfCnpj || '');
+                setInscricaoEstadual(cliente.inscricao_estadual || '');
                 setEmail(cliente.email || '');
                 setCelular(cliente.celular || '');
                 setLogradouro(cliente.logradouro || '');
@@ -71,6 +73,7 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
                 setNome('');
                 setNomeFantasia('');
                 setCpf('');
+                setInscricaoEstadual('');
                 setEmail('');
                 setCelular('');
                 setLogradouro('');
@@ -232,6 +235,18 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
                                         onChange={(e) => { setCpf(cpfCnpjMask(e.target.value)) }} //forma resumida de atualizar o input
                                         disabled={!permiteEditar}
                                         required
+                                    />
+                                </div>
+                                <div className="form-line">
+                                    <label htmlFor="inscricao_estadual">Inscrição Estadual</label>
+                                    <input
+                                        className='input-geral'
+                                        type="text"
+                                        id="inscricao_estadual"
+                                        name="inscricao_estadual"
+                                        value={inscricao_estadual} // Controlado pelo estado
+                                        onChange={(e) => { setInscricaoEstadual(e.target.value) }} //forma resumida de atualizar o input
+                                        disabled={!permiteEditar}
                                     />
                                 </div>
                             </div>
