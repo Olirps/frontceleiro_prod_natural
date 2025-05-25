@@ -95,8 +95,10 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
                 let dataHoje = new Date().toLocaleString().replace(',', '');
                 let DataHora = converterData(dataHoje);
                 setLoading(true);
-                const vendaIniciada = await iniciarVenda({ DataHora });
-                setPreVenda(vendaIniciada.id);
+                if (!edit) {
+                    const vendaIniciada = await iniciarVenda({ DataHora });
+                    setPreVenda(vendaIniciada.id);
+                }
                 const [veiculosData, funcionariosData, osStatusesData] = await Promise.all([
                     getVeiculos(),
                     getFuncionarios(),

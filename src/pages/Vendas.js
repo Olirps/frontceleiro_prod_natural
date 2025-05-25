@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getVendas, cancelaVenda, getVendaById, updateVenda, findByIdXml, registravenda, getFormasPagamento, getEmpresaById, statusNfe, retornaXMLAssinado, cancelaNf, geraXml } from '../services/api';
+import { getVendas, cancelaVenda, getVendaById, updateVenda, registraCancelamento, registravenda, getFormasPagamento, getEmpresaById, statusNfe, retornaXMLAssinado, cancelaNf, geraXml } from '../services/api';
 import '../styles/Vendas.css';
 import ModalCliente from '../components/ModalCadastraCliente';
 import ComunicacaoSEFAZ from '../components/ComunicacaoSEFAZ';
@@ -47,11 +47,41 @@ function Vendas() {
   const [somarLancamentosManuais, setSomarLancamentosManuais] = useState(false);
   const { permissions } = useAuth();
   const [isEdit, setIsEdit] = useState(false);
+  const [status, setStatus] = useState('');
 
 
   const fetchVendas = async () => {
     try {
-      const response = await getVendas();
+      let response;
+      const params = {
+        clienteNome: nome || undefined,
+        cpfCnpj: cpfCnpj || undefined,
+        dataInicio: dataVendaInicial || undefined,
+        dataFim: dataVendaFinal || undefined,
+        tipoVenda: tipoVenda || undefined
+      };
+
+      // Limpar parâmetros vazios
+      Object.keys(params).forEach(key => {
+        if (params[key] === undefined || params[key] === '') {
+          delete params[key];
+        }
+      });
+      if (Object.keys(params).length > 0) {
+        // Converter datas para o formato YYYY-MM-DD se existirem
+        if (params.dataInicio) {
+          params.dataInicio = new Date(params.dataInicio).toISOString().split('T')[0] + ' 00:00:00';
+        }
+        if (params.dataFim) {
+          params.dataFim = new Date(params.dataFim).toISOString().split('T')[0] + ' 23:59:59';
+        }
+        response = await getVendas(params);
+
+
+      } else {
+        response = await getVendas();
+      }
+
       const responseTipos = await getFormasPagamento();
       const data = response.data.transacoes;
       const tiposVenda = [{ id: 0, nome: 'Desconto' }, ...responseTipos.data];
@@ -322,12 +352,13 @@ function Vendas() {
   };
   // Calcula as somas de desconto e totalPrice
 
-  const handleOpenModalCancelaVenda = (venda) => {
+  const handleOpenModalCancelaVenda = async (venda) => {
     if (!hasPermission(permissions, 'vendas', 'delete')) {
       setToast({ message: "Você não tem permissão para cancelar vendas.", type: "error" });
       return; // Impede a abertura do modal
     } else {
       setIdVenda(venda);
+      setStatus(await statusNfe(venda));
       setIsModalCancelaVendaOpen(true);
     }
   };
@@ -348,51 +379,28 @@ function Vendas() {
       dataCancelamento: dataAjustada
     };
     try {
-      const status = await statusNfe(vendaId);
       if (status.response === 'ANDAMENTO') {
         const response = await cancelaVenda(vendaId, lancamentoData);
         if (response.status === 200) {
           setToast({ message: 'Registrado(s) cancelado(s) com sucesso!', type: 'success' });
-          setIsModalCancelaVendaOpen(false);
-          fetchVendas();
         } else {
           setToast({ message: 'Erro ao cancelar venda!', type: 'error' });
         }
       } else {
-        const response = await cancelaNf(vendaId, motivo_cancelamento);
+        const response = await cancelaNf(vendaId, lancamentoData);
         if (response.status === 200) {
-          try {
-            const res = await fetch(`http://3.13.205.247:5000/api/AssinaturaController_A1/assinar-xml?cnpj=45393325000110&tipoEvento=cancel`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "text/xml" // Define o tipo de conteúdo como XML
-              },
-              body: response.data // Envia o XML limpo no corpo da requisição
-            });
-
-            if (!res.ok) {
-              throw new Error(`Erro na requisição: ${response.status} ${response.statusText}`);
-            } else {
-              const xmlAssinado = await res.text();
-
-              const response = await cancelaVenda(vendaId, lancamentoData);
-
-              setToast({ message: 'Registrado(s) cancelado(s) com sucesso!', type: 'success' });
-              setIsModalCancelaVendaOpen(false);
-              fetchVendas();
-            }
-          } catch (error) {
-            setToast({ message: 'Erro ao cancelar venda!', type: 'error' });
-            console.error("Erro ao registrar lançamento:", error);
-          } finally {
-            setIsModalCancelaVendaOpen(false);
-          }
+          setToast({ message: 'Registrado(s) cancelado(s) com sucesso!', type: 'success' });
+        } else {
+          setToast({ message: 'Erro ao cancelar venda!', type: 'error' });
         }
-
       }
     } catch (error) {
       setToast({ message: 'Erro ao cancelar venda!', type: 'error' });
       console.error("Erro ao registrar lançamento:", error);
+    } finally {
+      setIsModalCancelaVendaOpen(false);
+      setCurrentPage(1); // Resetar para a primeira página após a busca
+      fetchVendas();
     }
   };
 
@@ -710,6 +718,7 @@ function Vendas() {
             onClose={handleCloseModalCancelaVenda}
             onSubmit={handleSubmitLancamento}
             idVenda={idVenda}
+            status={status}
           />
         )}
         {/* Modal de Confirmação */}

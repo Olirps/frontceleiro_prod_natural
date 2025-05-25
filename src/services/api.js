@@ -837,7 +837,18 @@ export const findByIdXml = async (id) => {
 
 export const cancelaNf = async (id, motivo) => {
   try {
-    const response = await api.post(`/cancela-nf/${id}`, { motivo });
+    const response = await api.put(`/cancela-nf/${id}`, { motivo });
+
+    return response;
+  } catch (error) {
+    console.error('Erro ao buscar XML por ID:', error);
+    throw error;
+  }
+};
+
+export const registraCancelamento = async (id, retorno) => {
+  try {
+    const response = await api.post(`/cancela-xml/${id}`, { retorno });
 
     return response;
   } catch (error) {

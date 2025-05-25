@@ -266,6 +266,25 @@ const formatarPercentual = (valor) => {
   return valorFormatado;
 };
 
+function formatarCEP(cep) {
+  // Remove tudo que não for número
+  const numeros = cep.replace(/\D/g, '');
+  let cepFormatado = numeros
+  // Verifica se tem exatamente 8 dígitos
+  if (numeros.length !== 8) {
+    return cepFormatado;
+  } else {
+    cepFormatado = numeros.replace(/(\d{5})(\d{3})/, '$1-$2');
+    return cepFormatado;
+
+  }
+
+  // Aplica a máscara
+
+
+}
+
+
 
 module.exports = {
   converterData,
@@ -282,5 +301,6 @@ module.exports = {
   dataAtual,
   formatarValor,
   mascaraPercentual,
-  formatarPercentual
+  formatarPercentual,
+  formatarCEP
 };

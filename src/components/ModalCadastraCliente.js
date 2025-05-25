@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import '../styles/ModalCadastraCliente.css'; // Certifique-se de criar este CSS também
 import { cpfCnpjMask } from './utils';
+import { formatarCEP } from '../utils/functions';
 import { getUfs, getMunicipiosUfId } from '../services/api';
 import Toast from '../components/Toast';
 import { formatarCelular } from '../utils/functions';
@@ -55,7 +56,7 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
                 setLogradouro(cliente.logradouro || '');
                 setNumero(cliente.numero || '');
                 setBairro(cliente.bairro || '');
-                setCep(cliente.cep || '');
+                setCep(formatarCEP(cliente.cep) || '');
 
                 // Preencher UF e Município com base nos IDs
                 if (cliente.uf_id) {
@@ -353,7 +354,7 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
                                             id="cep"
                                             name="cep"
                                             value={cep}
-                                            onChange={(e) => { setCep(e.target.value) }}
+                                            onChange={(e) => { setCep(formatarCEP(e.target.value)) }}
                                             maxLength={9}
                                             disabled={!permiteEditar}
                                         />

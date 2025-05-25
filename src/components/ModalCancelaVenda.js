@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import Toast from '../components/Toast';
 import '../styles/ModalCancelaVenda.css';
+import { converterData } from '../utils/functions';
 
-const ModalCancelaVenda = ({ idVenda, isOpen, onClose, onSubmit }) => {
+
+import { cancelaNf } from '../services/api';
+
+const ModalCancelaVenda = ({ idVenda, isOpen, onClose, status, onSubmit }) => {
     const [id, setId] = useState('');
     const [motivo, setMotivo] = useState('');
     const [toast, setToast] = useState({ message: '', type: '' });
@@ -16,6 +20,15 @@ const ModalCancelaVenda = ({ idVenda, isOpen, onClose, onSubmit }) => {
     }, [toast]);
 
     if (!isOpen) return null;
+    const handleCancelaNF = async () => {
+        let dataHoje = new Date().toLocaleString().replace(',', '');
+        let dataAjustada = converterData(dataHoje);
+        const cancelamento = {
+            motivo_cancelamento: motivo,
+            dataCancelamento: dataAjustada
+        };
+        const response = await cancelaNf(idVenda, cancelamento);
+    }
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -53,12 +66,23 @@ const ModalCancelaVenda = ({ idVenda, isOpen, onClose, onSubmit }) => {
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div id='motivo-cancelamento'>
-                        <label htmlFor="motivo"> Motivo:</label>
-                        <input
-                            className='input-geral'
-                            type="text"
-                            name="motivo"
-                            required />
+                        <div>
+                            <label htmlFor="motivo"> Motivo:</label>
+                            <input
+                                className='input-geral'
+                                type="text"
+                                name="motivo"
+                                onChange={(e) => setMotivo(e.target.value)}
+                                required />
+                        </div>
+                        {status.response == 'AUTORIZADA' && (
+                            <div >
+                                <label htmlFor="motivo">Venda com NF-e Emitida: </label>
+                                <button className='button-geral'
+                                    onClick={handleCancelaNF}>
+                                    {loading ? 'Processando...' : 'Cancelar Apenas a NF-e'}
+                                </button>
+                            </div>)}
                         <div className="modal-footer">
                             <button className="button-primary"
                                 type="submit"
