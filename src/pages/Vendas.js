@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getVendas, cancelaVenda, getVendaById, updateVenda, registraCancelamento, registravenda, getFormasPagamento, getEmpresaById, statusNfe, retornaXMLAssinado, cancelaNf, geraXml } from '../services/api';
+import { getVendas, cancelaVenda, getVendaById, updateVenda, registraCancelamento, registravenda, getFormasPagamento, getEmpresaById, statusNfe, retornaXMLAssinado, cancelaNf, geraNF } from '../services/api';
 import '../styles/Vendas.css';
 import ModalCliente from '../components/ModalCadastraCliente';
 import ComunicacaoSEFAZ from '../components/ComunicacaoSEFAZ';
@@ -449,13 +449,13 @@ function Vendas() {
     setIsConfirmationModalOpen(false); // Fechar o modal sem realizar nada
   };
 
-  const handleEmitirNFCe = async () => {
+  const handleEmitirNFe = async () => {
 
     setIsConfirmationModalOpen(false);
     setIsComunicacaoSEFAZOpen(true);
 
     try {
-      const response = await geraXml(idVenda.vendaId);
+      const response = await geraNF(idVenda.vendaId);
       // supondo que geraxml faça a requisição fetch e retorne a resposta completa
       if (response.status === 200) {
         setToast({
@@ -643,7 +643,7 @@ function Vendas() {
                             <button
                               onClick={() => handleConfirmacaoEmitirNFe(venda)} // Você vai implementar essa função
                               className="button"
-                              title="Emitir NFC-e"
+                              title="Emitir NF-e"
                             >
                               📤
                             </button>
@@ -725,7 +725,7 @@ function Vendas() {
         <ConfirmDialog
           isOpen={isConfirmationModalOpen}
           onClose={handleCancel}
-          onConfirm={() => handleEmitirNFCe()}
+          onConfirm={() => handleEmitirNFe()}
           onCancel={() => setIsConfirmationModalOpen(false)}
           message="Você tem certeza que deseja Emitir a NFe desta venda ?"
         />

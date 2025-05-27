@@ -857,9 +857,9 @@ export const registraCancelamento = async (id, retorno) => {
   }
 };
 
-export const geraXml = async (id) => {
+export const geraNF = async (id) => {
   try {
-    const response = await api.get(`/geraxml/${id}`, {
+    const response = await api.get(`/geranf/${id}`, {
       validateStatus: function (status) {
         return true; // Aceita qualquer status e permite você tratar no .status depois
       }
