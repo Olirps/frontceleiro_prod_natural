@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getVendas, cancelaVenda, getVendaById, updateVenda, registraCancelamento,geraNFC, registravenda, getFormasPagamento, getEmpresaById, statusNfe, retornaXMLAssinado, cancelaNf, geraNF } from '../services/api';
+import { getVendas, cancelaVenda, getVendaById, updateVenda, registraCancelamento, geraNFC, registravenda, getFormasPagamento, getEmpresaById, statusNfe, retornaXMLAssinado, cancelaNf, geraNF } from '../services/api';
 import '../styles/Vendas.css';
 import ModalCliente from '../components/ModalCadastraCliente';
 import ComunicacaoSEFAZ from '../components/ComunicacaoSEFAZ';
@@ -397,7 +397,9 @@ function Vendas() {
         }
       }
     } catch (error) {
-      setToast({ message: 'Erro ao cancelar venda!', type: 'error' });
+      const Message = error.response.data.erro || 'Erro ao cancelar venda!';
+
+      setToast({ message: Message, type: 'error' });
       console.error("Erro ao registrar lançamento:", error);
     } finally {
       setIsModalCancelaVendaOpen(false);
