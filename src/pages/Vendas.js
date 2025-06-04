@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getVendas, cancelaVenda, getVendaById, updateVenda, registraCancelamento, registravenda, getFormasPagamento, getEmpresaById, statusNfe, retornaXMLAssinado, cancelaNf, geraNF } from '../services/api';
+import { getVendas, cancelaVenda, getVendaById, updateVenda, registraCancelamento,geraNFC, registravenda, getFormasPagamento, getEmpresaById, statusNfe, retornaXMLAssinado, cancelaNf, geraNF } from '../services/api';
 import '../styles/Vendas.css';
 import ModalCliente from '../components/ModalCadastraCliente';
 import ComunicacaoSEFAZ from '../components/ComunicacaoSEFAZ';
@@ -122,6 +122,7 @@ function Vendas() {
       setFilteredPagamentos(pagamentos);
       setVendas(response.data);
       setFilteredVendas(response.data);
+      setPagamentosComTransacoes(response.data.transacoes);
 
       // Extrair tipos únicos, incluindo "débito" e "crédito"
       const tipos = Array.from(new Set(pagamentos.map((p) => p.formaPagamento)));
@@ -240,6 +241,7 @@ function Vendas() {
       const response = await getVendas();
       setVendas(response.data);
       setFilteredVendas(response.data);
+      setPagamentosComTransacoes(response.data);
       setIsModalOpen(false);
       window.location.reload();
 

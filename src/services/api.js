@@ -287,6 +287,16 @@ export const getLancamentoCompletoById = async (id) => {
   return api.get(`/despesa/${id}`);
 };
 
+export const getLancamentosAReceber = async (filters = {}) => {
+  try {
+    const response = await api.get('/contas-a-receber', { params: filters });
+    return response;
+  } catch (error) {
+    console.error('Erro ao buscar Movimentação Financeira:', error);
+    throw error;
+  }
+};
+
 export const getParcelasDespesa = async (id) => {
   return api.get(`/parcelasmovimentacao/${id}`);
 };
@@ -629,7 +639,7 @@ export const alterarTipoContratosLayout = async (id, tipoContrato) => {
 
 export const getContratosLayout = async (dados = {}, page = 1, limit = 20) => {
   try {
-    const { titulo_contrato, status,IdtituloLayout } = dados;
+    const { titulo_contrato, status, IdtituloLayout } = dados;
 
     const params = {
       page,
@@ -643,7 +653,7 @@ export const getContratosLayout = async (dados = {}, page = 1, limit = 20) => {
     if (status !== undefined) {
       params.status = status;
     }
-    
+
     if (IdtituloLayout) {
       params.id_tipo_contrato = IdtituloLayout;
     }
@@ -871,7 +881,19 @@ export const geraNF = async (id) => {
   }
 };
 
-
+export const geraNFC = async (id) => {
+  try {
+    const response = await api.get(`/geranfc/${id}`, {
+      validateStatus: function (status) {
+        return true; // Aceita qualquer status e permite você tratar no .status depois
+      }
+    });
+    return response;
+  } catch (error) {
+    console.error('Erro ao buscar XML por ID:', error);
+    throw error;
+  }
+};
 
 export const updateVenda = async (id) => {
   try {
@@ -955,6 +977,17 @@ export const addOS = async (status) => {
     return response;
   } catch (error) {
     console.error('Erro ao adicionar O.S.:', error);
+    throw error;
+  }
+};
+
+// Funções para gerenciar Status das OS
+export const registraPagamento = async (ptgo) => {
+  try {
+    const response = await api.post('/pagamentos', ptgo);
+    return response;
+  } catch (error) {
+    console.error('Erro ao adicionar Pagamento:', error);
     throw error;
   }
 };

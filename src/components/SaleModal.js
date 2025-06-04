@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
-import { getFormasPagamento } from '../services/api';
+import { getFormasPagamento, getClientes } from '../services/api';
 import Toast from '../components/Toast';
-import ModalCadastraCliente from '../components/ModalCadastraCliente';
+import CadClienteSimpl from '../components/CadClienteSimpl';
 import { converterMoedaParaNumero, formatarData, formatarMoedaBRL, converterData } from '../utils/functions';
 
 import '../styles/SaleModal.css'; // Estilo do modal
+import { Await } from 'react-router-dom';
 
 const SaleModal = ({
   isOpen,
@@ -25,6 +26,7 @@ const SaleModal = ({
   const [status_id, setStatusId] = useState(saleData.status_id || '');
   const [desconto, setDesconto] = useState('0');
   let [valorPagamento, setValorPagamento] = useState(totalPrice);
+  const [valorTotal, setValorTotal] = useState(0);
 
   const [pagamentos, setPagamentos] = useState([]);
   const [novaForma, setNovaForma] = useState('');
@@ -36,19 +38,13 @@ const SaleModal = ({
 
   const [formasPagamento, setFormasPagamento] = useState([]);
   const [formaPagamento, setFormaPagamento] = useState('');
-  const [nome, setNome] = useState('');
-  const [cpfCnpj, setCpf] = useState('');
   const [filteredClientes, setFilteredClientes] = useState([]);
   const [isConsultaClienteOpen, setIsConsultaClienteOpen] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '' });
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [onSucesso, setOnSucesso] = useState(false);
 
   // Para manter os funcionários e produtos/serviços
-  const [funcionarios, setFuncionarios] = useState(saleData.funcionarios || []);
-  const [produtosServicos, setProdutosServicos] = useState(saleData.products || []); //alterado de produtos_servicos para products para ficar com o comportamento correto ao Lançar O.S.
-  const [status, setStatus] = useState(saleData.status || '');
 
   useEffect(() => {
     if (toast.message) {
@@ -56,7 +52,6 @@ const SaleModal = ({
       return () => clearTimeout(timer);
     }
   }, [toast]);
-
 
   useEffect(() => {
     const fetchFormasPagamento = async () => {
@@ -74,11 +69,75 @@ const SaleModal = ({
     }
   }, [isOpen]); // Dependência do isOpen para buscar sempre que o modal abrir
 
+  useEffect(() => {
+    if (tipo === 'liquidacao') {
+      const total = saleData.reduce((acc, curr) => acc + parseFloat(curr.valor_parcela || 0), 0);
+      setValorTotal(total);
+      setValorPagamento(total);
+      setNovoValor(total)
+    } else {
+      setValorTotal(parseFloat(saleData.totalPrice || 0));
+      setValorPagamento(parseFloat(saleData.totalPrice || 0));
+    }
+  }, [saleData, tipo]);
 
+
+
+  // Função para buscar clientes pelo nome
+  const buscarClientes = async (nome) => {
+    try {
+      const response = await getClientes({ nome });
+
+      setFilteredClientes(response.data);
+      setIsConsultaClienteOpen(true);
+
+      // Verifica se a resposta está vazia
+      if (response.data && response.data.length === 0) {
+        setToast({
+          message: 'Nenhum cliente encontrado com este nome',
+          type: 'info',  // Tipo 'info' para mensagens informativas
+          duration: 3000
+        });
+      }
+
+    } catch (error) {
+      console.error('Erro ao buscar clientes:', error);
+      setToast({
+        message: 'Erro ao buscar clientes',
+        type: 'error',
+        duration: 3000
+      });
+    }
+  };
+
+  // Função para selecionar um cliente da lista
+  const selecionarCliente = (cliente) => {
+    setCliente(cliente.nome);
+    setClienteID(cliente.id);
+    setIsConsultaClienteOpen(false);
+  };
+
+  // Função para abrir o modal de cadastro de cliente
+  const abrirModalCadastroCliente = () => {
+    setIsModalOpen(true);
+  };
+
+  // Função para fechar o modal de cadastro de cliente
+  const fecharModalCadastroCliente = () => {
+    setIsModalOpen(false);
+  };
+
+  // Função chamada quando um novo cliente é cadastrado com sucesso
+  const handleClienteCadastrado = (novoCliente) => {
+    setCliente(novoCliente.nome);
+    setClienteID(novoCliente.id);
+    fecharModalCadastroCliente();
+    setToast({ message: 'Cliente cadastrado com sucesso!', type: 'success' });
+  };
 
   // Cálculo do saldo restante
   const saldoRestanteSemFormat =
-    parseFloat(totalPrice) - (pagamentos.reduce((sum, p) => sum + parseFloat(p.valor || 0), 0) + parseFloat(converterMoedaParaNumero(desconto) || 0));
+    parseFloat(valorTotal) - (pagamentos.reduce((sum, p) => sum + parseFloat(p.valor || 0), 0) + parseFloat(converterMoedaParaNumero(desconto) || 0));
 
   let saldoRestante = saldoRestanteSemFormat.toFixed(2);
 
@@ -91,7 +150,7 @@ const SaleModal = ({
     let valorDesconto = formatarMoedaBRL(rawValue)
     valorDesconto = Number(converterMoedaParaNumero(valorDesconto))
     if (valorDesconto === '' || (!isNaN(valorDesconto) && valorDesconto <= valorPagamento)) {
-      const novoValorAtual = parseFloat(totalPrice) - (pagamentos.reduce((sum, p) => sum + parseFloat(p.valor || 0), 0) + (valorDesconto) || 0);
+      const novoValorAtual = parseFloat(valorTotal) - (pagamentos.reduce((sum, p) => sum + parseFloat(p.valor || 0), 0) + (valorDesconto) || 0);
       setDesconto(formatarMoedaBRL(String(rawValue)));
       setNovoValor((novoValorAtual).toFixed(2));
     }
@@ -113,7 +172,7 @@ const SaleModal = ({
   // Adiciona pagamento ao total
   const adicionarPagamento = () => {
     let valorNum = 0;
-    if (novoValor.startsWith("R$")) {
+    if (String(novoValor).startsWith("R$")) {
       valorNum = converterMoedaParaNumero(novoValor);
     } else {
       valorNum = Number(novoValor);
@@ -129,13 +188,17 @@ const SaleModal = ({
       settrocoDinheiro((valorNum - saldoRestante).toFixed(2));
       valorNum = saldoRestante;
     }
+    if (novaForma == 8 && cliente_id == '') {
+      setToast({ message: 'Selecione um cliente para pagamento a Prazo.', type: 'error' });
+      return;
+
+    }
 
     setPagamentos([...pagamentos, { forma: novaForma, valor: valorNum, formaPgtoNome: formaPgtoNome }]);
     setNovaForma('');
     let valorRestanteAtualizado = saldoRestanteSemFormat - valorNum;
     setNovoValor(valorRestanteAtualizado.toFixed(2));
   };
-
 
   const handleSubmitSale = async (e) => {
     e.preventDefault(); // Evita o comportamento padrão de recarregar a página
@@ -161,25 +224,32 @@ const SaleModal = ({
       let dataAjustada = converterData(dataHoje);
 
       let descontoAtualizado = converterMoedaParaNumero(desconto);
-      const valortTotal = (Number(totalPrice) - Number(descontoAtualizado)).toFixed(2);
-      // 04-04-2025 Alterado totalPrice para valor_total para ficar com o comportamento correto ao Lançar O.S.
-      // 05-04-2025 Alterado produtos_servicos para products para ficar com o comportamento correto ao Lançar O.S.
-      // 07-05-2025 Ajustado de valor_total para totalPrice para igualar o nome do banco
-      await onSubmit({
-        preVenda: saleData.preVenda || null,
-        cliente,
-        cliente_id,
-        veiculo_id,
-        totalQuantity,
-        status_id,
-        totalPrice: valortTotal,
-        desconto: converterMoedaParaNumero(desconto) || 0,
-        valorPagamento: valorPagamento - (parseFloat(desconto) || 0),
-        pagamentos,
-        funcionarios,
-        data_conclusao: dataAjustada,
-        products: produtosServicos,
-      });
+      const somaTotal = (Number(valorTotal) - Number(descontoAtualizado)).toFixed(2);
+      if (tipo === 'liquidacao') {
+
+        const dadosSubmit = {
+          desconto: converterMoedaParaNumero(desconto) || 0,
+          tipoVenda: 'liquidacao',
+          valor: somaTotal,
+          pagamentos,
+          data_conclusao: dataAjustada
+        }
+        await onSubmit(dadosSubmit);
+
+      } else {
+        const dadosSubmit = {
+          tipoVenda: 'VendaRest',
+          cliente,
+          cliente_id,
+          venda_id: saleData.vendaVinculada.id,
+          valor: somaTotal,
+          desconto: converterMoedaParaNumero(desconto) || 0,
+          pagamentos,
+          data_conclusao: dataAjustada
+        }
+        await onSubmit(dadosSubmit);
+
+      }
 
       setToast({ message: 'Venda confirmada com sucesso!', type: 'success' });
       setLoading(false); // Desativa o estado de carregamento após sucesso
@@ -190,6 +260,7 @@ const SaleModal = ({
       setLoading(false); // Desativa o estado de carregamento após erro
     }
   };
+
   // Função para remover um pagamento
   const removerPagamento = (pagamentos, index, setPagamentos, setToast) => {
     const pagamento = pagamentos[index];
@@ -214,159 +285,209 @@ const SaleModal = ({
       }
       // Atualiza o valor para o próximo pagamento
       setNovoValor(saldoRestanteAtualizado.toFixed(2));
-
     }
   };
-
 
   return (
     <div className="modal-overlay-sales">
       <div className="modal-content-sales">
         <form onSubmit={handleSubmitSale}>
           <div className="informacaoPagamento">
-            <div className='inf-venda'>
-              <label className="modal-field">
-                Valor à Pagar R$: {saldoRestante}
-              </label>
-              <label className="modal-field">
-                Total de Itens: {quantidadeItens}
-              </label>
-              {trocoDinheiro > '0' && (
-                <label className="modal-field">
-                  Troco R$: {trocoDinheiro}
-                </label>
+            <div className="form-row">
+              {tipo !== 'liquidacao' && (
+                <fieldset className="inline-fieldset">
+                  <legend>Dados Cliente</legend>
+                  <div className="modal-field cliente-field">
+                    <input
+                      name='cliente'
+                      type="text"
+                      value={cliente}
+                      onChange={(e) => {
+                        setCliente(e.target.value);
+                        if (e.target.value.length > 2) {
+                          buscarClientes(e.target.value);
+                        } else {
+                          setFilteredClientes([]);
+                          setIsConsultaClienteOpen(false);
+                        }
+                      }}
+                      placeholder="Digite o nome do cliente"
+                      disabled={!!cliente_id}
+                    />
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        type="button"
+                        className="btn-cadastrar-cliente"
+                        onClick={abrirModalCadastroCliente}
+                        disabled={!!cliente_id}
+                      >
+                        Cadastrar Cliente
+                      </button>
+
+                      {cliente_id && (
+                        <button
+                          type="button"
+                          className="btn-remover-cliente"
+                          onClick={() => {
+                            setCliente('');
+                            setClienteID('');
+                            setFilteredClientes([]);
+                            setIsConsultaClienteOpen(false);
+                          }}
+                          style={{
+                            backgroundColor: '#d9534f',
+                            color: '#fff',
+                            border: 'none',
+                            padding: '0.5rem',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Remover Cliente
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {isConsultaClienteOpen && filteredClientes.length > 0 && (
+                    <div className="clientes-list">
+                      <ul>
+                        {filteredClientes.map((cli) => (
+                          <li
+                            key={cli.id}
+                            onClick={() => selecionarCliente(cli)}
+                            className="cliente-item"
+                          >
+                            {cli.nome} - {cli.cpfCnpj ? cpfCnpjMask(cli.cpfCnpj) : 'Sem CPF/CNPJ'}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </fieldset>
               )}
             </div>
             <div className="form-row">
-              <fieldset className="inline-fieldset">
-                <legend>Dados Cliente</legend>
-                <div className="modal-field">
-                  <input
-                    name='cliente'
-                    type="text"
-                    value={cliente}
-                    onChange={(e) => setCliente(e.target.value)}
-                    placeholder="Selecione um cliente na consulta"
-                    disabled={!!cliente_id}
-                  />
-                </div>
-              </fieldset>
-
-              {tipo !== 'venda' && (<fieldset className="inline-fieldset">
-                <legend>Funcionarios</legend>
-                <div className="modal-field">
-                  <ul>
-                    {funcionarios.map((funcionario, index) => (
-                      <li key={index}>{funcionario.funcionario_nome || funcionario.label}</li>
-                    ))}
-                  </ul>
-                </div>
-              </fieldset>)}
-            </div>
-
-            <div className="form-row">
-              <fieldset>
-                <legend>Serviços/Produtos:</legend>
-                <div className="modal-field">
-                  <table id="grid-padrao">
-                    <thead>
-                      <tr>
-                        <th>Produto/Serviço</th>
-                        <th>Valor Unitário</th>
-                        <th>Quantidade</th>
-                        <th>Valor Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {produtosServicos.map((item, index) => (
-                        <tr key={index}>
-                          <td>{item.xProd}</td>
-                          <td>{formatarMoedaBRL(item.valor_unitario)}</td>
-                          <td>
-                            {item.quantidade || 1}
-                          </td>
-                          <td>{formatarMoedaBRL(item.valorTotal || item.vlrVenda)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr>
-                        <td colSpan="3" className="total-label"><strong>Total Geral:</strong></td>
-                        <td className="total-value"><strong>{formatarMoedaBRL(totalPrice)}</strong></td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              </fieldset>
-            </div>
-            <div className="form-row">
-              <fieldset>
-                <legend>
-                  Pagamentos:
+              <fieldset className="payment-fieldset">
+                <legend className="payment-legend">
+                  Pagamentos
+                  <span className="payment-remaining">
+                    Saldo Restante: {formatarMoedaBRL(saldoRestante)}
+                  </span>
                 </legend>
-                <div className="pagamentos">
-                  <div className="conteudo-pagamentos">
-                    {/* Coluna 1 */}
-                    <div className="coluna-opcoes">
-                      <div className="modal-field-pgto">
-                        <label>Desconto: </label>
-                        <input
-                          type="text"
-                          className='input-geral'
-                          value={formatarMoedaBRL(desconto)}
-                          onChange={handleDescontoChange}
-                          placeholder="Digite o desconto"
-                        />
-                        <label>Valor:</label>
-                        <input
-                          type="text"
-                          value={formatarMoedaBRL(novoValor)}
-                          onChange={(e) => setNovoValor(formatarMoedaBRL(e.target.value))}
-                          placeholder="Digite o valor"
-                        />
-                        <label>Forma de Pagamento:</label>
-                        <input type="hidden" name="formaPgtoNome" value={formaPgtoNome} />
-                        <select
-                          value={novaForma}
-                          onChange={(e) => {
-                            setNovaForma(e.target.value); // Atualiza o ID da forma de pagamento
-                            setFormaPgtoNome(e.target.options[e.target.selectedIndex].text); // Atualiza o nome
-                          }}
-                        >
-                          <option value="">Selecione</option>
-                          {formasPagamento.map((forma) => (
-                            <option key={forma.id} value={forma.id}>
-                              {forma.nome}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
 
-                      <button type="button" onClick={adicionarPagamento}>
-                        Adicionar Pagamento
-                      </button>
+                <div className="payment-container">
+                  {/* Seção de Adicionar Pagamento */}
+                  <div className="payment-add-section">
+                    <div className="payment-input-group">
+                      <label className="payment-label">Desconto</label>
+                      <input
+                        type="text"
+                        className="payment-input"
+                        value={formatarMoedaBRL(desconto)}
+                        onChange={handleDescontoChange}
+                        placeholder="R$ 0,00"
+                      />
                     </div>
-                    {/* Coluna 2 */}
-                    <div className="coluna-pagamentos">
-                      <div className="grid-pagamentos">
+
+                    <div className="payment-input-group">
+                      <label className="payment-label">Valor do Pagamento</label>
+                      <input
+                        type="text"
+                        className="payment-input"
+                        value={formatarMoedaBRL(novoValor)}
+                        onChange={(e) => setNovoValor(formatarMoedaBRL(e.target.value))}
+                        placeholder="Digite o valor"
+                      />
+                    </div>
+
+                    <div className="payment-input-group">
+                      <label className="payment-label">Forma de Pagamento</label>
+                      <select
+                        className="payment-select"
+                        value={novaForma}
+                        onChange={(e) => {
+                          setNovaForma(e.target.value);
+                          setFormaPgtoNome(e.target.options[e.target.selectedIndex].text);
+                        }}
+                      >
+                        <option value="">Selecione a forma</option>
+                        {formasPagamento.map((forma) => (
+                          <option key={forma.id} value={forma.id}>
+                            {forma.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="payment-add-button"
+                      onClick={adicionarPagamento}
+                      disabled={!novaForma || !novoValor || parseFloat(novoValor) <= 0}
+                    >
+                      <i className="fas fa-plus"></i> Adicionar Pagamento
+                    </button>
+                  </div>
+
+                  {/* Lista de Pagamentos Adicionados */}
+                  <div className="payment-list-section">
+                    <div className="payment-list-header">
+                      <span>Forma de Pagamento</span>
+                      <span>Valor</span>
+                      <span>Ações</span>
+                    </div>
+
+                    {pagamentos.length === 0 ? (
+                      <div className="payment-empty-state">
+                        <i className="fas fa-money-bill-wave"></i>
+                        <p>Nenhum pagamento adicionado</p>
+                      </div>
+                    ) : (
+                      <div className="payment-list">
                         {pagamentos.map((p, index) => (
-                          <div className="pagamento-item" key={index}>
-                            <div className="pagamento-info">
-                              <span className="pagamento-forma">{p.formaPgtoNome}</span>
-                              <span className="pagamento-valor"> {formatarMoedaBRL(p.valor)}</span>
-                            </div>
+                          <div className="payment-item" key={index}>
+                            <span className="payment-method">{p.formaPgtoNome}</span>
+                            <span className="payment-value">{formatarMoedaBRL(p.valor)}</span>
                             <button
                               type="button"
-                              className="btn-remover"
+                              className="payment-remove-button"
                               onClick={() => removerPagamento(pagamentos, index, setPagamentos, setToast)}
+                              title="Remover pagamento"
                             >
-                              Remover
+                              <i className="fas fa-trash-alt"></i>
                             </button>
                           </div>
                         ))}
                       </div>
-                    </div>
+                    )}
 
+                    {/* Resumo de Valores */}
+                    <div className="payment-summary">
+                      <div className="summary-row">
+                        <span>Total da Venda:</span>
+                        <span>{formatarMoedaBRL(totalPrice)}</span>
+                      </div>
+                      <div className="summary-row">
+                        <span>Desconto:</span>
+                        <span className="discount-value">- {formatarMoedaBRL(desconto)}</span>
+                      </div>
+                      <div className="summary-row">
+                        <span>Total Pago:</span>
+                        <span>{formatarMoedaBRL(pagamentos.reduce((sum, p) => sum + parseFloat(p.valor || 0), 0))}</span>
+                      </div>
+                      <div className="summary-row total">
+                        <span>Saldo Restante:</span>
+                        <span className={saldoRestante > 0 ? 'pending-value' : 'paid-value'}>
+                          {formatarMoedaBRL(saldoRestante)}
+                        </span>
+                      </div>
+                      {trocoDinheiro > 0 && (
+                        <div className="summary-row">
+                          <span>Troco:</span>
+                          <span className="change-value">{formatarMoedaBRL(trocoDinheiro)}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </fieldset>
@@ -394,6 +515,13 @@ const SaleModal = ({
           </div>
         </form>
       </div>
+      {/* Por este */}
+      <CadClienteSimpl
+        isOpen={isModalOpen}
+        onClose={fecharModalCadastroCliente}
+        onSuccess={handleClienteCadastrado}
+      />
+
       {toast.message && <Toast type={toast.type} message={toast.message} />}
     </div>
   );

@@ -1,13 +1,15 @@
 import { jsPDF } from "jspdf";
-import { consultaVenda, consultaItensVenda, consultaPagamentosById, consultaVendaPorId } from '../services/api';
+import { consultaVenda, consultaItensVenda, consultaPagamentosById, consultaVendaPorId, getEmpresaById } from '../services/api';
+import { cpfCnpjMask } from '../components/utils';
 
- const imprimeVenda = async (idVenda) => {
+const imprimeVenda = async (idVenda) => {
     try {
         // Aguarda as 3 requisições simultaneamente
-        const [responseVenda, responseItensVenda, responsePagamentosVenda] = await Promise.all([
+        const [responseVenda, responseItensVenda, responsePagamentosVenda, responseEmpresa] = await Promise.all([
             consultaVendaPorId(idVenda),
             consultaItensVenda(idVenda),
-            consultaPagamentosById(idVenda)
+            consultaPagamentosById(idVenda),
+            getEmpresaById(1)
         ]);
 
         // Verifica se todas as respostas são válidas
@@ -20,7 +22,7 @@ import { consultaVenda, consultaItensVenda, consultaPagamentosById, consultaVend
             };
 
             // Chama a função de geração de PDF com os dados unificados
-            generatePDF(vendaComDetalhes);
+            generatePDF(vendaComDetalhes, responseEmpresa.data);
         } else {
             console.error('Erro inesperado ao obter os dados da venda:', responseVenda, responseItensVenda, responsePagamentosVenda);
         }
@@ -34,18 +36,19 @@ import { consultaVenda, consultaItensVenda, consultaPagamentosById, consultaVend
     }
 };
 
-export const generatePDF = (data) => {
-        // Cálculo da altura dinâmica: 150mm para até 6 itens, aumentando 5mm por item extra
-        const baseHeight = 150;
-        const itemsPerPage = 6;
-        const extraHeight = Math.max(0, (data.itens.length - itemsPerPage) * 5);
-        const pageHeight = baseHeight + extraHeight;
-    
+export const generatePDF = (data, responseEmpresa) => {
+    // Cálculo da altura dinâmica: 150mm para até 6 itens, aumentando 5mm por item extra
+    const baseHeight = 150;
+    const itemsPerPage = 6;
+    const extraHeight = Math.max(0, (data.itens.length - itemsPerPage) * 5);
+    const pageHeight = baseHeight + extraHeight;
+
     const doc = new jsPDF({
         unit: 'mm',  // Unidade de medida em milímetros
         format: [70, pageHeight]  // Definindo o tamanho da página: 7 cm de largura x 15 cm de altura
     });
 
+    const cnpj = cpfCnpjMask(responseEmpresa.cnpj);
     // Largura e altura da página
     const margin = 2; // Margem da esquerda
     const contentWidth = 66; // Largura para o conteúdo (7cm - margens)
@@ -63,16 +66,20 @@ export const generatePDF = (data) => {
 
     // Informações da Empresa
     yOffset += headerLines.length * 5 + 5; // Ajusta o deslocamento após o cabeçalho
-    doc.text(`Nome Fantasia: Celeiro Produtos Naturais`, margin, yOffset);
+    doc.text(`Nome Fantasia: ${responseEmpresa.nome}`, margin, yOffset);
     yOffset += 5;
-    doc.text(`CNPJ: 45.393.325/0001-10`, margin, yOffset);
+    doc.text(`CNPJ: ${cnpj}`, margin, yOffset);
     yOffset += 5;
-    doc.text(`Razão Social: ANDRESSA MULLER`, margin, yOffset);
-    yOffset += 5;
+
+    // Força quebra de linha para a Razão Social
+    const razaoSocialTexto = `Razão Social: ${responseEmpresa.razaosocial}`;
+    const linhasRazaoSocial = doc.splitTextToSize(razaoSocialTexto, 180); // 180 mm de largura, ajustável
+    doc.text(linhasRazaoSocial, margin, yOffset);
+    yOffset += linhasRazaoSocial.length * 5;
 
 
     // Endereço com quebra de linha
-    const enderecoText = `Endereço: Av. Paraná, R. Piracicaba, 621 - Primavera II, Primavera do Leste - MT, 78850-000`;
+    const enderecoText = `Endereço: ${responseEmpresa.logradouro}, ${responseEmpresa.numero} - ${responseEmpresa.bairro}, Primavera do Leste - MT, 78850-000`;
     const enderecoLines = doc.splitTextToSize(enderecoText, contentWidth);
     enderecoLines.forEach((line, index) => {
         doc.text(line, margin, yOffset + (index * 5));
@@ -118,14 +125,14 @@ export const generatePDF = (data) => {
     });
 
     // Desconto e Total Pago
-    
+
     // Exibe o Total da Venda (a variável vlrVenda)
     const totalVenda = (parseFloat(data.totalPrice) || 0) + (parseFloat(data.desconto) || 0);
     doc.text(`Total da Venda: R$ ${parseFloat(totalVenda).toFixed(2)}`, margin, yOffset);  // Agora usa o valor de vlrVenda diretamente
     yOffset += 5;
     doc.text(`Desconto: R$ ${parseFloat(data.desconto).toFixed(2)}`, margin, yOffset);
     yOffset += 5;
-    doc.text(`Total Pago: R$ ${parseFloat(data.totalPrice).toFixed(2)}`, margin, yOffset); 
+    doc.text(`Total Pago: R$ ${parseFloat(data.totalPrice).toFixed(2)}`, margin, yOffset);
     yOffset += 5;
 
     // Forma de Pagamento
@@ -138,10 +145,10 @@ export const generatePDF = (data) => {
         cartaoDebito: 'Cartão de Débito',
         cartaoCredito: 'Cartão de Crédito'
     };
-    
+
     data.pagamentos.forEach(pagamento => {
         const formaPagamento = formasPagamento[pagamento.formaPagamento] || pagamento.formaPagamento;
-        
+
         doc.text(`${formaPagamento}: R$ ${parseFloat(pagamento.vlrPago).toFixed(2)}`, margin, yOffset);
         yOffset += 5;
     });
