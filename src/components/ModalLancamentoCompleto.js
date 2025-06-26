@@ -9,7 +9,7 @@ import Toast from '../components/Toast';
 
 
 
-const ModalLancamentoCompleto = ({ isOpen, onClose, onConfirmar, lancamento }) => {
+const ModalLancamentoCompleto = ({ isOpen, onClose, onConfirmar, lancamento, onReceita }) => {
     const [lancamentoCompleto, setLancamentoCompleto] = useState(null);
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
     const [cancelarLancto, setCancelarLancto] = useState(false); // Estado para controlar o modal de parcelas
@@ -67,7 +67,7 @@ const ModalLancamentoCompleto = ({ isOpen, onClose, onConfirmar, lancamento }) =
                 <h2>Lançamento Completo</h2>
 
                 {/* Detalhes do Lançamento */}
-                <div className="lancamento-detalhes">
+                {onReceita === false && (<div className="lancamento-detalhes">
                     <h3>Detalhes do Lançamento</h3>
                     <p><strong>Descrição:</strong> {lancamentoCompleto.descricao}</p>
                     <p><strong>Valor:</strong> {formatarMoedaBRL(lancamentoCompleto.valor)}</p>
@@ -75,7 +75,7 @@ const ModalLancamentoCompleto = ({ isOpen, onClose, onConfirmar, lancamento }) =
                     <p><strong>Data de Lançamento:</strong> {formatarData(lancamentoCompleto.data_lancamento)}</p>
                     <p><strong>Tipo:</strong> {lancamentoCompleto.tipo}</p>
                     <p><strong>Status:</strong> {lancamentoCompleto.status}</p>
-                </div>
+                </div>)}
 
                 {/* Detalhes da Entidade (Fornecedor, Funcionário ou Cliente) */}
                 {lancamentoCompleto.fornecedor && (
@@ -163,11 +163,11 @@ const ModalLancamentoCompleto = ({ isOpen, onClose, onConfirmar, lancamento }) =
                         </table>
                     </div>
                 )}
-                <div id='button-group'>
+                {onReceita === false && (<div id='button-group'>
                     <button className="button-excluir" onClick={handleCancelar}>
                         Excluir
                     </button>
-                </div>
+                </div>)}
             </div>
             {toast.message && <Toast type={toast.type} message={toast.message} />}
 

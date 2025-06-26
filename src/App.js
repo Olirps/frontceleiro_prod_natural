@@ -19,6 +19,7 @@ import MovimentacaoFinanceiraDespesa from './pages/MovimentacaoFinanceiraDespesa
 import MovimentacaoFinanceiraReceitas from './pages/MovimentacaoFinanceiraReceitas';
 import ContasBancarias from './pages/ContasBancarias';
 import Vendas from './pages/Vendas';
+import VendasNew from './pages/VendasNew/Vendas';
 import Permissoes from './pages/Permissoes';
 import ContasPagas from './pages/ContasPagas';
 import ProdutosVendidos from './pages/ProdutosVendidos';

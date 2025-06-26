@@ -829,6 +829,28 @@ export const statusNfe = async (id) => {
   }
 }
 
+export const getDanfe = async (id) => {
+  try {
+    const response = await api.get(`/geradanfe/${id}`, {
+      responseType: 'blob' // PDF binário
+    });
+
+    const file = new Blob([response.data], { type: 'application/pdf' });
+    const fileURL = URL.createObjectURL(file);
+    window.open(fileURL);
+
+  } catch (error) {
+    if (error.response?.status === 412) {
+      alert('Não é possível gerar a DANFE NFC-e: esta venda foi emitida como NF-e (modelo 55).');
+      return;
+    }
+
+    console.error('Erro ao buscar DANFE NFC-e por ID:', error);
+    alert('Erro inesperado ao gerar DANFE NFC-e.');
+  }
+};
+
+
 export const findByIdXml = async (id) => {
   try {
     const response = await api.get(`/xml/${id}`);
@@ -866,6 +888,16 @@ export const registraCancelamento = async (id, retorno) => {
     throw error;
   }
 };
+
+export const processTefPayment = async (transaction) => {
+  try {
+    const response = await api.post('/tef/transacao', transaction);
+    return response.data; // Retorna os dados da venda iniciada
+  } catch (error) {
+    console.error('Erro ao iniciar transação:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+}
 
 export const geraNF = async (id) => {
   try {

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { getVendas, cancelaVenda, getVendaById, updateVenda, registraCancelamento, geraNFC, registravenda, getFormasPagamento, getEmpresaById, statusNfe, retornaXMLAssinado, cancelaNf, geraNF } from '../services/api';
+import { getVendas, cancelaVenda, getVendaById, updateVenda, geraNF, geraNFC, registravenda, getFormasPagamento, getEmpresaById, statusNfe, getDanfe, cancelaNf } from '../services/api';
 import '../styles/Vendas.css';
 import ModalCliente from '../components/ModalCadastraCliente';
+import ModalCadastroVenda from '../components/ModalCadastroVenda';
 import ComunicacaoSEFAZ from '../components/ComunicacaoSEFAZ';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
 import Toast from '../components/Toast';
@@ -375,21 +376,21 @@ function Vendas() {
     let dataAjustada = converterData(dataHoje);
     // Extrai os valores dos elementos do formulário
     const motivo_cancelamento = formElements.motivo.value;
-    const vendaId = formElements.idVenda;
+    const venda = formElements.idVenda;
     const lancamentoData = {
       motivo_cancelamento: motivo_cancelamento,
       dataCancelamento: dataAjustada
     };
     try {
       if (status.response === 'ANDAMENTO') {
-        const response = await cancelaVenda(vendaId, lancamentoData);
+        const response = await cancelaVenda(venda, lancamentoData);
         if (response.status === 200) {
           setToast({ message: 'Registrado(s) cancelado(s) com sucesso!', type: 'success' });
         } else {
           setToast({ message: 'Erro ao cancelar venda!', type: 'error' });
         }
       } else {
-        const response = await cancelaNf(vendaId, lancamentoData);
+        const response = await cancelaNf(venda, lancamentoData);
         if (response.status === 200) {
           setToast({ message: 'Registrado(s) cancelado(s) com sucesso!', type: 'success' });
         } else {
@@ -420,10 +421,20 @@ function Vendas() {
 
   const handlePrintClick = async (venda) => {
     try {
-      imprimeVenda(venda.vendaId)
+      setLoading(true);
+
+      const status = await statusNfe(venda.vendaId);
+      if (status.response === 'AUTORIZADA') {
+        await getDanfe(venda.vendaId); // Vai abrir o PDF no navegador
+      } else {
+        imprimeVenda(venda.vendaId)
+      }
 
     } catch (error) {
-      console.error("Erro ao gerar OS:", error);
+      console.error('Erro ao imprimir DANFE NF-e:', error);
+      alert('Erro ao imprimir DANFE NF-e');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -601,8 +612,8 @@ function Vendas() {
                   </tr>
                 </thead>
                 <tbody>
-                  {pagamentosPaginaAtual.map((venda) => (
-                    <tr key={venda.id}>
+                  {pagamentosPaginaAtual.map((venda, index) => (
+                    <tr key={`${venda.vendaId}-${index}`}>  {/* Added index as fallback */}
                       <td>{venda.vendaId}</td>
                       <td>{venda.cliente || venda.descricao || 'Não Informado'}</td>
                       <td>
@@ -656,7 +667,6 @@ function Vendas() {
 
                         </div>
                       </td>
-
                     </tr>
                   ))}
 
@@ -665,7 +675,6 @@ function Vendas() {
                   <tfoot>
                     <tr>
                       <td colSpan="2"><strong>Total</strong></td>
-
                       <td><strong>
                         {new Intl.NumberFormat('pt-BR', {
                           style: 'currency',
@@ -679,6 +688,7 @@ function Vendas() {
                         }).format(totalDescontos)}
                       </strong></td>
 
+                      <td></td>
                       <td></td>
                     </tr>
                   </tfoot>
@@ -707,7 +717,7 @@ function Vendas() {
             </div>
           </div>)}
         {isModalOpen && (
-          <ModalCadastroOS
+          <ModalCadastroVenda
             isOpen={isModalOpen}
             onSubmit={isEdit ? handleEditSubmit : handleAddVenda}
             os={selectedVenda}  // Mudei de 'os' para 'venda' - confira qual o nome correto

@@ -168,7 +168,7 @@ function MovimentacaoFinanceiraReceitas() {
       await addMovimentacaofinanceiraDespesa(newMovimentacao);
       setToast({ message: "Movimentação financeira cadastrada com sucesso!", type: "success" });
       setIsModalPagamentoUnificadoOpen(false);
-      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'credito'});
+      const response = await getAllMovimentacaofinanceiraDespesa({ tipo: 'credito' });
       setMovimentacoes(response.data);
       setFilteredMovimentacoes(response.data);
     } catch (err) {
@@ -665,7 +665,7 @@ function MovimentacaoFinanceiraReceitas() {
                               style: 'currency',
                               currency: 'BRL',
                             }).format(parcela.valor_parcela || 0)}</td>
-                            <td>{formatarData(parcela.vencimento)}</td>
+                            <td>{new Date(parcela.vencimento).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
                             <td>
                               <button
                                 className="edit-button"
@@ -744,6 +744,7 @@ function MovimentacaoFinanceiraReceitas() {
           onClose={() => setIsModalLancamentoCompletoOpen(false)}
           lancamento={selectedLancamentoCompleto}
           onConfirmar={handleConfirmacaoParcelas}
+          onReceita={true}
         />
       )}
       {isModalUnificaLancamentosOpen && (

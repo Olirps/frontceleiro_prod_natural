@@ -170,7 +170,7 @@ export default function ComandasAbertasPage() {
                 <SaleModal
                     isOpen={isSaleModalOpen}
                     onSubmit={handlePaymentSubmit}
-                    tipo={"venda"}
+                    tipo={"VendaRest"}
                     saleData={vendaSelecionada}
                     onClose={() => setIsSaleModalOpen(false)}
                 />

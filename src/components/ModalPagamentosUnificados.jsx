@@ -285,7 +285,7 @@ export default function ModalPagamentosUnificados({ isOpen, onClose }) {
                                                 </td>
                                                 <td className="p-2">{l.financeiro?.descricao || 'Sem descrição'}</td>
                                                 <td className="p-2 text-center">
-                                                    {new Date(l.vencimento).toLocaleDateString()}
+                                                    {new Date(l.vencimento).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                                                 </td>
                                                 <td className="p-2 text-right">
                                                     R$ {parseFloat(l.valor_parcela).toFixed(2)}

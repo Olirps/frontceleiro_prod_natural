@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
-import { getFormasPagamento, getClientes } from '../services/api';
+import { getFormasPagamento, getClientes, processTefPayment } from '../services/api';
 import Toast from '../components/Toast';
 import CadClienteSimpl from '../components/CadClienteSimpl';
+import TefModal from '../components/TefModal';
+import TefTransactionModal from '../components/TefTransactionModal';
 import { converterMoedaParaNumero, formatarData, formatarMoedaBRL, converterData } from '../utils/functions';
 
 import '../styles/SaleModal.css'; // Estilo do modal
@@ -43,6 +45,14 @@ const SaleModal = ({
   const [toast, setToast] = useState({ message: '', type: '' });
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Variáveis para o TEF
+  const [tefModalOpen, setTefModalOpen] = useState(false);
+  const [currentTefPayment, setCurrentTefPayment] = useState(null);
+  const [tefProcessing, setTefProcessing] = useState(false);
+  const [completedTefPayments, setCompletedTefPayments] = useState([]);
+  const [transacaoEmAndamento, setTransacaoEmAndamento] = useState(false);
+
 
   // Para manter os funcionários e produtos/serviços
 
@@ -169,6 +179,40 @@ const SaleModal = ({
 
   if (!isOpen) return null;
 
+
+  // Novo método para lidar com pagamentos TEF
+  // Função para processar pagamento TEF (integrado com a API)
+  const handleTefPayment = async (paymentData) => {
+    try {
+      setTefProcessing(true);
+      const response = await processTefPayment(paymentData);
+
+      if (response.success) {
+        // Adiciona o pagamento à lista
+        setPagamentos(prev => [...prev, paymentData]);
+
+        // Atualiza o saldo restante
+        const novoSaldo = saldoRestanteSemFormat - paymentData.valor;
+        setNovoValor(novoSaldo.toFixed(2));
+
+        setToast({ message: 'Pagamento TEF realizado!', type: 'success' });
+        return true;
+      } else {
+        setToast({ message: response.message || 'Falha no pagamento TEF', type: 'error' });
+        return false;
+      }
+    } catch (error) {
+      console.error('Erro no TEF:', error);
+      const mensagemErro = error?.response?.data?.message || error?.message || 'Erro ao processar TEF';
+      setToast({ message: mensagemErro, type: 'error' });
+      return false;
+    } finally {
+      setTefProcessing(false);
+    }
+  };
+
+
+
   // Adiciona pagamento ao total
   const adicionarPagamento = () => {
     let valorNum = 0;
@@ -178,20 +222,32 @@ const SaleModal = ({
       valorNum = Number(novoValor);
     }
 
-    valorNum = Number(valorNum)
-    if (!formaPgtoNome || isNaN(valorNum) || valorNum <= 0 || (valorNum > saldoRestante && formaPgtoNome !== 'Dinheiro')) {
+    valorNum = Number(valorNum);
+
+    if (!formaPgtoNome || isNaN(valorNum) || valorNum <= 0 ||
+      (valorNum > saldoRestante && formaPgtoNome !== 'Dinheiro')) {
       setToast({ message: 'Forma de pagamento inválida ou valor inválido.', type: 'error' });
       return;
     }
 
+    // Verifica se é um pagamento TEF
+    const isTefPayment = formaPgtoNome.includes('TEF');
+
+    if (isTefPayment) {
+      // Se for TEF, inicia o fluxo especial
+      handleTefPayment({ novaForma, valorNum, formaPgtoNome });
+      return;
+    }
+
+    // Fluxo normal para não-TEF
     if (formaPgtoNome === 'Dinheiro' && valorNum > saldoRestante) {
       settrocoDinheiro((valorNum - saldoRestante).toFixed(2));
       valorNum = saldoRestante;
     }
+
     if (novaForma == 8 && cliente_id == '') {
       setToast({ message: 'Selecione um cliente para pagamento a Prazo.', type: 'error' });
       return;
-
     }
 
     setPagamentos([...pagamentos, { forma: novaForma, valor: valorNum, formaPgtoNome: formaPgtoNome }]);
@@ -236,7 +292,23 @@ const SaleModal = ({
         }
         await onSubmit(dadosSubmit);
 
-      } else {
+      } else if (tipo === 'venda') {
+        const dadosSubmit = {
+          tipoVenda: 'Venda',
+          cliente,
+          cliente_id,
+          veiculo_id,
+          dataVenda: dataAjustada,
+          products: saleData.products,
+          status_id,
+          valor: somaTotal,
+          desconto: converterMoedaParaNumero(desconto) || 0,
+          pagamentos,
+          data_conclusao: dataAjustada
+        }
+        await onSubmit(dadosSubmit);
+      }
+      else {
         const dadosSubmit = {
           tipoVenda: 'VendaRest',
           cliente,
@@ -521,6 +593,17 @@ const SaleModal = ({
         onClose={fecharModalCadastroCliente}
         onSuccess={handleClienteCadastrado}
       />
+      {/* Aciona no Modal do TEF */}
+      <TefModal
+        isOpen={tefModalOpen}
+        onClose={() => setTefModalOpen(false)}
+        onConfirm={() => handleTefPayment(currentTefPayment)}
+        paymentData={currentTefPayment}
+        isProcessing={tefProcessing}
+        isFullPayment={currentTefPayment?.valor >= saldoRestanteSemFormat}
+      />
+      <TefTransactionModal isOpen={tefProcessing} tempoTotalSegundos={90} />
+
 
       {toast.message && <Toast type={toast.type} message={toast.message} />}
     </div>
