@@ -1,30 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { listarContainers } from '../services/api';
-import Pagination from '../utils/Pagination';
+import { getAllContainers, addContainer, updateContainer, getContainerById, getAllTiposContainers, getAllContainersStatus } from '../services/api';
+import ModalCadastroContainers from '../components/ModalCadastroContainers';
 import Toast from '../components/Toast';
+import { useAuth } from '../context/AuthContext';
+import { hasPermission } from '../utils/hasPermission';
 
-
-const Container = () => {
-    const dataAtual = () => {
-        const hoje = new Date();
-        const ano = hoje.getFullYear();
-        const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-        const dia = String(hoje.getDate()).padStart(2, '0');
-        return `${ano}-${mes}-${dia}`;
-    };
-    const [data, setData] = useState('');
-    const [dataImpressao, setDataImpressao] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [tipoContainer, setTipoContainer] = useState(); // 'resumo', 'saldo', 'estoque'
-    const [tiposContainer, setTiposContainer] = useState([]); // 'resumo', 'saldo', 'estoque'
-    const [containers, setContainers] = useState([]); // 'resumo', 'saldo', 'estoque'
-    const [nomeProduto, setNomeProduto] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+const Containers = () => {
+    const [containers, setContainers] = useState([]);
+    const [filteredContainers, setFilteredContainers] = useState([]);
+    const [descricao, setDescricao] = useState('');
+    const [tiposComContainers, setTiposComContainers] = useState([]);
+    const [statusContainer, setStatusContainer] = useState([]);
+    const [tipo, setTipo] = useState('');
+    const [tipoId, setTipoId] = useState('');
+    const [statusId, setStatusId] = useState('');
+    const [status, setStatus] = useState('');
+    const [selectedContainer, setSelectedContainer] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState({ message: '', type: '' });
+    const [isEdit, setIsEdit] = useState(false);
+    const { permissions } = useAuth();
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [filter, setFilter] = useState({});
-    const [executarBusca, setExecutarBusca] = useState(false);
+
 
     useEffect(() => {
         if (toast.message) {
@@ -34,204 +34,358 @@ const Container = () => {
     }, [toast]);
 
     useEffect(() => {
-        if (executarBusca) {
-            fetchContainer();
-        }
+        handleSearch();
     }, [currentPage, rowsPerPage]);
 
 
-
-    const fetchContainer = async () => {
-        try {
-            setLoading(true);
-            setDataImpressao(data);
-
-            const response = await listarContainers({
-                filter,
-                page: currentPage,
-                limit: rowsPerPage
-            });
-
-            const { dados, totalPaginas, totalRegistros } = response.data;
-
-            if (dados.length === 0) {
-                setToast({ message: 'Nenhum resultado encontrado.', type: 'warning' });
+    useEffect(() => {
+        const fetchContainers = async () => {
+            try {
+                const response = await getAllContainers();
+                setContainers(response.data);
+                setFilteredContainers(response.data);
+            } catch (error) {
+                console.error('Erro ao buscar containers:', error);
                 setContainers([]);
-                setTotalPages(1);
-            } else {
-                setToast({ message: 'Relatório gerado com sucesso.', type: 'success' });
-                setRelatorio(dados);
-                setTotalPages(totalPaginas);
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            setToast({ message: 'Erro ao Buscar os dados', type: 'warning' });
-            console.error('Erro ao buscar relatório:', error);
-        } finally {
-            setLoading(false);
-            setExecutarBusca(false); // desliga flag
+        };
+
+        fetchContainers();
+    }, []);
+
+    useEffect(() => {
+        const carregarTiposStatus = async () => {
+            try {
+                const responseTipo = await getAllTiposContainers();
+                const responseStatusContainer = await getAllContainersStatus();
+                setTiposComContainers(responseTipo.data);
+                setStatusContainer(responseStatusContainer.data);
+            } catch (error) {
+                console.error('Erro ao carregar tipos com containers:', error);
+            }
+        };
+
+        carregarTiposStatus();
+    }, []);
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
         }
     };
 
+    const handlePreviousPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
+    const handleSearch = async () => {
+        try {
+            setLoading(true);
+            const response = await getAllContainers({
+                descricao,
+                tipoId,
+                statusId,
+                page: currentPage,
+                pageSize: rowsPerPage
+            });
+            setContainers(response.data);
+            setFilteredContainers(response.data);
+            setTotalPages(response.pagination.totalPages);
+        } catch (error) {
+            console.error('Erro ao buscar containers filtrados:', error);
+            setToast({ message: 'Erro ao buscar containers', type: 'error' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+    const handleClear = () => {
+        setDescricao('');
+        setTipo('');
+        setStatus('');
+        setFilteredContainers(containers);
+        setCurrentPage(1);
+    };
+
+    const handleCadastrarModal = () => {
+        if (!hasPermission(permissions, 'container', 'insert')) {
+            setToast({ message: "Você não tem permissão para cadastrar containers.", type: "error" });
+            return;
+        }
+        setIsModalOpen(true);
+        setIsEdit(false);
+        setSelectedContainer(null);
+    };
+
+    const handleRowsChange = (e) => {
+        setRowsPerPage(Number(e.target.value));
+        setCurrentPage(1);
+    };
+    const handleAtualizarPage = async () => {
+        setIsModalOpen(false);
+        setSelectedContainer(null);
+        setIsEdit(false);
+        setDescricao('');
+        setTipo('');
+        setTipoId('');
+        setStatus('');
+        setCurrentPage(1);
+
+        try {
+            const response = await getAllContainers({
+                descricao,
+                tipoId,
+                statusId,
+                page: currentPage,
+                pageSize: rowsPerPage
+            });
+            setContainers(response.data);
+            setFilteredContainers(response.data);
+        } catch (error) {
+            setToast({ message: 'Erro ao atualizar containers.', type: 'error' });
+        }
+    };
+
+    const handleAddContainer = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+
+        const novoContainer = {
+            descricao: formData.get('descricao'),
+            tipo: formData.get('tipo'),
+            status: formData.get('status')
+        };
+
+        try {
+            await addContainer(novoContainer);
+            setToast({ message: "Container cadastrado com sucesso!", type: "success" });
+            setIsModalOpen(false);
+            const response = await getAllContainers();
+            setContainers(response.data);
+            setFilteredContainers(response.data);
+        } catch (err) {
+            const msg = err.response?.data?.error || "Erro ao cadastrar container.";
+            setToast({ message: msg, type: "error" });
+        }
+    };
+
+    const handleEditClick = async (container) => {
+        if (!hasPermission(permissions, 'container', 'viewcadastro')) {
+            setToast({ message: "Você não tem permissão para visualizar containers.", type: "error" });
+            return;
+        }
+        try {
+            const response = await getContainerById(container.id);
+            setSelectedContainer(response);
+            setIsEdit(true);
+            setIsModalOpen(true);
+        } catch (err) {
+            setToast({ message: "Erro ao carregar dados do container.", type: "error" });
+        }
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+
+        const updated = {
+            descricao: formData.get('descricao'),
+            tipo: formData.get('tipo'),
+            status: formData.get('status')
+        };
+
+        try {
+            await updateContainer(selectedContainer.id, updated);
+            setToast({ message: "Container atualizado com sucesso!", type: "success" });
+            setIsModalOpen(false);
+            const response = await getAllContainers();
+            setContainers(response.data);
+            setFilteredContainers(response.data);
+        } catch (err) {
+            const msg = err.response?.data?.error || "Erro ao atualizar container.";
+            setToast({ message: msg, type: "error" });
+        }
+    };
+
+
+    const containersComTipoNome = filteredContainers.map(container => {
+        const tipoObj = tiposComContainers.find(tipo => tipo.id === container.tipo_id);
+        return {
+            ...container,
+            nomeTipo: tipoObj?.nome || ''
+        };
+    });
+
+
+
+    //const totalPages = Math.ceil(filteredContainers.length / rowsPerPage);
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const currentContainers = containersComTipoNome; // já paginado pelo backend
+
     return (
-        <div className="p-6">
-            <h1 className='title-page'>Containers</h1>
+        <div id="containers-container">
+            <h1 className="title-page">Containers</h1>
+
             <div id="search-container">
                 <div id="search-fields">
-                    <select
-                        className="border p-2 rounded"
-                        value={tipoRelatorio}
-                        onChange={(e) => setTipoContainer(e.target.value)}
-                    >
-                        <option value="resumo">Resumo até data</option>
-                        <option value="saldo">Saldo por Produto</option>
-                        <option value="estoque">Produtos em Estoque</option>
-                    </select>
-                    {tipoRelatorio === 'saldo' && (
-                        <>
-                            <div>
-                                <input
-                                    type="text"
-                                    className="border p-2 rounded"
-                                    placeholder="Nome do produto"
-                                    value={nomeProduto}
-                                    onChange={(e) => setNomeProduto(e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <input
-                                    type="date"
-                                    className="border p-2 rounded"
-                                    value={data}
-                                    onChange={(e) => setData(e.target.value)}
-                                />
-                            </div>
-                        </>
-
-                    )}
-
-                    {tipoRelatorio === 'resumo' && (
+                    <div>
+                        <label htmlFor="descricao">Descrição</label>
                         <input
-                            type="date"
-                            className="border p-2 rounded"
-                            value={data}
-                            onChange={(e) => setData(e.target.value)}
+                            className="input-geral"
+                            id="descricao"
+                            type="text"
+                            value={descricao}
+                            onChange={(e) => setDescricao(e.target.value)}
                         />
-                    )}
+                    </div>
+                    <div>
+                        <label htmlFor="tipo">Tipo</label>
+                        <select
+                            className="select-veiculos-geral"
+                            id="tipo"
+                            value={tipo}
+                            onChange={(e) => {
+                                const selectedNome = e.target.value;
+                                setTipo(selectedNome);
+
+                                const tipoEncontrado = tiposComContainers.find(t => t.nome === selectedNome);
+                                if (tipoEncontrado) {
+                                    setTipoId(tipoEncontrado.id);
+                                } else {
+                                    setTipoId('');
+                                }
+                            }}
+                        >
+                            <option value="">Todos</option>
+                            {tiposComContainers.map((tipo) => (
+                                <option key={tipo.id} value={tipo.nome}>
+                                    {tipo.nome}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="status">Status</label>
+                        <select
+                            className="select-veiculos-geral"
+                            id="status"
+                            value={status}
+                            onChange={(e) => {
+                                const selectedNome = e.target.value;
+                                setStatus(selectedNome);
+
+                                const statusEncontrado = statusContainer.find(t => t.descricao === selectedNome);
+                                if (statusEncontrado) {
+                                    setStatusId(statusEncontrado.id);
+                                } else {
+                                    setStatusId('');
+                                }
+                            }}
+                        >
+                            <option value="">Todos</option>
+                            {statusContainer.map((tipo) => (
+                                <option key={tipo.id} value={tipo.descricao}>
+                                    {tipo.descricao}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
                 <div id="button-group">
-                    <button
-                        className="button"
-                        onClick={() => {
-                            setCurrentPage(1);
-                            setExecutarBusca(true); // sinaliza que deve buscar
-                        }}
-                        disabled={!data || loading}
-                    >
-                        {loading ? 'Carregando...' : 'Buscar'}
-                    </button>
-
-                    {relatorio.length > 0 && (
-                        <button
-                            className="button"
-                            onClick={fetchRelatorioCompleto}
-                        >
-                            Exportar PDF
-                        </button>
-                    )}
+                    <button onClick={handleSearch} className="button">Pesquisar</button>
+                    <button onClick={handleAtualizarPage} className="button">Limpar</button>
+                    <button onClick={handleCadastrarModal} className="button">Cadastrar</button>
                 </div>
             </div>
-            <div id="separator-bar"></div>
-            {loading ? (
-                <div className="spinner-container">
-                    <div className="spinner"></div>
-                </div>) : (
-                <>
-                    <div id="results-container">
-                        <div id="grid-padrao-container">
-                            <table id="grid-padrao">
-                                <thead>
-                                    <tr className="bg-gray-200 text-left">
-                                        {tipoRelatorio === 'resumo' && (
-                                            <>
-                                                <th className="p-2 border">Produto</th>
-                                                <th className="p-2 border">Entradas</th>
-                                                <th className="p-2 border">Saídas</th>
-                                                <th className="p-2 border">Saldo</th>
-                                            </>
-                                        )}
-                                        {tipoRelatorio === 'saldo' && (
-                                            <>
-                                                <th className="p-2 border">Produto</th>
-                                                <th className="p-2 border">Entradas</th>
-                                                <th className="p-2 border">Saídas</th>
-                                                <th className="p-2 border">Saldo Atual</th>
-                                            </>
-                                        )}
-                                        {tipoRelatorio === 'estoque' && (
-                                            <>
-                                                <th className="p-2 border">Produto</th>
-                                                <th className="p-2 border">Unidade</th>
-                                                <th className="p-2 border">Estoque Atual</th>
-                                            </>
-                                        )}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {relatorio.map((item, index) => (
-                                        <tr key={index} className="border-t">
-                                            {tipoRelatorio === 'resumo' && (
-                                                <>
-                                                    <td className="p-2 border">{item.nome_produto}</td>
-                                                    <td className="p-2 border">{item.entradas_ate_data}</td>
-                                                    <td className="p-2 border">{item.saidas_ate_data}</td>
-                                                    <td className="p-2 border">{item.saldo_ate_data}</td>
-                                                </>
-                                            )}
-                                            {tipoRelatorio === 'saldo' && (
-                                                <>
-                                                    <td className="p-2 border">{item.nome_produto}</td>
-                                                    <td className="p-2 border">{item.entradas_ate_data}</td>
-                                                    <td className="p-2 border">{item.saidas_ate_data}</td>
-                                                    <td className="p-2 border">{item.saldo}</td>
-                                                </>
-                                            )}
-                                            {tipoRelatorio === 'estoque' && (
-                                                <>
-                                                    <td className="p-2 border">{item.nome_produto}</td>
-                                                    <td className="p-2 border">{item.unidade}</td>
-                                                    <td className="p-2 border">{item.estoque_atual}</td>
-                                                </>
-                                            )}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            {relatorio.length > 0 && (
-                                <div className="mt-4">
-                                    <Pagination
-                                        currentPage={currentPage}
-                                        totalPages={totalPages}
-                                        onPageChange={(page) => {
-                                            setExecutarBusca(true); // sinaliza que deve buscar
-                                            setCurrentPage(page); // só atualiza o estado
-                                        }}
-                                        onRowsChange={(rows) => {
-                                            setRowsPerPage(rows);
-                                            setCurrentPage(1); // resetar para primeira página ao mudar limite
-                                            setExecutarBusca(true); // sinaliza que deve buscar
-                                        }}
-                                        rowsPerPage={rowsPerPage}
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </>
-            )}
-            {toast.message && <Toast type={toast.type} message={toast.message} />}
-        </div>
 
+            <div id="separator-bar"></div>
+
+            <div id="results-container">
+                {loading ? (
+                    <div className="spinner-container"><div className="spinner"></div></div>
+                ) : containers.length === 0 ? (
+                    <p className="empty-message">Nenhum container cadastrado.</p>
+                ) : (
+                    <div id="grid-padrao-container">
+                        <table id="grid-padrao">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Descrição</th>
+                                    <th>Tipo</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {currentContainers.map((container) => (
+                                    <tr key={container.id}>
+                                        <td>{container.id}</td>
+                                        <td>{container.descricao}</td>
+                                        <td>{container.nomeTipo}</td>
+                                        <td>{container.status_nome}</td>
+                                        <td>
+                                            <button
+                                                onClick={() => handleEditClick(container)}
+                                                className="edit-button"
+                                            >
+                                                Visualizar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                <div id="pagination-container">
+                    <button onClick={handlePreviousPage} disabled={currentPage === 1}>
+                        Anterior
+                    </button>
+                    <span>Página {currentPage} de {totalPages}</span>
+                    <button onClick={handleNextPage} disabled={currentPage === totalPages}>
+                        Próxima
+                    </button>
+                </div>
+
+                <div id="show-more-container">
+                    <label htmlFor="rows-select">Mostrar</label>
+                    <select id="rows-select" value={rowsPerPage} onChange={handleRowsChange}>
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                    </select>
+                    <label htmlFor="rows-select">por página</label>
+                </div>
+            </div>
+
+            {toast.message && <Toast type={toast.type} message={toast.message} />}
+
+            {isModalOpen && (
+                <ModalCadastroContainers
+                    isOpen={isModalOpen}
+                    onSubmit={isEdit ? handleEditSubmit : handleAddContainer}
+                    container={selectedContainer}
+                    onClose={handleAtualizarPage}
+                    onContainerAdicionado={(container) => {
+                        // Atualiza a lista após adicionar
+                        setContainers(prev => [...prev, container]);
+                        if (container.edit) {
+                            setToast({ message: "Container atualizado com sucesso!", type: "success" });
+                        } else {
+                            setToast({ message: "Container adicionado com sucesso!", type: "success" });
+                        }
+                    }}
+                    edit={isEdit}
+                />
+            )}
+        </div>
     );
 };
 
-export default Container;
+export default Containers;

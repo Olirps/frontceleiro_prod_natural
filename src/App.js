@@ -13,6 +13,9 @@ import MovimentacaoProdutos from './pages/MovimentacaoProdutos';
 import Layout from './components/Layout';
 import { useAuth } from './context/AuthContext';
 import Veiculos from './pages/Veiculos';
+import Container from './pages/Container';
+import MovimentaContainerPage from './pages/MovimentaContainerPage';
+import MapaContainersPage from './pages/MapaContainersPage';
 import Clientes from './pages/Clientes';
 import Funcionarios from './pages/Funcionarios';
 import MovimentacaoFinanceiraDespesa from './pages/MovimentacaoFinanceiraDespesa';
@@ -124,19 +127,31 @@ function App() {
           <Route
             path="/contaspendentes"
             element={isAuthenticated && hasPermission(permissions, 'contaspendentes', 'view') ? <ContasPendentes /> : null} // Condicionalmente não renderiza
-          />        
+          />
           <Route
             path="/estoque"
             element={isAuthenticated && hasPermission(permissions, 'estoque', 'view') ? <RelatorioSaldoEstoquePage /> : null} // Condicionalmente não renderiza
-          />        
+          />
           <Route
             path="/tipolayout"
             element={isAuthenticated && hasPermission(permissions, 'tipolayout', 'view') ? <TipoContratoLayout /> : null} // Condicionalmente não renderiza
-          />        
+          />
           <Route
             path="/contratolayout"
             element={isAuthenticated && hasPermission(permissions, 'contratolayout', 'view') ? <ContratosLayout /> : null} // Condicionalmente não renderiza
-          />        
+          />
+          <Route
+            path="/container"
+            element={isAuthenticated && hasPermission(permissions, 'container', 'view') ? <Container /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/container-movimentacao"
+            element={isAuthenticated && hasPermission(permissions, 'container-movimentacao', 'view') ? <MovimentaContainerPage /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/container-localiza"
+            element={isAuthenticated && hasPermission(permissions, 'container-localiza', 'view') ? <MapaContainersPage /> : null} // Condicionalmente não renderiza
+          />
         </Route>
       </Routes>
     </Router>

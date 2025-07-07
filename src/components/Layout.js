@@ -113,6 +113,7 @@ function Layout() {
                       </div>
                     </div>
                   )}
+                  {canViewMenuItem('container') && <Link to="/container" className="submenu-item">Containers</Link>}
                 </div>
               </div>
             ) : null}
@@ -125,6 +126,15 @@ function Layout() {
                   <div id="movimentacao-submenu" className={isMovimentacaoOpen ? 'submenu' : ''}>
                     {canViewMenuItem('notafiscal') && <Link to="/notafiscal" className="submenu-item">Lançar NF-e</Link>}
                     {canViewMenuItem('vendas') && <Link to="/vendas" className="submenu-item">Vendas</Link>}
+                    {(canViewMenuItem('container-movimentacao') || canViewMenuItem('containers-localiza')) && (
+                      <div id="container-movimentacao" className="submenu-item submenu-parent">
+                        <span>Containers</span>
+                        <div id="container-submenu" className="submenu">
+                          {canViewMenuItem('container-movimentacao') && <Link to="/container-movimentacao" className="submenu-item">Movimentação</Link>}
+                          {canViewMenuItem('container-localiza') && <Link to="/container-localiza" className="submenu-item">Localização</Link>}
+                        </div>
+                      </div>
+                    )}
                     {canViewMenuItem('os') && <Link to="/os" className="submenu-item">Ordem de Serviço</Link>}
                     {canViewMenuItem('movimentacaoprodutos') && <Link to="/movimentacaoprodutos" className="submenu-item">Movimentação de Produtos</Link>}
                   </div>

@@ -56,7 +56,7 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
                 setLogradouro(cliente.logradouro || '');
                 setNumero(cliente.numero || '');
                 setBairro(cliente.bairro || '');
-                setCep(formatarCEP(cliente.cep) || '');
+                setCep(cliente.cep ? formatarCEP(cliente?.cep) : '');
 
                 // Preencher UF e Município com base nos IDs
                 if (cliente.uf_id) {
@@ -162,7 +162,9 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
     return (
         <div className="modal-overlay">
             <div className="modal-content">
-                <button className="modal-close" onClick={onClose}>X</button>
+                <div>
+                    <button className="modal-close" onClick={onClose}>X</button>
+                </div>
                 <h2>
                     {edit
                         ? `Editar Cliente - ${nomeFantasia ? nomeFantasia : nome}`

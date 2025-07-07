@@ -520,11 +520,15 @@ select {
   border: none;
   font-size: 20px;
   cursor: pointer;
+  width: 32px;         /* Largura */
+  height: 32px;        /* Altura igual à largura (quadrado) */
   border-radius: 5px;
-  justify-content: flex-end;
-  /* Certifique-se de que o botão está acima de outros elementos */
-
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;         /* Garante que fique acima dos outros elementos */
 }
+
 
 .modal-close:hover {
   background-color: rgb(133, 12, 12);

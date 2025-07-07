@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getAllMovimentacaofinanceiraDespesa, addMovimentacaofinanceiraDespesa, getLancamentoCompletoById, updateLancamentoDespesa, getLancamentoDespesaById, getParcelaByID, pagamentoParcela, updateMovimentacaofinanceiraDespesa, addParcelasDespesa, getParcelasDespesa } from '../services/api';
+import {
+  getAllMovimentacaofinanceiraDespesa, addMovimentacaofinanceiraDespesa,
+  getLancamentoCompletoById, updateLancamentoDespesa,
+  getLancamentoDespesaById, getParcelaByID,
+  pagamentoParcela, updateMovimentacaofinanceiraDespesa,
+  addParcelasDespesa, getParcelasDespesa,
+  getLancamentoReceitaById
+} from '../services/api';
 import '../styles/MovimentacaoFinanceiraDespesa.css';
 import ModalMovimentacaoFinanceiraReceitas from '../components/ModalMovimentacaoFinanceiraReceitas';
 import { converterMoedaParaNumero, formatarData, dataAtual } from '../utils/functions';
@@ -263,20 +270,32 @@ function MovimentacaoFinanceiraReceitas() {
   };
 
   const handleEditClick = async (movimentacao) => {
-    const response = await getLancamentoDespesaById(movimentacao.id);
-    setSelectedMovimentacao(response.data);
-    setIsEdit(true);
-    setIsModalOpen(true);
+    try {
+      const response = await getLancamentoReceitaById(movimentacao.id);
+      setSelectedMovimentacao(response);
+      setIsEdit(true);
+      setIsModalOpen(true);
+    } catch (err) {
+      const status = err?.status;
+      const message = typeof err?.message === 'string' ? err.message : 'Erro desconhecido';
+
+      setToast({ message: message, type: "error" });
+
+
+      console.error('Erro ao buscar movimentação:', err);
+    }
   };
+
+
 
   const handleLancaParcelas = async (movimentacao) => {
     if (!hasPermission(permissions, 'lancarparcelas', 'insert')) {
       setToast({ message: "Você não tem permissão para lançar parcelas.", type: "error" });
       return; // Impede a abertura do modal
     }
-    const response = await getLancamentoDespesaById(movimentacao.id);
-    setSelectedMovimentacao(response.data);
-    setValor(response.data.valor);
+    const response = await getLancamentoReceitaById(movimentacao.id);
+    setSelectedMovimentacao(response);
+    setValor(response.valor);
     setIsModalLancaParcelasOpen(true);
   };
 

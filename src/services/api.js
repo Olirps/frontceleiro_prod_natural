@@ -280,8 +280,53 @@ export const getContaPagarSemana = async () => {
 };
 
 export const getLancamentoDespesaById = async (id) => {
-  return api.get(`/movimentacaofinanceiradespesa/${id}`);
+  try {
+    const response = await api.get(`/movimentacaofinanceiradespesa/${id}`);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      // O servidor respondeu com um status fora da faixa 2xx
+      const status = error.response.status;
+      const message = error.response.data?.message || 'Erro ao buscar lançamento de despesa';
+
+      console.warn(`Status: ${status} - ${message}`);
+      throw { status, message };
+    } else if (error.request) {
+      // A requisição foi feita mas não houve resposta
+      console.error('Nenhuma resposta recebida do servidor.');
+      throw { status: null, message: 'Sem resposta do servidor' };
+    } else {
+      // Erro na configuração da requisição
+      console.error('Erro ao configurar a requisição:', error.message);
+      throw { status: null, message: 'Erro ao configurar a requisição' };
+    }
+  }
 };
+
+export const getLancamentoReceitaById = async (id) => {
+  try {
+    const response = await api.get(`/movimentacaofinanceirareceita/${id}`);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      // O servidor respondeu com um status fora da faixa 2xx
+      const status = error.response.status;
+      const message = error.response.data?.message || 'Erro ao buscar lançamento de despesa';
+
+      console.warn(`Status: ${status} - ${message}`);
+      throw { status, message };
+    } else if (error.request) {
+      // A requisição foi feita mas não houve resposta
+      console.error('Nenhuma resposta recebida do servidor.');
+      throw { status: null, message: 'Sem resposta do servidor' };
+    } else {
+      // Erro na configuração da requisição
+      console.error('Erro ao configurar a requisição:', error.message);
+      throw { status: null, message: 'Erro ao configurar a requisição' };
+    }
+  }
+};
+
 
 export const getLancamentoCompletoById = async (id) => {
   return api.get(`/despesa/${id}`);
@@ -600,7 +645,7 @@ export const getProdutosVendidosSemana = async (id) => {
 
 
 // ENDPOINT - CONTRATO LAYOUT
-export const getTipoContratosLayout = async (dados, page = 1, limit = 20) => {
+export const getTipoContratosLayout = async (dados = {}, page = 1, limit = 20) => {
   try {
     // Valores padrão para paginação
     const { descricao, status } = dados;
@@ -686,8 +731,60 @@ export const alterarContratosLayout = async (id, Contrato) => {
   }
 }
 
+// ENDPOINT - TIPOS CONTAINER
+export const getAllContainersStatus = async () => {
+  try {
+    const response = await api.get('/containers-status');
+    return response
+  } catch (error) {
+    console.error('Erro ao buscar containers status:', error);
+    throw error;
+  }
+};
+
+export const getAllTiposContainers = async (filtro = {}) => {
+  try {
+    const response = await api.get('/tipo-containers', { params: filtro });
+    return response
+  } catch (error) {
+    console.error('Erro ao buscar tipos de containers:', error);
+    throw error;
+  }
+};
+
+export const addTipoContainer = async (container) => {
+  try {
+    const response = await api.post('/tipo-containers', container);
+    return response.data; // 
+  } catch (error) {
+    console.error('Erro ao criar novo tipo container:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+}
+
+export const updateTipoContainer = async (id, container) => {
+  try {
+    const response = await api.put(`/tipo-containers/${id}`, container);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao alterar o tipo container:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+}
+
+
+export const getTiposContainerById = async (id) => {
+  try {
+    const response = await api.get(`/tipo-containers/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar Tipo Container por ID:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+};
+
 // ENDPOINT - CONTAINER
-export const listarContainers = async (filters = {}) => {
+export const getAllContainers = async (filters = {}) => {
   try {
     // Valores padrão para paginação
     const params = {
@@ -729,6 +826,266 @@ export const listarContainers = async (filters = {}) => {
       status: 400,
       message: error.message
     };
+  }
+};
+
+export const addContainer = async (container) => {
+  try {
+    const response = await api.post('/containers', container);
+    return response.data; // 
+  } catch (error) {
+    console.error('Erro ao criar novo container:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+}
+
+
+export const updateContainer = async (id, container) => {
+  try {
+    const response = await api.put(`/containers/${id}`, container);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao alterar o container:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+}
+
+
+export const getContainerById = async (id) => {
+  try {
+    const response = await api.get(`/containers/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar Container por ID:', error);
+    throw error; // Lança o erro para tratamento em outro lugar
+  }
+};
+
+// ENDPOINT - MOVIMENTAÇÃO DE CONTAINERS
+export const getAllContainersMovimentacoes = async (filters = {}) => {
+  try {
+    // Valores padrão para paginação
+    const params = {
+      page: 1,
+      pageSize: 10,
+      ...filters
+    };
+
+    // Validação básica dos parâmetros
+    if (params.page && (isNaN(params.page) || params.page < 1)) {
+      throw new Error('O parâmetro "page" deve ser um número maior que 0');
+    }
+
+    if (params.pageSize && (isNaN(params.pageSize) || params.pageSize < 1)) {
+      throw new Error('O parâmetro "pageSize" deve ser um número maior que 0');
+    }
+
+    const response = await api.get('/container-movimentacao', { params });
+
+    // Retorna tanto os dados quanto os metadados de paginação
+    return {
+      data: response.data.data, // Array de movimentações
+      pagination: response.data.totalPaginas // Metadados de paginação
+    };
+  } catch (error) {
+    console.error('Erro ao buscar Movimentações:', error);
+
+    // Para erros de resposta da API
+    if (error.response) {
+      throw {
+        status: error.response.status,
+        message: error.response.data.erro || 'Erro ao buscar Movimentações',
+        details: error.response.data.detalhes
+      };
+    }
+
+    // Para outros tipos de erros
+    throw {
+      status: 400,
+      message: error.message
+    };
+  }
+};
+
+export const getMovimentacaoById = async (id) => {
+  try {
+    const response = await api.get(`/container-movimentacao/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar Movimentação:', error);
+
+    if (error.response) {
+      throw {
+        status: error.response.status,
+        message: error.response.data.erro || 'Erro ao buscar Movimentação',
+        details: error.response.data.detalhes
+      };
+    }
+
+    throw {
+      status: 500,
+      message: error.message
+    };
+  }
+};
+
+export const createMovimentacao = async (movimentacaoData) => {
+  try {
+    const response = await api.post('/container-movimentacao', movimentacaoData);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao criar nova movimentação:', error);
+
+    if (error.response) {
+      throw {
+        status: error.response.status,
+        message: error.response.data || 'Erro ao criar Movimentação',
+      };
+    }
+
+    throw {
+      status: 500,
+      message: error.message
+    };
+  }
+};
+
+export const updateMovimentacao = async (id, movimentacaoData) => {
+  try {
+    const response = await api.put(`/container-movimentacao/${id}`, movimentacaoData);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao atualizar movimentação:', error);
+
+    if (error.response) {
+      throw {
+        status: error.response.status,
+        message: error.response.data.error || 'Erro ao atualizar Movimentação',
+      };
+    }
+
+    throw {
+      status: 500,
+      message: error.message
+    };
+  }
+};
+
+export const efetivarMovimentacao = async (id, movimentacaoData) => {
+  try {
+    const response = await api.put(`/container-movimentacao/efetivar/${id}`, movimentacaoData);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao efetivar movimentação:', error);
+
+    if (error.response) {
+      throw {
+        status: error.response.status,
+        message: error.response.data.erro || 'Erro ao efetivar Movimentação',
+        details: error.response.data.detalhes
+      };
+    }
+
+    throw {
+      status: 500,
+      message: error.message
+    };
+  }
+};
+
+export const cancelMovimentacao = async (id) => {
+  try {
+    const response = await api.post(`/container-movimentacao/${id}/cancel`);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao cancelar movimentação:', error);
+
+    if (error.response) {
+      throw {
+        status: error.response.status,
+        message: error.response.data.erro || 'Erro ao cancelar Movimentação',
+        details: error.response.data.detalhes
+      };
+    }
+
+    throw {
+      status: 500,
+      message: error.message
+    };
+  }
+};
+
+export const finalizeMovimentacao = async (id) => {
+  try {
+    const response = await api.post(`/container-movimentacao/${id}/finalize`);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao finalizar movimentação:', error);
+
+    if (error.response) {
+      throw {
+        status: error.response.status,
+        message: error.response.data.erro || 'Erro ao finalizar Movimentação',
+        details: error.response.data.detalhes
+      };
+    }
+
+    throw {
+      status: 500,
+      message: error.message
+    };
+  }
+};
+
+
+
+export const getAvailableContainers = async (params = {}) => {
+  try {
+    const response = await api.get('/containers/available', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar containers disponíveis:', error);
+
+    if (error.response) {
+      throw {
+        status: error.response.status,
+        message: error.response.data.erro || 'Erro ao buscar Containers Disponíveis',
+        details: error.response.data.detalhes
+      };
+    }
+
+    throw {
+      status: 500,
+      message: error.message
+    };
+  }
+};
+
+export const removerItemMovimentacao = async (movimentacaoId, itemId) => {
+  try {
+    const response = await api.delete(`/container-movimentacao/${movimentacaoId}/item/${itemId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar item da movimentação:', error);
+    throw error;
+  }
+};
+
+export const generateContractoPDF = async (id) => {
+  try {
+    const response = await api.post(
+      `/container-movimentacao-contrato/${id}`, // endpoint
+      {}, // corpo vazio, pois não há body no seu exemplo
+      {
+        responseType: 'blob', // config correta, fora do body
+      }
+    );
+
+    const file = new Blob([response.data], { type: 'application/pdf' });
+    const fileURL = URL.createObjectURL(file);
+    window.open(fileURL);
+  } catch (error) {
+    console.error('Erro ao gerar contrato PDF:', error);
   }
 };
 
