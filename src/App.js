@@ -9,6 +9,7 @@ import TipoContratoLayout from './pages/TipoContratoLayout';
 import ContratosLayout from './pages/ContratosLayout';
 import Produtos from './pages/Produtos';
 import LancaNFe from './pages/LancaNFe';
+import RelatorioVendasClientePage from './pages/RelatorioVendasClientePage';
 import MovimentacaoProdutos from './pages/MovimentacaoProdutos';
 import Layout from './components/Layout';
 import { useAuth } from './context/AuthContext';
@@ -151,6 +152,10 @@ function App() {
           <Route
             path="/container-localiza"
             element={isAuthenticated && hasPermission(permissions, 'container-localiza', 'view') ? <MapaContainersPage /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/clientes_periodo"
+            element={isAuthenticated && hasPermission(permissions, 'clientes_periodo', 'view') ? <RelatorioVendasClientePage /> : null} // Condicionalmente não renderiza
           />
         </Route>
       </Routes>

@@ -161,6 +161,14 @@ function Layout() {
                   {canViewMenuItem('contaspendentes') && <Link to="/contaspendentes" className="submenu-item">Contas Pendentes</Link>}
                   {canViewMenuItem('contasliquidadas') && <Link to="/contasliquidadas" className="submenu-item">Contas/Parcelas Liquidadas</Link>}
                   {canViewMenuItem('estoque') && <Link to="/estoque" className="submenu-item">Estoque</Link>}
+                  {(canViewMenuItem('vendas-relatorios') || canViewMenuItem('vendas_por_cliente_periodo')) && (
+                    <div id="vendas-relatorios" className="submenu-item submenu-parent">
+                      <span>Relatórios de Vendas</span>
+                      <div id="vendas-relatorios-submenu" className="submenu">
+                        {canViewMenuItem('vendas_por_cliente_periodo') && <Link to="/clientes_periodo" className="submenu-item">Clientes/Período</Link>}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : null}
