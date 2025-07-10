@@ -1454,22 +1454,33 @@ export const removerProdutoOS = async (id, os) => {
 
 export const getVendasPorClientePeriodo = async (filters = {}) => {
   try {
-    const params = {
-      page: 1,
-      limit: 10,
-      ...filters
-    };
+    const {
+      page = 1,
+      limit = 10,
+      dataInicio,
+      dataFim,
+      clienteNome
+    } = filters;
 
-    // Validação básica dos parâmetros
-    if (params.page && (isNaN(params.page) || params.page < 1)) {
+    // Validação dos parâmetros
+    if (isNaN(page) || page < 1) {
       throw new Error('O parâmetro "page" deve ser um número maior que 0');
     }
 
-    if (params.limit && (isNaN(params.limit) || params.limit < 1)) {
+    if (isNaN(limit) || limit < 1) {
       throw new Error('O parâmetro "limit" deve ser um número maior que 0');
     }
 
-    const response = await api.get('/vendasporclienteperiodo', { params });
+    const params = {
+      page,
+      limit,
+    };
+
+    if (dataInicio) params.dataInicio = dataInicio;
+    if (dataFim) params.dataFim = dataFim;
+    if (clienteNome) params.clienteNome = clienteNome;
+
+    const response = await api.get('/relatorio-vendas/clienteperiodo', { params });
 
     return {
       data: response.data.dados, // array de vendas
