@@ -1459,7 +1459,8 @@ export const getVendasPorClientePeriodo = async (filters = {}) => {
       limit = 10,
       dataInicio,
       dataFim,
-      clienteNome
+      clienteNome,
+      produtoNome
     } = filters;
 
     // Validação dos parâmetros
@@ -1479,11 +1480,13 @@ export const getVendasPorClientePeriodo = async (filters = {}) => {
     if (dataInicio) params.dataInicio = dataInicio;
     if (dataFim) params.dataFim = dataFim;
     if (clienteNome) params.clienteNome = clienteNome;
+    if (produtoNome) params.produtoNome = produtoNome;
 
     const response = await api.get('/relatorio-vendas/clienteperiodo', { params });
 
     return {
       data: response.data.dados, // array de vendas
+      somaTotal: response.data.somaTotal, // soma total das vendas
       pagination: {
         total: response.data.total,
         totalPages: response.data.totalPages,
