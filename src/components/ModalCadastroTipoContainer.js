@@ -3,7 +3,7 @@ import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/hasPermission';
 
-const ModalCadastroGrupo = ({ isOpen, onClose, edit, onSubmit, grupoProduto }) => {
+const ModalCadastroTipoContainer = ({ isOpen, onClose, edit, onSubmit, tipoContainer }) => {
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [ativo, setAtivo] = useState(true); // novo estado
@@ -14,22 +14,22 @@ const ModalCadastroGrupo = ({ isOpen, onClose, edit, onSubmit, grupoProduto }) =
 
   useEffect(() => {
     if (isOpen) {
-      const canEdit = hasPermission(permissions, 'grupoproduto', edit ? 'edit' : 'insert');
+      const canEdit = hasPermission(permissions, 'tipocontainer', edit ? 'edit' : 'insert');
       setPermiteEditar(canEdit);
     }
   }, [isOpen, edit, permissions]);
 
   useEffect(() => {
-    if (grupoProduto) {
-      setNome(grupoProduto.nome || '');
-      setDescricao(grupoProduto.descricao || '');
-      setAtivo(grupoProduto.status?.toLowerCase() === 'ativo'); // ou grupoProduto.ativo === true
+    if (tipoContainer) {
+      setNome(tipoContainer.nome || '');
+      setDescricao(tipoContainer.descricao || '');
+      setAtivo(tipoContainer.status?.toLowerCase() === 'ativo'); // ou tipoContainer.ativo === true
     } else {
       setNome('');
       setDescricao('');
       setAtivo(true);
     }
-  }, [grupoProduto]);
+  }, [tipoContainer]);
 
   useEffect(() => {
     if (toast.message) {
@@ -58,7 +58,7 @@ const ModalCadastroGrupo = ({ isOpen, onClose, edit, onSubmit, grupoProduto }) =
         </button>
 
         <h2 className="text-xl font-semibold mb-4">
-          {edit ? 'Editar Grupo de Produto' : 'Cadastrar Grupo de Produto'}
+          {edit ? 'Editar Tipo de Container' : 'Cadastrar Tipo de Container'}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -71,7 +71,6 @@ const ModalCadastroGrupo = ({ isOpen, onClose, edit, onSubmit, grupoProduto }) =
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               maxLength={100}
-              autoFocus
               disabled={!permiteEditar}
               required
               className="w-full border border-gray-300 rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -121,4 +120,4 @@ const ModalCadastroGrupo = ({ isOpen, onClose, edit, onSubmit, grupoProduto }) =
   );
 };
 
-export default ModalCadastroGrupo;
+export default ModalCadastroTipoContainer;

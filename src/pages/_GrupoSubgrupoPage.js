@@ -94,33 +94,38 @@ const GrupoSubgrupoPage = () => {
 
             <div className="grupos-section">
                 <h2>Grupos de Produtos</h2>
-                {grupos.length > 0 ? (
-                    <div>
-                        {grupos.map((grupo) => (
-                            <div key={grupo.id} className="grupo-item">
-                                <h3 className="grupo-title">{grupo.descricao}</h3>
-                                <button onClick={() => {
-                                    setGrupoSelecionado(grupo.id);
-                                    carregarSubgrupos(grupo.id);
-                                }}>
-                                    Ver Subgrupos
-                                </button>
-                                <button className="button" onClick={() => excluirGrupo(grupo.id)}>Excluir</button>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <p>Nenhum grupo encontrado.</p>
-                )}
+                <div id="search-container">
+                    <div id="search-fields">
 
-                <div className="input-group">
-                    <input
-                        type="text"
-                        placeholder="Novo grupo"
-                        value={novoGrupo}
-                        onChange={(e) => setNovoGrupo(e.target.value)}
-                    />
-                    <button onClick={criarGrupo}>Adicionar Grupo</button>
+                        {grupos.length > 0 ? (
+                            <div>
+                                {grupos.map((grupo) => (
+                                    <div key={grupo.id} className="grupo-item">
+                                        <h3 className="grupo-title">{grupo.descricao}</h3>
+                                        <button onClick={() => {
+                                            setGrupoSelecionado(grupo.id);
+                                            carregarSubgrupos(grupo.id);
+                                        }}>
+                                            Ver Subgrupos
+                                        </button>
+                                        <button className="button" onClick={() => excluirGrupo(grupo.id)}>Excluir</button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p>Nenhum grupo encontrado.</p>
+                        )}
+
+                        <div className="input-group">
+                            <input
+                                type="text"
+                                placeholder="Novo grupo"
+                                value={novoGrupo}
+                                onChange={(e) => setNovoGrupo(e.target.value)}
+                            />
+                            <button onClick={criarGrupo}>Adicionar Grupo</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 

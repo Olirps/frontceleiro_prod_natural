@@ -89,6 +89,19 @@
   white-space: nowrap;
 }
 
+#produtos-submenu {
+  display: none;
+  position: absolute;
+  top: 0; /* ajustar se precisar para alinhar com o pai */
+  left: 100%; /* aparece à direita do item Contrato */
+  background-color: #007bff;
+  padding: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  z-index: 1000;
+  white-space: nowrap;
+}
+
 #clientes-submenu {
   display: none;
   position: absolute;
@@ -128,12 +141,20 @@
   display: block;
 }
 
+#produtos:hover #produtos-submenu {
+  display: block;
+}
+
 #container-movimentacao:hover #container-submenu {
   display: block;
 }
 
 /* Ajustar posição submenu Contrato para ficar dentro do submenu Cadastros */
 #cadastros-submenu #contrato {
+  position: relative;
+}
+
+#cadastros-submenu #produtos {
   position: relative;
 }
 #cadastros-submenu #clientes {

@@ -88,7 +88,6 @@ function Layout() {
                 <div id="cadastros-submenu" className={isCadastrosOpen ? 'submenu' : ''}>
                   {canViewMenuItem('permissoes') && <Link to="/permissoes" className="submenu-item">Permissões</Link>}
                   {canViewMenuItem('empresas') && <Link to="/empresas" className="submenu-item">Empresas</Link>}
-
                   {(canViewMenuItem('clientes') || canViewMenuItem('funcionarios') || canViewMenuItem('fornecedores')) && (
                     <div id="clientes" className="submenu-item submenu-parent">
                       <span>Pessoas</span>
@@ -99,7 +98,16 @@ function Layout() {
                       </div>
                     </div>
                   )}
-                  {canViewMenuItem('produtos') && <Link to="/produtos" className="submenu-item">Produtos/Serviços</Link>}
+                  {(canViewMenuItem('produtos') || canViewMenuItem('grupoproduto') || canViewMenuItem('subgrupoproduto')) && (
+                    <div id="produtos" className="submenu-item submenu-parent">
+                      <span>Produtos</span>
+                      <div id="produtos-submenu" className="submenu">
+                        {canViewMenuItem('grupoproduto') && <Link to="/grupoproduto" className="submenu-item">Grupos</Link>}
+                        {canViewMenuItem('subgrupoproduto') && <Link to="/subgrupoproduto" className="submenu-item">Sub Grupos</Link>}
+                        {canViewMenuItem('produtos') && <Link to="/produtos" className="submenu-item">Produtos/Serviços</Link>}
+                      </div>
+                    </div>
+                  )}
                   {canViewMenuItem('osstatus') && <Link to="/osstatus" className="submenu-item">Status O.S.</Link>}
                   {canViewMenuItem('veiculos') && <Link to="/veiculos" className="submenu-item">Veículos</Link>}
                   {canViewMenuItem('contasbancarias') && <Link to="/contasbancarias" className="submenu-item">Contas Bancárias</Link>}

@@ -20,7 +20,8 @@ const setAuthToken = (token) => {
 const token = localStorage.getItem('authToken');
 setAuthToken(token);
 
-export { api, setAuthToken };
+export default api;
+
 
 // Funções de autenticação
 export const login = async (username, password) => {
@@ -514,50 +515,6 @@ export const vinculaProdutoNF = async (id, produto) => {
 export const desvinculaProdutoNF = async (id, produto) => {
   return api.put(`/produtosnf/desvincular/${id}`, produto);
 };
-
-// Funções para gerenciar grupoprodutos
-export const getGrupoProdutos = async () => {
-  return api.get('/grupoproduto');
-};
-
-export const addGrupoProdutos = async (produto) => {
-  return api.post('/grupoproduto', produto);
-};
-
-export const updateGrupoProduto = (id, produto) => {
-  return api.put(`/grupoproduto/${id}`, produto);
-};
-
-export const getGrupoProdutoById = async (id) => {
-  return api.get(`/grupoproduto/${id}`);
-};
-
-export const deleteGrupoProduto = async (id) => {
-  return api.delete(`/grupoproduto/${id}`);
-};
-
-// Funções para gerenciar subgrupoprodutos
-export const getSubGrupoProdutos = async () => {
-  return api.get('/subgrupoproduto');
-};
-
-export const addSubGrupoProdutos = async (produto) => {
-  return api.post('/subgrupoproduto', produto);
-};
-
-export const updateSubGrupoProduto = (id, produto) => {
-  return api.put(`/subgrupoproduto/${id}`, produto);
-};
-
-
-export const getSubGrupoProdutoById = async (id) => {
-  return api.get(`/subgrupoproduto/${id}`);
-};
-
-export const deleteSubGrupoProduto = async (id) => {
-  return api.delete(`/subgrupoproduto/${id}`);
-};
-
 
 
 // Funções para gerenciar produtos

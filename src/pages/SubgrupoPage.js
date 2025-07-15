@@ -1,178 +1,311 @@
 import React, { useState, useEffect } from 'react';
-import { getSubGrupoProdutos, addSubGrupoProdutos, updateSubGrupoProduto, getSubGrupoProdutoById } from '../services/api';
-import '../styles/SubgrupoPage.css';
-import Modal from '../components/ModalCadastroSubgrupo';
+import {
+  getSubGrupoProdutos,
+  addSubGrupoProdutos,
+  updateSubGrupoProduto,
+  getSubGrupoProdutoById,
+  getGrupoProdutos
+} from '../services/GrupoSubGrupoProdutos';
 import Toast from '../components/Toast';
+import Modal from '../components/ModalCadastroSubgrupo';
+import { useAuth } from '../context/AuthContext';
+import { hasPermission } from '../utils/hasPermission';
+import Pagination from '../utils/Pagination';
 
-function SubgrupoPage() {
+const SubgrupoPage = () => {
   const [subgrupos, setSubgrupos] = useState([]);
-  const [filteredSubgrupos, setFilteredSubgrupos] = useState([]);
-  const [descricao, setDescricao] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [grupos, setGrupos] = useState([]);
+  const [nome, setNome] = useState('');
+  const [grupoNome, setGrupoNome] = useState('');
+  const [status, setStatus] = useState('');
+  const [grupoId, setGrupoId] = useState('');
+  const [executarBusca, setExecutarBusca] = useState(true);
+
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [toast, setToast] = useState({ message: '', type: '' });
   const [selectedSubgrupo, setSelectedSubgrupo] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState({ message: '', type: '' });
+  const { permissions } = useAuth();
+
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    const fetchSubgrupos = async () => {
+    if (toast.message) {
+      const timer = setTimeout(() => setToast({ message: '', type: '' }), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    handleSearch();
+  }, [currentPage, rowsPerPage, status, grupoNome, executarBusca]);
+
+  useEffect(() => {
+    const fetchGrupos = async () => {
       try {
-        const response = await getSubGrupoProdutos();
-        setSubgrupos(response.data);
-        setFilteredSubgrupos(response.data);
-      } catch (err) {
-        console.error('Erro ao buscar subgrupos', err);
-      } finally {
-        setLoading(false);
+        const response = await getGrupoProdutos({ status: 'ativo', page: 1, rowsPerPage: 100 });
+        setGrupos(response.data);
+        await handleSearch(); // <-- dispara a busca dos subgrupos após carregar os grupos
+      } catch (error) {
+        console.error('Erro ao carregar grupos de produtos:', error);
+        setToast({ message: 'Erro ao carregar grupos de produtos.', type: 'error' });
       }
     };
-
-    fetchSubgrupos();
+    fetchGrupos();
   }, []);
 
-  const handleSearch = () => {
-    const lowerDescricao = descricao.toLowerCase();
-    const results = subgrupos.filter(subgrupo =>
-      lowerDescricao ? subgrupo.descricao.toLowerCase().includes(lowerDescricao) : true
-    );
-    setFilteredSubgrupos(results);
-    setCurrentPage(1); 
+
+  const handleSearch = async () => {
+    setLoading(true);
+    try {
+      const response = await getSubGrupoProdutos({
+        nome,
+        status,
+        grupoNome,
+        grupoId,
+        currentPage,
+        rowsPerPage
+      });
+      const todos = response.data;
+
+      const filtrados = todos.filter((sg) => {
+        const matchDescricao = nome
+          ? sg.nome.toLowerCase().includes(nome.toLowerCase())
+          : true;
+        const matchGrupo = grupoId ? sg.gpid === grupoId : true;
+        return matchDescricao && matchGrupo;
+      });
+
+      setSubgrupos(filtrados);
+      setTotalPages(response.pagination.totalPages);
+    } catch (error) {
+      setToast({ message: 'Erro ao buscar subgrupos.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClear = () => {
-    setDescricao('');
-    setFilteredSubgrupos(subgrupos);
+    setNome('');
+    setGrupoId('');
+    setGrupoNome('');
     setCurrentPage(1);
+    handleSearch();
+  };
+
+  const handleCadastrarModal = () => {
+    if (!hasPermission(permissions, 'subgrupoproduto', 'insert')) {
+      setToast({ message: "Você não tem permissão para cadastrar subgrupos.", type: "error" });
+      return;
+    }
+    setIsModalOpen(true);
+    setIsEdit(false);
+    setSelectedSubgrupo(null);
+  };
+
+  const handleAtualizarPage = () => {
+    setIsModalOpen(false);
+    setSelectedSubgrupo(null);
+    setIsEdit(false);
+    handleSearch();
   };
 
   const handleAddSubgrupo = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const newSubgrupo = { descricao: formData.get('descricao') };
+    const newSubgrupo = {
+      nome: e.nome,
+      descricao: e.descricao,
+      gpid: e.grupoId,
+      status: e.status
+    };
 
     try {
       await addSubGrupoProdutos(newSubgrupo);
       setToast({ message: "Subgrupo cadastrado com sucesso!", type: "success" });
-      setIsModalOpen(false);
-      const response = await getSubGrupoProdutos();
-      setSubgrupos(response.data);
-      setFilteredSubgrupos(response.data);
+      handleAtualizarPage();
     } catch (err) {
-      const errorMessage = err.response?.data?.error || "Erro ao cadastrar subgrupo.";
-      setToast({ message: errorMessage, type: "error" });
+      const msg = err.response?.data?.error || "Erro ao cadastrar subgrupo.";
+      setToast({ message: msg, type: "error" });
     }
   };
 
   const handleEditClick = async (subgrupo) => {
+    if (!hasPermission(permissions, 'subgrupoproduto', 'viewcadastro')) {
+      setToast({ message: "Você não tem permissão para visualizar subgrupos.", type: "error" });
+      return;
+    }
+
     try {
       const response = await getSubGrupoProdutoById(subgrupo.id);
       setSelectedSubgrupo(response.data);
       setIsEdit(true);
       setIsModalOpen(true);
     } catch (err) {
-      console.error('Erro ao buscar detalhes do subgrupo', err);
-      setToast({ message: "Erro ao buscar detalhes do subgrupo.", type: "error" });
+      setToast({ message: "Erro ao carregar dados do subgrupo.", type: "error" });
     }
   };
 
   const handleEditSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const updatedSubgrupo = { descricao: formData.get('descricao') };
+    const updated = {
+      descricao: e.descricao,
+      gpid: e.grupoId,
+      status: e.status
+
+    };
 
     try {
-      await updateSubGrupoProduto(selectedSubgrupo.id, updatedSubgrupo);
+      await updateSubGrupoProduto(selectedSubgrupo.id, updated);
       setToast({ message: "Subgrupo atualizado com sucesso!", type: "success" });
-      setIsModalOpen(false);
-      setSelectedSubgrupo(null);
-      setIsEdit(false);
-      const response = await getSubGrupoProdutos();
-      setSubgrupos(response.data);
-      setFilteredSubgrupos(response.data);
+      handleAtualizarPage();
     } catch (err) {
-      const errorMessage = err.response?.data?.error || "Erro ao atualizar subgrupo.";
-      setToast({ message: errorMessage, type: "error" });
+      const msg = err.response?.data?.error || "Erro ao atualizar subgrupo.";
+      setToast({ message: msg, type: "error" });
     }
   };
 
-  const totalPages = Math.ceil(filteredSubgrupos.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const currentSubgrupos = filteredSubgrupos.slice(startIndex, startIndex + rowsPerPage);
+  const currentSubgrupos = subgrupos;
 
   return (
     <div id="subgrupo-container">
-      <h1 id="subgrupo-title">Consulta de Subgrupos</h1>
-      {loading ? (
-        <div className="spinner-container">
-          <div className="spinner"></div>
-        </div>) : (
-        <>
-          <div id="search-container">
+      <h1 className="title-page">Subgrupos</h1>
+
+      <div id="search-container">
+        <div id="search-fields">
+          <div>
+            <label htmlFor="descricao">Nome</label>
             <input
+              className="input-geral"
+              id="nome"
               type="text"
-              placeholder="Descrição do Subgrupo"
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
             />
-            <button onClick={handleSearch} className="button">Pesquisar</button>
-            <button onClick={handleClear} className="button">Limpar</button>
-            <button onClick={() => { setIsModalOpen(true); setIsEdit(false); setSelectedSubgrupo(null); }} className="button">Cadastrar</button>
           </div>
 
-          <div id="results-container">
-            <table>
+          <div>
+            <label htmlFor="grupo">Grupo</label>
+            <select
+              className="select-veiculos-geral"
+              id="grupo"
+              value={grupoNome}
+              onChange={(e) => {
+                const nomeSelecionado = e.target.value;
+                setGrupoNome(nomeSelecionado);
+
+                const grupoEncontrado = grupos.find(g => g.nome === nomeSelecionado);
+                if (grupoEncontrado) {
+                  setGrupoId(grupoEncontrado.id);
+                } else {
+                  setGrupoId('');
+                }
+              }}
+            >
+              <option value="todos">Todos</option>
+              {grupos.map((g) => (
+                <option key={g.id} value={g.nome}>{g.nome}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="status">Status</label>
+            <select
+              className="input-geral"
+              id="status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="todos">Todos</option>
+              <option value="ativo">Ativo</option>
+              <option value="inativo">Inativo</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="button-group">
+          <button onClick={handleSearch} className="button">Pesquisar</button>
+          <button onClick={handleClear} className="button">Limpar</button>
+          <button onClick={handleCadastrarModal} className="button">Cadastrar</button>
+        </div>
+      </div>
+
+      <div id="separator-bar" />
+
+      <div id="results-container">
+        {loading ? (
+          <div className="spinner-container"><div className="spinner" /></div>
+        ) : subgrupos.length === 0 ? (
+          <p className="empty-message">Nenhum subgrupo cadastrado.</p>
+        ) : (
+          <div id="grid-padrao-container">
+            <table id="grid-padrao">
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Descrição</th>
+                  <th>Nome</th>
+                  <th>Grupo</th>
                   <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {currentSubgrupos.map((subgrupo) => (
-                  <tr key={subgrupo.id}>
-                    <td>{subgrupo.id}</td>
-                    <td>{subgrupo.descricao}</td>
-                    <td>
-                      <button onClick={() => handleEditClick(subgrupo)} className="edit-button">Editar</button>
-                    </td>
-                  </tr>
-                ))}
+                {currentSubgrupos.map((sg) => {
+                  return (
+                    <tr key={sg.id}>
+                      <td>{sg.id}</td>
+                      <td>{sg.nome}</td>
+                      <td>{sg.grupoNome || '-'}</td>
+                      <td>
+                        <button
+                          onClick={() => handleEditClick(sg)}
+                          className="edit-button"
+                        >
+                          Visualizar
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-
-          <div id="pagination-container">
-            <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>Anterior</button>
-            <span>Página {currentPage} de {totalPages}</span>
-            <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>Próxima</button>
-          </div>
-
-          <div id="show-more-container">
-            <label htmlFor="rows-select">Mostrar</label>
-            <select id="rows-select" value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))}>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
-            <label>por página</label>
-          </div>
-        </>
+        )}
+      </div>
+      {currentSubgrupos && currentSubgrupos.length > 0 && (
+        <div className="mt-4">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={(page) => {
+              setCurrentPage(page);
+              setExecutarBusca(true);
+            }}
+            onRowsChange={(rows) => {
+              setRowsPerPage(rows);
+              setCurrentPage(1);
+              setExecutarBusca(true);
+            }}
+            rowsPerPage={rowsPerPage}
+          />
+        </div>
       )}
 
       {toast.message && <Toast type={toast.type} message={toast.message} />}
+
       {isModalOpen && (
         <Modal
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
           onSubmit={isEdit ? handleEditSubmit : handleAddSubgrupo}
-          subgrupo={selectedSubgrupo}
+          SubGrupoProduto={selectedSubgrupo}
+          edit={isEdit}
+          onClose={handleAtualizarPage}
+          grupos={grupos} // Se quiser popular o select do modal também
         />
       )}
     </div>
   );
-}
+};
 
 export default SubgrupoPage;

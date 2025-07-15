@@ -1,166 +1,251 @@
 import React, { useState, useEffect } from 'react';
-import { getGrupoProdutos, addGrupoProdutos, updateGrupoProduto, getGrupoProdutoById } from '../services/api';
-import '../styles/GrupoPage.css';
+import {
+  getGrupoProdutos,
+  addGrupoProdutos,
+  updateGrupoProduto,
+  getGrupoProdutoById
+} from '../services/GrupoSubGrupoProdutos';
 import ModalCadastroGrupo from '../components/ModalCadastroGrupo';
-
 import Toast from '../components/Toast';
+import { useAuth } from '../context/AuthContext';
+import { hasPermission } from '../utils/hasPermission';
+import Pagination from '../utils/Pagination';
 
-function GrupoPage() {
+
+const GrupoPage = () => {
   const [grupos, setGrupos] = useState([]);
-  const [filteredGrupos, setFilteredGrupos] = useState([]);
-  const [descricao, setDescricao] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [nome, setNome] = useState('');
+  const [status, setStatus] = useState('ativo'); // <-- NOVO
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [toast, setToast] = useState({ message: '', type: '' });
   const [selectedGrupo, setSelectedGrupo] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState({ message: '', type: '' });
+  const { permissions } = useAuth();
+  const [executarBusca, setExecutarBusca] = useState(true);
+
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    const fetchGrupos = async () => {
-      try {
-        const response = await getGrupoProdutos();
-        setGrupos(response.data);
-        setFilteredGrupos(response.data);
-      } catch (err) {
-        console.error('Erro ao buscar grupos', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (toast.message) {
+      const timer = setTimeout(() => setToast({ message: '', type: '' }), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
-    fetchGrupos();
-  }, []);
+  useEffect(() => {
+    handleSearch();
+  }, [currentPage, rowsPerPage, status, executarBusca]);
 
-  const handleSearch = () => {
-    const lowerDescricao = descricao.toLowerCase();
-    const results = grupos.filter(grupo =>
-      lowerDescricao ? grupo.descricao.toLowerCase().includes(lowerDescricao) : true
-    );
-    setFilteredGrupos(results);
-    setCurrentPage(1);
+  const handleSearch = async () => {
+    setLoading(true);
+    try {
+      const response = await getGrupoProdutos({
+        nome,
+        status,
+        currentPage,
+        rowsPerPage
+      });
+
+      const todos = response.data || [];
+
+      const filtrados = nome
+        ? todos.filter(g => g.nome.toLowerCase().includes(nome.toLowerCase()))
+        : todos;
+
+      setGrupos(filtrados);
+      setTotalPages(response.pagination.totalPages);
+    } catch (error) {
+      setToast({ message: 'Erro ao buscar grupos.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClear = () => {
-    setDescricao('');
-    setFilteredGrupos(grupos);
+    setNome('');
+    setStatus('');
     setCurrentPage(1);
+    handleSearch();
+  };
+
+  const handleCadastrarModal = () => {
+    if (!hasPermission(permissions, 'grupoproduto', 'insert')) {
+      setToast({ message: "Você não tem permissão para cadastrar grupos.", type: "error" });
+      return;
+    }
+    setIsModalOpen(true);
+    setIsEdit(false);
+    setSelectedGrupo(null);
+  };
+
+  const handleAtualizarPage = () => {
+    setIsModalOpen(false);
+    setSelectedGrupo(null);
+    setIsEdit(false);
+    handleSearch();
   };
 
   const handleAddGrupo = async (grupoData) => {
     try {
       await addGrupoProdutos(grupoData);
       setToast({ message: "Grupo cadastrado com sucesso!", type: "success" });
-      setIsModalOpen(false);
-      //fetchGrupos(); // Atualiza a lista de grupos
+      handleAtualizarPage();
     } catch (err) {
-      const errorMessage = err.response?.data?.error || "Erro ao cadastrar grupo.";
-      setToast({ message: errorMessage, type: "error" });
+      const msg = err.response?.data?.error || "Erro ao cadastrar grupo.";
+      setToast({ message: msg, type: "error" });
     }
   };
-
-  const handleEditSubmit = async (grupoData) => {
-    try {
-      await updateGrupoProduto(grupoData.id, grupoData);
-      setToast({ message: "Grupo atualizado com sucesso!", type: "success" });
-      setIsModalOpen(false);
-      //fetchGrupos(); // Atualiza a lista de grupos
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || "Erro ao atualizar grupo.";
-      setToast({ message: errorMessage, type: "error" });
-    }
-  };
-
 
   const handleEditClick = async (grupo) => {
+    if (!hasPermission(permissions, 'grupoproduto', 'viewcadastro')) {
+      setToast({ message: "Você não tem permissão para visualizar grupos.", type: "error" });
+      return;
+    }
+
     try {
       const response = await getGrupoProdutoById(grupo.id);
       setSelectedGrupo(response.data);
       setIsEdit(true);
       setIsModalOpen(true);
     } catch (err) {
-      console.error('Erro ao buscar detalhes do grupo', err);
-      setToast({ message: "Erro ao buscar detalhes do grupo.", type: "error" });
+      setToast({ message: "Erro ao carregar dados do grupo.", type: "error" });
     }
   };
 
-  const totalPages = Math.ceil(filteredGrupos.length / rowsPerPage);
+  const handleEditSubmit = async (grupoData) => {
+    try {
+      await updateGrupoProduto(selectedGrupo.id, grupoData);
+      setToast({ message: "Grupo atualizado com sucesso!", type: "success" });
+      handleAtualizarPage();
+    } catch (err) {
+      const msg = err.response?.data?.error || "Erro ao atualizar grupo.";
+      setToast({ message: msg, type: "error" });
+    }
+  };
+
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const currentGrupos = filteredGrupos.slice(startIndex, startIndex + rowsPerPage);
+  const currentGrupos = grupos;
 
   return (
     <div id="grupo-container">
-      <h1 id="grupo-title">Consulta de Grupos</h1>
-      {loading ? (
-        <div className="spinner-container">
-          <div className="spinner"></div>
-        </div>) : (
-        <>
-          <div id="search-container">
+      <h1 className="title-page">Grupos</h1>
+
+      <div id="search-container">
+        <div id="search-fields">
+          <div>
+            <label htmlFor="nome">Nome</label>
             <input
+              className="input-geral"
+              id="descricao"
               type="text"
-              placeholder="Descrição do Grupo"
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
             />
-            <button onClick={handleSearch} className="button">Pesquisar</button>
-            <button onClick={handleClear} className="button">Limpar</button>
-            <button onClick={() => { setIsModalOpen(true); setIsEdit(false); setSelectedGrupo(null); }} className="button">Cadastrar</button>
           </div>
 
-          <div id="results-container">
-            <table>
+          <div>
+            <label htmlFor="status">Status</label>
+            <select
+              className="input-geral"
+              id="status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="todos">Todos</option>
+              <option value="ativo">Ativo</option>
+              <option value="inativo">Inativo</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="button-group">
+          <button onClick={handleSearch} className="button">Pesquisar</button>
+          <button onClick={handleClear} className="button">Limpar</button>
+          <button onClick={handleCadastrarModal} className="button">Cadastrar</button>
+        </div>
+      </div>
+
+      <div id="separator-bar"></div>
+
+      <div id="results-container">
+        {loading ? (
+          <div className="spinner-container"><div className="spinner" /></div>
+        ) : grupos.length === 0 ? (
+          <p className="empty-message">Nenhum grupo cadastrado.</p>
+        ) : (
+          <div id="grid-padrao-container">
+            <table id="grid-padrao">
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Descrição</th>
+                  <th>Nome</th>
+                  <th>Status</th>
                   <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {currentGrupos.map((grupo) => (
-                  <tr key={grupo.id}>
-                    <td>{grupo.id}</td>
-                    <td>{grupo.descricao}</td>
-                    <td>
-                      <button onClick={() => handleEditClick(grupo)} className="edit-button">Editar</button>
+                {currentGrupos?.length > 0 ? (
+                  currentGrupos.map((grupo) => (
+                    <tr key={grupo.id}>
+                      <td>{grupo.id}</td>
+                      <td>{grupo.nome}</td>
+                      <td>{grupo.status}</td>
+                      <td>
+                        <button
+                          onClick={() => handleEditClick(grupo)}
+                          className="edit-button"
+                        >
+                          Visualizar
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="no-results">
+                      Nenhum grupo encontrado
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
-
-          <div id="pagination-container">
-            <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>Anterior</button>
-            <span>Página {currentPage} de {totalPages}</span>
-            <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>Próxima</button>
-          </div>
-
-          <div id="show-more-container">
-            <label htmlFor="rows-select">Mostrar</label>
-            <select id="rows-select" value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))}>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
-            <label>por página</label>
-          </div>
-        </>
+        )}
+      </div>
+      {currentGrupos && currentGrupos.length > 0 && (
+        <div className="mt-4">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={(page) => {
+              setCurrentPage(page);
+              setExecutarBusca(true);
+            }}
+            onRowsChange={(rows) => {
+              setRowsPerPage(rows);
+              setCurrentPage(1);
+              setExecutarBusca(true);
+            }}
+            rowsPerPage={rowsPerPage}
+          />
+        </div>
       )}
-
       {toast.message && <Toast type={toast.type} message={toast.message} />}
+
       {isModalOpen && (
         <ModalCadastroGrupo
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
           onSubmit={isEdit ? handleEditSubmit : handleAddGrupo}
-          grupo={selectedGrupo}
+          grupoProduto={selectedGrupo}
+          edit={isEdit}
+          onClose={handleAtualizarPage}
         />
       )}
     </div>
   );
-}
+};
 
 export default GrupoPage;
