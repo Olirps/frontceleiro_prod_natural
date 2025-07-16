@@ -1,3 +1,5 @@
 node_modules
 public
-build
+build/
+.vs
+build/asset-manifest.json
