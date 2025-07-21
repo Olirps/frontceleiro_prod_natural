@@ -1,422 +1,351 @@
 import React, { useEffect, useState } from 'react';
-import '../styles/ModalCadastraCliente.css'; // Certifique-se de criar este CSS também
 import { cpfCnpjMask } from './utils';
-import { formatarCEP } from '../utils/functions';
+import { formatarCEP, formatarCelular } from '../utils/functions';
 import { getUfs, getMunicipiosUfId } from '../services/api';
-import Toast from '../components/Toast';
-import { formatarCelular } from '../utils/functions';
+import { addCliente, updateCliente } from '../services/ApiClientes/ApiClientes';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { hasPermission } from '../utils/hasPermission';
+import Toast from './Toast';
 
-
+const TABS = ['Dados Básicos', 'Dados Jurídicos', 'Contato', 'Endereço'];
 
 const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
-    const [nome, setNome] = useState('');
-    const [nomeFantasia, setNomeFantasia] = useState('');
-    const [cpfCnpj, setCpf] = useState('');
-    const [inscricao_estadual, setInscricaoEstadual] = useState('');
-    const [email, setEmail] = useState('');
-    const [celular, setCelular] = useState('');
-    const [logradouro, setLogradouro] = useState('');
-    const [numero, setNumero] = useState('');
-    const [bairro, setBairro] = useState('');
-    const [municipio, setMunicipio] = useState('');
-    const [uf, setUf] = useState('');
-    const [cep, setCep] = useState('');
-    const [permiteEditar, setPermiteEditar] = useState(true);
-    const [ufs, setUfs] = useState([]); // Estado para armazenar os UFs
-    const [municipios, setMunicipios] = useState([]); // Estado para armazenar os municípios
-    const [toast, setToast] = useState({ message: '', type: '' });
-    const { permissions } = useAuth();
-    const [hasAccess, setHasAccess] = useState(true);
-
-    const [isExpanded, setIsExpanded] = useState({
-        dadosBasicos: true,
-        dadosJuridicos: false,
-        contato: false,
-        endereco: false
+    const [activeTab, setActiveTab] = useState(TABS[0]);
+    const [form, setForm] = useState({
+        nome: '',
+        nomeFantasia: '',
+        cpfCnpj: '',
+        inscricao_estadual: '',
+        email: '',
+        celular: '',
+        logradouro: '',
+        numero: '',
+        bairro: '',
+        municipio: '',
+        uf: '',
+        cep: ''
     });
+
+    const [ufs, setUfs] = useState([]);
+    const [municipios, setMunicipios] = useState([]);
+    const [toast, setToast] = useState({ message: '', type: '' });
+    const [loading, setLoading] = useState(false);
+    const [permiteEditar, setPermiteEditar] = useState(true);
+    const { permissions } = useAuth();
 
     useEffect(() => {
         if (isOpen && edit) {
-            const canEdit = hasPermission(permissions, 'clientes', edit ? 'edit' : 'insert');
-            setPermiteEditar(canEdit)
+            setPermiteEditar(hasPermission(permissions, 'clientes', edit ? 'edit' : 'insert'));
         }
     }, [isOpen, edit, permissions]);
 
     useEffect(() => {
-        const preencherDadosCliente = async () => {
-            if (cliente) {
-                setNome(cliente.nome || '');
-                setNomeFantasia(cliente.nomeFantasia || '');
-                setCpf(cliente.cpfCnpj || '');
-                setInscricaoEstadual(cliente.inscricao_estadual || '');
-                setEmail(cliente.email || '');
-                setCelular(cliente.celular || '');
-                setLogradouro(cliente.logradouro || '');
-                setNumero(cliente.numero || '');
-                setBairro(cliente.bairro || '');
-                setCep(cliente.cep ? formatarCEP(cliente?.cep) : '');
-
-                // Preencher UF e Município com base nos IDs
-                if (cliente.uf_id) {
-                    const ufCorrespondente = ufs.find((uf) => parseInt(uf.codIBGE) === parseInt(cliente.uf_id));
-                    setUf(ufCorrespondente ? ufCorrespondente.codIBGE : '');
-                }
-
-                // Preencher Município com base no ID
-                if (cliente.municipio_id) {
-                    const municipioCorrespondente = municipios.find((municipio) => parseInt(municipio.id) === parseInt(cliente.municipio_id));
-                    setMunicipio(municipioCorrespondente ? municipioCorrespondente.id : '');
-                }
-            } else {
-                // Limpar os campos
-                setNome('');
-                setNomeFantasia('');
-                setCpf('');
-                setInscricaoEstadual('');
-                setEmail('');
-                setCelular('');
-                setLogradouro('');
-                setNumero('');
-                setBairro('');
-                setMunicipio('');
-                setUf('');
-                setCep('');
-            }
-        };
-        preencherDadosCliente();
-    }, [cliente, ufs]); // Adicione dependências relevantes
-
-
-    useEffect(() => {
         const fetchUfs = async () => {
             try {
-                let munsUf;
-                const ufsData = await getUfs(); // Supõe-se que isso retorna o JSON fornecido
-
-                if (edit) {
-                    munsUf = await getMunicipiosUfId(cliente.uf_id);
-                }
-
-                if (Array.isArray(ufsData.data)) {
-                    setUfs(ufsData.data);
-                } else {
-                    console.error("O retorno de getUfs não é um array:", JSON.stringify(ufsData.data));
-                }
-
-                if (edit) {
-                    if (Array.isArray(munsUf.data)) {
-                        setMunicipios(munsUf.data);
-                    }
+                const ufsData = await getUfs();
+                setUfs(ufsData.data || []);
+                if (edit && cliente?.uf_id) {
+                    const muns = await getMunicipiosUfId(cliente.uf_id);
+                    setMunicipios(muns.data || []);
                 }
             } catch (error) {
-                console.error("Erro ao buscar UFs:", error);
-                setUfs([]); // Define como um array vazio em caso de erro
-
-                // Adicionando o toast de erro
-                setToast({
-                    message: "Erro ao buscar as UFs. Tente novamente.",
-                    type: "error", // Tipo de mensagem: pode ser "success", "error", etc.
-                    duration: 3000, // Duração do toast em milissegundos
-                });
+                setToast({ message: 'Erro ao buscar UFs', type: 'error' });
             }
         };
 
-
         fetchUfs();
-    }, [getUfs]);
+    }, [cliente?.uf_id]);
+
+    useEffect(() => {
+        if (cliente) {
+            setForm({
+                nome: cliente.nome || '',
+                nomeFantasia: cliente.nomeFantasia || '',
+                cpfCnpj: cliente.cpfCnpj || '',
+                inscricao_estadual: cliente.inscricao_estadual || '',
+                email: cliente.email || '',
+                celular: cliente.celular || '',
+                logradouro: cliente.logradouro || '',
+                numero: cliente.numero || '',
+                bairro: cliente.bairro || '',
+                municipio: cliente.municipio_id || '',
+                uf: cliente.uf_id || '',
+                cep: cliente.cep ? formatarCEP(cliente.cep) : ''
+            });
+        } else {
+            setForm({
+                nome: '',
+                nomeFantasia: '',
+                cpfCnpj: '',
+                inscricao_estadual: '',
+                email: '',
+                celular: '',
+                logradouro: '',
+                numero: '',
+                bairro: '',
+                municipio: '',
+                uf: '',
+                cep: ''
+            });
+        }
+    }, [cliente]);
 
     const handleUfChange = async (e) => {
         const selectedUf = e.target.value;
-        setUf(selectedUf);
-        if (selectedUf) {
-            try {
-                const municipiosData = await getMunicipiosUfId(selectedUf);
-                if (Array.isArray(municipiosData.data)) {
-                    setMunicipios(municipiosData.data);
-                } else {
-                    console.error('O retorno de getMunicipiosUfId não é um array:', JSON.stringify(municipiosData.data));
-                    setMunicipios([]); // Resetar em caso de erro
-                }
-            } catch (error) {
-                console.error('Erro ao buscar municípios:', error);
-                setMunicipios([]);
-            }
-        } else {
+        setForm(prev => ({ ...prev, uf: selectedUf }));
+        try {
+            const municipiosData = await getMunicipiosUfId(selectedUf);
+            setMunicipios(municipiosData.data || []);
+        } catch {
+            setToast({ message: 'Erro ao buscar municípios', type: 'error' });
             setMunicipios([]);
         }
     };
 
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+            const payload = {
+                ...form,
+                celular: form.celular.replace(/\D/g, ''),
+                cep: form.cep.replace(/\D/g, '')
+            };
+
+            const response = edit
+                ? await updateCliente(cliente.id, payload)
+                : await addCliente(payload);
+
+            setToast({
+                message: `Cliente ${response.data.nomeFantasia || response.data.nome} ${edit ? 'atualizado' : 'cadastrado'} com sucesso!`,
+                type: 'success'
+            });
+
+            if (onSubmit) {
+                onSubmit({ cliente: response.data }); // callback para página, se quiser usar
+            }
+
+            setTimeout(() => {
+                setLoading(false);
+                onClose(); // só fecha depois de salvar e exibir o toast
+            }, 300);
+        } catch (error) {
+            setToast({
+                message: 'Erro ao salvar cliente.',
+                type: 'error'
+            });
+            setLoading(false);
+        }
+    };
 
 
     if (!isOpen) return null;
 
-    const toggleSection = (section) => {
-        setIsExpanded((prevState) => ({
-            ...prevState,
-            [section]: !prevState[section],
-        }));
+    const renderTabContent = () => {
+        const input = "input input-bordered w-full";
+
+        switch (activeTab) {
+            case 'Dados Básicos':
+                return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="label">Nome</label>
+                            <input
+                                className={input}
+                                type="text"
+                                value={form.nome}
+                                onChange={(e) => setForm(prev => ({ ...prev, nome: e.target.value.toUpperCase() }))}
+                                disabled={!permiteEditar}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="label">Nome Fantasia</label>
+                            <input
+                                className={input}
+                                type="text"
+                                value={form.nomeFantasia}
+                                onChange={(e) => setForm(prev => ({ ...prev, nomeFantasia: e.target.value.toUpperCase() }))}
+                                disabled={!permiteEditar}
+                            />
+                        </div>
+                    </div>
+                );
+
+            case 'Dados Jurídicos':
+                return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="label">CPF/CNPJ</label>
+                            <input
+                                className={input}
+                                type="text"
+                                value={cpfCnpjMask(form.cpfCnpj)}
+                                onChange={(e) => setForm(prev => ({ ...prev, cpfCnpj: cpfCnpjMask(e.target.value) }))}
+                                disabled={!permiteEditar}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="label">Inscrição Estadual</label>
+                            <input
+                                className={input}
+                                type="text"
+                                value={form.inscricao_estadual}
+                                onChange={(e) => setForm(prev => ({ ...prev, inscricao_estadual: e.target.value }))}
+                                disabled={!permiteEditar}
+                            />
+                        </div>
+                    </div>
+                );
+
+            case 'Contato':
+                return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="label">Email</label>
+                            <input
+                                className={input}
+                                type="email"
+                                value={form.email}
+                                onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value.toLowerCase() }))}
+                                disabled={!permiteEditar}
+                            />
+                        </div>
+                        <div>
+                            <label className="label">Celular</label>
+                            <input
+                                className={input}
+                                type="text"
+                                value={formatarCelular(form.celular)}
+                                onChange={(e) => setForm(prev => ({ ...prev, celular: e.target.value }))}
+                                disabled={!permiteEditar}
+                            />
+                        </div>
+                    </div>
+                );
+
+            case 'Endereço':
+                return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="label">Logradouro</label>
+                            <input
+                                className={input}
+                                type="text"
+                                value={form.logradouro}
+                                onChange={(e) => setForm(prev => ({ ...prev, logradouro: e.target.value.toUpperCase() }))}
+                                disabled={!permiteEditar}
+                            />
+                        </div>
+                        <div>
+                            <label className="label">Número</label>
+                            <input
+                                className={input}
+                                type="text"
+                                value={form.numero}
+                                onChange={(e) => setForm(prev => ({ ...prev, numero: e.target.value }))}
+                                disabled={!permiteEditar}
+                            />
+                        </div>
+                        <div>
+                            <label className="label">Bairro</label>
+                            <input
+                                className={input}
+                                type="text"
+                                value={form.bairro}
+                                onChange={(e) => setForm(prev => ({ ...prev, bairro: e.target.value.toUpperCase() }))}
+                                disabled={!permiteEditar}
+                            />
+                        </div>
+                        <div>
+                            <label className="label">CEP</label>
+                            <input
+                                className={input}
+                                type="text"
+                                value={form.cep}
+                                onChange={(e) => setForm(prev => ({ ...prev, cep: formatarCEP(e.target.value) }))}
+                                disabled={!permiteEditar}
+                            />
+                        </div>
+                        <div>
+                            <label className="label">UF</label>
+                            <select
+                                className={input}
+                                value={form.uf}
+                                onChange={handleUfChange}
+                                disabled={!permiteEditar}
+                            >
+                                <option value="">Selecione um estado</option>
+                                {ufs.map((u) => (
+                                    <option key={u.codIBGE} value={u.codIBGE}>{u.nome}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="label">Município</label>
+                            <select
+                                className={input}
+                                value={form.municipio}
+                                onChange={(e) => setForm(prev => ({ ...prev, municipio: e.target.value }))}
+                                disabled={!permiteEditar}
+                            >
+                                <option value="">Selecione um município</option>
+                                {municipios.map((m) => (
+                                    <option key={m.id} value={m.id}>{m.nome}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                );
+        }
     };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <div>
-                    <button className="modal-close" onClick={onClose}>X</button>
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-4xl p-6">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-bold">
+                        {edit ? `Editar Cliente - ${form.nomeFantasia || form.nome}` : 'Cadastrar Cliente'}
+                    </h2>
+                    <button className="text-gray-500 hover:text-red-600" onClick={onClose}>✕</button>
                 </div>
-                <h2>
-                    {edit
-                        ? `Editar Cliente - ${nomeFantasia ? nomeFantasia : nome}`
-                        : `Cadastrar Cliente : ${nomeFantasia ? nomeFantasia : nome}`}
-                </h2>
-                <form onSubmit={onSubmit}>
-                    <div >
-                        {/* Dados Básicos do Cliente */}
-                        <fieldset>
-                            <legend>
-                                Dados Básicos
-                                <button
-                                    type="button"
-                                    onClick={() => toggleSection('dadosBasicos')}
-                                    className="expand-button"
-                                >
-                                    {isExpanded.dadosBasicos ? '-' : '+'}
-                                </button>
-                            </legend>
-                            <div style={{ display: isExpanded.dadosBasicos ? 'block' : 'none' }}>
-                                <div>
-                                    <div className="form-line">
-                                        <label htmlFor="nome">Nome</label>
-                                        <input
-                                            className='input-geral'
-                                            type="text"
-                                            id="nome"
-                                            name="nome"
-                                            value={nome}
-                                            onChange={(e) => { setNome(e.target.value.toUpperCase()) }} //forma resumida de atualizar o input
-                                            maxLength="150"
-                                            disabled={!permiteEditar}
-                                            required
-                                        />
-                                        <label htmlFor="nomeFantasia">Nome Fantasia</label>
-                                        <input
-                                            className='input-geral'
-                                            type="text"
-                                            id="nomeFantasia"
-                                            name="nomeFantasia"
-                                            value={nomeFantasia}
-                                            onChange={(e) => { setNomeFantasia(e.target.value.toUpperCase()) }} //forma resumida de atualizar o input
-                                            maxLength="150"
-                                            disabled={!permiteEditar}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
 
-                        </fieldset>
-                        <fieldset>
-                            <legend>
-                                Dados Jurídicos
-                                <button
-                                    type="button"
-                                    onClick={() => toggleSection('dadosJuridicos')}
-                                    className="expand-button"
-                                >
-                                    {isExpanded.dadosJuridicos ? '-' : '+'}
-                                </button>
-                            </legend>
-                            <div style={{ display: isExpanded.dadosJuridicos ? 'block' : 'none' }}>
-                                <div className="form-line">
-                                    <label htmlFor="cpfCnpj">CPF/CNPJ</label>
-                                    <input
-                                        className='input-geral'
-                                        type="text"
-                                        id="cpfCnpj"
-                                        name="cpfCnpj"
-                                        value={cpfCnpjMask(cpfCnpj)} // Controlado pelo estado
-                                        onChange={(e) => { setCpf(cpfCnpjMask(e.target.value)) }} //forma resumida de atualizar o input
-                                        disabled={!permiteEditar}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-line">
-                                    <label htmlFor="inscricao_estadual">Inscrição Estadual</label>
-                                    <input
-                                        className='input-geral'
-                                        type="text"
-                                        id="inscricao_estadual"
-                                        name="inscricao_estadual"
-                                        value={inscricao_estadual} // Controlado pelo estado
-                                        onChange={(e) => { setInscricaoEstadual(e.target.value) }} //forma resumida de atualizar o input
-                                        disabled={!permiteEditar}
-                                    />
-                                </div>
-                            </div>
-                        </fieldset>
-                        <fieldset>
-                            <legend>
-                                Contato
-                                <button
-                                    type="button"
-                                    onClick={() => toggleSection('contato')}
-                                    className="expand-button"
-                                >
-                                    {isExpanded.contato ? '-' : '+'}
-                                </button>
-                            </legend>
-                            <div style={{ display: isExpanded.contato ? 'block' : 'none' }}>
-                                <div className="form-line">
-                                    <div>
-                                        <label htmlFor="email">Email</label>
-                                        <input
-                                            className='input-geral'
-                                            type="email"
-                                            id="email"
-                                            name="email"
-                                            value={email}
-                                            onChange={(e) => { setEmail(e.target.value.toLowerCase()) }}
-                                            maxLength={100}
-                                            disabled={!permiteEditar}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="celular">Celular</label>
-                                        <input
-                                            className='input-geral'
-                                            type="text"
-                                            id="celular"
-                                            name="celular"
-                                            value={formatarCelular(celular)}
-                                            onChange={(e) => { setCelular(e.target.value) }}
-                                            maxLength={20}
-                                            disabled={!permiteEditar}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </fieldset>
-                        <fieldset>
-                            <legend>
-                                Endereço
-                                <button
-                                    type="button"
-                                    onClick={() => toggleSection('endereco')}
-                                    className="expand-button"
-                                >
-                                    {isExpanded.endereco ? '-' : '+'}
-                                </button>
-                            </legend>
-                            <div style={{ display: isExpanded.endereco ? 'block' : 'none' }}>
-                                <div className="form-line">
-                                    <div>
-                                        <label htmlFor="logradouro">Logradouro</label>
-                                        <input
-                                            className='input-geral'
-                                            type="text"
-                                            id="logradouro"
-                                            name="logradouro"
-                                            value={logradouro}
-                                            onChange={(e) => { setLogradouro(e.target.value.toUpperCase()) }}
-                                            maxLength={100}
-                                            disabled={!permiteEditar}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="numero">Número</label>
-                                        <input
-                                            className='input-geral'
-                                            type="text"
-                                            id="numero"
-                                            name="numero"
-                                            value={numero}
-                                            onChange={(e) => { setNumero(e.target.value) }}
-                                            maxLength={8}
-                                            disabled={!permiteEditar}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="bairro">Bairro</label>
-                                        <input
-                                            className='input-geral'
-                                            type="text"
-                                            id="bairro"
-                                            name="bairro"
-                                            value={bairro}
-                                            onChange={(e) => { setBairro(e.target.value.toUpperCase()) }}
-                                            maxLength={100}
-                                            disabled={!permiteEditar}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="cep">CEP</label>
-                                        <input
-                                            className='input-geral'
-                                            type="text"
-                                            id="cep"
-                                            name="cep"
-                                            value={cep}
-                                            onChange={(e) => { setCep(formatarCEP(e.target.value)) }}
-                                            maxLength={9}
-                                            disabled={!permiteEditar}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="uf">UF</label>
-                                        <select
-                                            className="input-geral"
-                                            id="uf"
-                                            name="uf"
-                                            value={uf}
-                                            onChange={handleUfChange}
-                                            disabled={!permiteEditar}
-                                            required
-                                        >
-                                            <option value="">Selecione um estado</option>
-                                            {ufs.map((uf) => (
-                                                <option key={uf.id} value={uf.codIBGE}>
-                                                    {uf.nome}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label htmlFor="municipio">Município</label>
-                                        <select
-                                            className="input-geral"
-                                            id="municipio"
-                                            name="municipio"
-                                            value={municipio}
-                                            onChange={(e) => { setMunicipio(e.target.value) }}
-                                            disabled={!permiteEditar}
-                                            required
-                                        >
-                                            <option value="">Selecione um município</option>
-                                            {Array.isArray(municipios) &&
-                                                municipios.map((mun) => (
-                                                    <option key={mun.id} value={mun.id}>
-                                                        {mun.nome}
-                                                    </option>
-                                                ))
-                                            }
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </fieldset>
-                    </div>
-                    <div id='button-group'>
-                        {permiteEditar ? (
+                <div className="flex border-b mb-6">
+                    {TABS.map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`py-2 px-4 font-semibold ${activeTab === tab ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'
+                                }`}
+                        >
+                            {tab}
+                        </button>
+                    ))}
+                </div>
+
+                <form onSubmit={handleSubmit}>
+                    <div className="space-y-4 mb-6">{renderTabContent()}</div>
+
+                    {permiteEditar && (
+                        <div className="flex justify-end">
                             <button
                                 type="submit"
-                                id="btnsalvar"
-                                className="button"
+                                className="btn btn-primary"
+                                disabled={loading}
                             >
-                                Salvar
+                                {loading ? (
+                                    <>
+                                        <span className="loading loading-spinner"></span>
+                                        Salvando...
+                                    </>
+                                ) : 'Salvar'}
                             </button>
-                        ) : ''}
-                    </div>
+                        </div>
+                    )}
                 </form>
+
                 {toast.message && (
                     <Toast
                         type={toast.type}

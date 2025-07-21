@@ -224,7 +224,6 @@ function Funcionarios() {
         <ModalFuncionario
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onSubmit={isEdit ? handleEditSubmit : handleAddFuncionario}
           funcionario={selectedFuncionario}
           edit={isEdit}
         />

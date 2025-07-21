@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getClientes, addCliente, updateCliente, getClienteById } from '../services/api';
+import { getClientes, getClienteById } from '../services/ApiClientes/ApiClientes';
 import '../styles/Clientes.css';
 import ModalCliente from '../components/ModalCadastraCliente';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
@@ -7,61 +7,64 @@ import Toast from '../components/Toast';
 import { formatarCelular } from '../utils/functions';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import Pagination from '../utils/Pagination';
 
 
 function Clientes() {
-  const [clientes, setClientes] = useState([]);
   const [filteredClientes, setFilteredClientes] = useState([]);
+  const [executarBusca, setExecutarBusca] = useState(true);
+
   const [nome, setNome] = useState('');
   const [nomeFantasia, setNomeFantasia] = useState('');
   const [cpfCnpj, setCpf] = useState('');
   const [loading, setLoading] = useState(true);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
+  const [totalPages, setTotalPages] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '' });
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
   const { permissions } = useAuth();
 
-
   useEffect(() => {
-    const fetchClientes = async () => {
-      try {
-        const response = await getClientes();
-        setClientes(response.data);
-        setFilteredClientes(response.data);
-      } catch (err) {
-        console.error('Erro ao buscar clientes', err);
-      } finally {
-        setLoading(false);
-      }
+    if (executarBusca) {
+      fetchMovimentacoes();
+      setExecutarBusca(false); // importante para evitar chamadas repetidas
+    }
+  }, [executarBusca, currentPage, rowsPerPage]);
+
+  const fetchMovimentacoes = async () => {
+    setLoading(true)
+    const filtros = {
+      nome: nome.trim() || undefined,
+      nomeFantasia: nomeFantasia.trim() || undefined,
+      cpfCnpj: removeMaks(cpfCnpj.trim()) || undefined,
+      page: currentPage,
+      limit: rowsPerPage
     };
 
-    fetchClientes();
-  }, []);
-
-  const handleSearch = () => {
-    const lowerNome = nome.toLowerCase();
-    const lowerNomeFantasia = nomeFantasia.toLowerCase();
-    let lowerCpf = cpfCnpj.toLowerCase();
-    lowerCpf = removeMaks(lowerCpf);
-    const results = clientes.filter(cliente =>
-      (lowerNome ? cliente.nome.toLowerCase().includes(lowerNome) : true) &&
-      (lowerNomeFantasia ? cliente.nomeFantasia?.toLowerCase().includes(lowerNomeFantasia) : true) &&
-      (lowerCpf ? cliente.cpfCnpj.toLowerCase().includes(lowerCpf) : true)
-    );
-
-    setFilteredClientes(results);
-    setCurrentPage(1); // Resetar para a primeira página após a busca
+    try {
+      const response = await getClientes(filtros);
+      setFilteredClientes(response.data.clientes || response.data || []);
+      setTotalPages(response.data.totalPages || 1);
+    } catch (error) {
+      console.error('Erro ao buscar clientes:', error);
+      setToast({ message: "Erro ao buscar clientes", type: "error" });
+    }
+    finally {
+      setLoading(false)
+    }
   };
+
+
 
   const handleClear = () => {
     setNome('');
     setNomeFantasia('');
     setCpf('');
-    setFilteredClientes(clientes);
-    setCurrentPage(1); // Resetar para a primeira página ao limpar a busca
+    setCurrentPage(1);
+    setExecutarBusca(true);
   };
 
   const handleRowsChange = (e) => {
@@ -84,38 +87,6 @@ function Clientes() {
     setSelectedCliente(null);
   };
 
-
-  const handleAddCliente = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const newCliente = {
-      nome: formData.get('nome'),
-      nomeFantasia: formData.get('nomeFantasia'),
-      cpfCnpj: formData.get('cpfCnpj'),
-      inscricao_estadual: formData.get('inscricao_estadual'),
-      email: formData.get('email'),
-      celular: formData.get('celular').replace(/\D/g, ''),
-      logradouro: formData.get('logradouro'),
-      numero: formData.get('numero'),
-      bairro: formData.get('bairro'),
-      municipio_id: formData.get('municipio'),
-      uf_id: formData.get('uf'),
-      cep: formData.get('cep').replace(/\D/g, ''),
-    };
-
-    try {
-      await addCliente(newCliente);
-      setToast({ message: "Cliente cadastrado com sucesso!", type: "success" });
-      setIsModalOpen(false);
-      const response = await getClientes();
-      setClientes(response.data);
-      setFilteredClientes(response.data);
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || "Erro ao cadastrar cliente.";
-      setToast({ message: errorMessage, type: "error" });
-    }
-  };
-
   const handleEditClick = async (cliente) => {
     try {
       if (!hasPermission(permissions, 'clientes', 'viewcadastro')) {
@@ -132,39 +103,6 @@ function Clientes() {
     }
   };
 
-  const handleEditSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const updatedCliente = {
-      nome: formData.get('nome'),
-      nomeFantasia: formData.get('nomeFantasia'),
-      cpfCnpj: formData.get('cpfCnpj'),
-      inscricao_estadual: formData.get('inscricao_estadual'),
-      email: formData.get('email'),
-      celular: formData.get('celular').replace(/\D/g, ''),
-      logradouro: formData.get('logradouro'),
-      numero: formData.get('numero'),
-      bairro: formData.get('bairro'),
-      municipio_id: formData.get('municipio'),
-      uf_id: formData.get('uf'),
-      cep: formData.get('cep').replace(/\D/g, '')
-    };
-
-    try {
-      await updateCliente(selectedCliente.id, updatedCliente);
-      setToast({ message: "Cliente atualizado com sucesso!", type: "success" });
-      setIsModalOpen(false);
-      setSelectedCliente(null);
-      setIsEdit(false);
-      const response = await getClientes();
-      setClientes(response.data);
-      setFilteredClientes(response.data);
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || "Erro ao atualizar cliente.";
-      setToast({ message: errorMessage, type: "error" });
-    }
-  };
-
   useEffect(() => {
     if (toast.message) {
       const timer = setTimeout(() => setToast({ message: '', type: '' }), 3000);
@@ -172,9 +110,7 @@ function Clientes() {
     }
   }, [toast]);
 
-  const totalPages = Math.ceil(filteredClientes.length / rowsPerPage);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const currentClientes = filteredClientes.slice(startIndex, startIndex + rowsPerPage);
+  const currentClientes = filteredClientes;
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
@@ -229,7 +165,7 @@ function Clientes() {
             </div>
             <div>
               <div id="button-group">
-                <button onClick={handleSearch} className="button">Pesquisar</button>
+                <button onClick={() => setExecutarBusca(true)} className="button">Pesquisar</button>
                 <button onClick={handleClear} className="button">Limpar</button>
                 <button onClick={() => {
                   handleCadastrarModal();
@@ -275,25 +211,24 @@ function Clientes() {
               </table>
             </div>
 
-            <div id="pagination-container">
-              <button onClick={handlePreviousPage} disabled={currentPage === 1}>
-                Anterior
-              </button>
-              <span>Página {currentPage} de {totalPages}</span>
-              <button onClick={handleNextPage} disabled={currentPage === totalPages}>
-                Próxima
-              </button>
-            </div>
-
-            <div id="show-more-container">
-              <label htmlFor="rows-select">Mostrar</label>
-              <select id="rows-select" value={rowsPerPage} onChange={handleRowsChange}>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
-              <label htmlFor="rows-select">por página</label>
-            </div>
+            {currentClientes && currentClientes.length > 0 && (
+              <div className="mt-4">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={(page) => {
+                    setCurrentPage(page);
+                    setExecutarBusca(true);
+                  }}
+                  onRowsChange={(rows) => {
+                    setRowsPerPage(rows);
+                    setCurrentPage(1);
+                    setExecutarBusca(true);
+                  }}
+                  rowsPerPage={rowsPerPage}
+                />
+              </div>
+            )}
           </div>
         </>
       )}
@@ -302,11 +237,14 @@ function Clientes() {
       {isModalOpen && (
         <ModalCliente
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSubmit={isEdit ? handleEditSubmit : handleAddCliente}
+          onClose={() => {
+            setIsModalOpen(false);
+            setExecutarBusca(true); // isso vai disparar fetchMovimentacoes com filtros e paginação
+          }}
           cliente={selectedCliente}
           edit={isEdit}
         />
+
       )}
     </div>
   );
