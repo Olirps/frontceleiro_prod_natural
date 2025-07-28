@@ -16,6 +16,7 @@ import vendaRealizadas from '../relatorios/vendaRealizadas'; // Importe a funç�
 import imprimeVenda from '../utils/impressaovenda';
 import { replace } from 'react-router-dom';
 import ConfirmDialog from '../components/ConfirmDialog'; // Componente para o modal de confirmação
+import Pagination from '../utils/Pagination';
 
 
 
@@ -49,6 +50,8 @@ function Vendas() {
   const { permissions } = useAuth();
   const [isEdit, setIsEdit] = useState(false);
   const [status, setStatus] = useState('');
+  const [executarBusca, setExecutarBusca] = useState(true);
+
 
 
   const fetchVendas = async () => {
@@ -137,7 +140,7 @@ function Vendas() {
 
   useEffect(() => {
     fetchVendas();
-  }, []);
+  }, [executarBusca]);
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
@@ -223,34 +226,7 @@ function Vendas() {
     setSelectedVenda(null);
   };
 
-  const handleAddVenda = async (e) => {
-    try {
-      const username = localStorage.getItem('username');
-      const empresa = await getEmpresaById(1);
 
-
-      const pagamentos = e.pagamentos.map((pagamento) => ({
-        formaId: pagamento.forma,
-        formaPagamentoNome: pagamento.formaPgtoNome,
-        vlrPago: pagamento.vlrPago,
-      }));
-
-      e.login = username;
-      e.empresa = empresa.data;
-      await registravenda(e);
-      setToast({ message: "Venda cadastrada com sucesso!", type: "success" });
-      const response = await getVendas();
-      setVendas(response.data);
-      setFilteredVendas(response.data);
-      setPagamentosComTransacoes(response.data);
-      setIsModalOpen(false);
-      window.location.reload();
-
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || "Erro ao cadastrar Venda.";
-      setToast({ message: errorMessage, type: "error" });
-    }
-  };
   const handleModalClose = async (vendaFinalizada) => {
 
     setIsModalOpen(false);
@@ -262,13 +238,6 @@ function Vendas() {
       setVendas(response.data);
       setFilteredVendas(response.data);
     }
-  };
-
-  const handleEditClick = async (os) => {
-    const vendaSelecionada = await getVendaById(os.id)
-    setSelectedVenda(vendaSelecionada);
-    setIsEdit(true);
-    setIsModalOpen(true);
   };
 
   const handleEditSubmit = async (e) => {
@@ -342,17 +311,6 @@ function Vendas() {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const pagamentosPaginaAtual = filteredPagamentos.slice(startIndex, startIndex + rowsPerPage);
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
   // Calcula as somas de desconto e totalPrice
 
   const handleOpenModalCancelaVenda = async (venda) => {
@@ -406,15 +364,6 @@ function Vendas() {
       setIsModalCancelaVendaOpen(false);
       setCurrentPage(1); // Resetar para a primeira página após a busca
       fetchVendas();
-    }
-  };
-
-
-  const handleImprimeVenda = async (venda) => {
-    setLoading(true); // Ativa o estado de carregamento
-    imprimeVenda(venda.id)
-    if (imprimeVenda) {
-      setLoading(false)
     }
   };
 
@@ -605,7 +554,7 @@ function Vendas() {
                   <tr>
                     <th>ID</th>
                     <th>Cliente</th>
-                    <th>Valor Recebido</th>
+                    <th>Valor Venda</th>
                     <th>Desconto</th>
                     <th>Data do Lançamento</th>
                     <th>Ações</th>
@@ -696,30 +645,29 @@ function Vendas() {
               </table>
             </div>
 
-            <div id="pagination-container">
-              <button onClick={handlePreviousPage} disabled={currentPage === 1}>
-                Anterior
-              </button>
-              <span>Página {currentPage} de {totalPages}</span>
-              <button onClick={handleNextPage} disabled={currentPage === totalPages}>
-                Próxima
-              </button>
-            </div>
-
-            <div id="show-more-container">
-              <label htmlFor="rows-select">Mostrar</label>
-              <select id="rows-select" value={rowsPerPage} onChange={handleRowsChange}>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
-              <label htmlFor="rows-select">por página</label>
-            </div>
+            {pagamentosPaginaAtual && pagamentosPaginaAtual.length > 0 && (
+              <div className="mt-4">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={(page) => {
+                    setCurrentPage(page);
+                    setExecutarBusca(true);
+                  }}
+                  onRowsChange={(rows) => {
+                    setRowsPerPage(rows);
+                    setCurrentPage(1);
+                    setExecutarBusca(true);
+                  }}
+                  rowsPerPage={rowsPerPage}
+                />
+              </div>
+            )}
           </div>)}
         {isModalOpen && (
           <ModalCadastroVenda
             isOpen={isModalOpen}
-            onSubmit={isEdit ? handleEditSubmit : handleAddVenda}
+            onSubmit={isEdit ? handleEditSubmit : () => setToast({ message: 'Submit Executado', type: 'info' })}
             os={selectedVenda}  // Mudei de 'os' para 'venda' - confira qual o nome correto
             onClose={handleModalClose}
             edit={isEdit}

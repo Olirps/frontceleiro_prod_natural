@@ -1,8 +1,9 @@
 // ModalFuncionario.js
 import React, { useState, useEffect } from 'react';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { cpfCnpjMask } from './utils';
-import { formatarCelular, converterMoedaParaNumero, formatarMoedaBRL ,formatarCEP} from '../utils/functions';
-import { getUfs, getMunicipiosUfId, addFuncionario, updateFuncionario } from '../services/api';
+import { formatarCelular, converterMoedaParaNumero, formatarMoedaBRL, formatarCEP, } from '../utils/functions';
+import { getUfs, getMunicipiosUfId, addFuncionario, updateFuncionario, getAllGrupoAcesso } from '../services/api';
 import { getClientes } from '../services/ApiClientes/ApiClientes';
 
 import Toast from './Toast';
@@ -29,6 +30,13 @@ function ModalFuncionario({ isOpen, onClose, onSubmit, funcionario, edit }) {
   const [municipios, setMunicipios] = useState([]);
   const [toast, setToast] = useState({ message: '', type: '' });
   const [permiteEditar, setPermiteEditar] = useState(true);
+  const [gruposAcesso, setGruposAcesso] = useState([]);
+  const [grupoAcessoId, setGrupoAcessoId] = useState('');
+  const [criarUsuario, setCriarUsuario] = useState(false);
+  const [login, setLogin] = useState('');
+  const [password, setPassword] = useState('');
+  const [alterarSenha, setAlterarSenha] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { permissions } = useAuth();
 
   useEffect(() => {
@@ -43,35 +51,60 @@ function ModalFuncionario({ isOpen, onClose, onSubmit, funcionario, edit }) {
       const canEdit = hasPermission(permissions, 'funcionarios', 'edit');
       setPermiteEditar(canEdit);
     }
+    getAllGrupoAcesso().then((res) => {
+      setGruposAcesso(res.data || []);
+    }).catch(err => {
+      console.error('Erro ao carregar grupos de acesso', err);
+    });
   }, [isOpen, edit, permissions]);
 
   useEffect(() => {
-    if (isOpen) {
-      const carregarUfs = async () => {
-        const result = await getUfs();
-        setUfs(result.data || []);
-      };
+    if (!isOpen || !edit || !funcionario || gruposAcesso.length === 0) return;
 
-      carregarUfs();
+    const carregarUfs = async () => {
+      const result = await getUfs();
+      setUfs(result.data || []);
+    };
 
-      if (edit && funcionario) {
-        setNome(funcionario.cliente?.nome || '');
-        setCpf(funcionario.cliente?.cpfCnpj || '');
-        setEmail(funcionario.cliente?.email || '');
-        setCelular(funcionario.cliente?.celular || '');
-        setdataContratacao(funcionario.dataContratacao?.split('T')[0] || '');
-        settipoFuncionario(funcionario.tipoFuncionario || '');
-        setCargo(funcionario.cargo || '');
-        setSalario(formatarMoedaBRL(funcionario.salario) || '');
-        setLogradouro(funcionario.cliente?.logradouro || '');
-        setNumero(funcionario.cliente?.numero || '');
-        setBairro(funcionario.cliente?.bairro || '');
-        setCep(formatarCEP(funcionario.cliente?.cep) || '');
-        setUf(funcionario.cliente?.uf_id || '');
-        setMunicipio(funcionario.cliente?.municipio_id || '');
+    carregarUfs();
+
+    if (edit && funcionario) {
+      setNome(funcionario.cliente?.nome || '');
+      setCpf(funcionario.cliente?.cpfCnpj || '');
+      setEmail(funcionario.cliente?.email || '');
+      setCelular(funcionario.cliente?.celular || '');
+      setdataContratacao(funcionario.dataContratacao?.split('T')[0] || '');
+      settipoFuncionario(funcionario.tipoFuncionario || '');
+      setCargo(funcionario.cargo || '');
+      setSalario(formatarMoedaBRL(funcionario.salario || 0));
+      setLogradouro(funcionario.cliente?.logradouro || '');
+      setNumero(funcionario.cliente?.numero || '');
+      setBairro(funcionario.cliente?.bairro || '');
+      setCep(formatarCEP(funcionario.cliente?.cep || ''));
+      setUf(funcionario.cliente?.uf_id || '');
+      setMunicipio(funcionario.cliente?.municipio_id || '');
+
+      if (funcionario.login && funcionario.login !== '') {
+        setCriarUsuario(true);
+        setLogin(funcionario.login);
+
+        // Buscar no array de grupos o correspondente ao grupoAcessoId
+        const grupoEncontrado = gruposAcesso.find(
+          grupo => grupo.id === funcionario.grupoAcessoId
+        );
+
+        if (grupoEncontrado) {
+          setGrupoAcessoId(grupoEncontrado.id); // ou setGrupoAcessoId(grupoEncontrado) se for objeto inteiro
+        } else {
+          setGrupoAcessoId('');
+        }
+      } else {
+        setCriarUsuario(false);
       }
+
     }
-  }, [isOpen]);
+  }, [isOpen, edit, funcionario, gruposAcesso]);
+
 
   useEffect(() => {
     if (uf) {
@@ -117,12 +150,27 @@ function ModalFuncionario({ isOpen, onClose, onSubmit, funcionario, edit }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (criarUsuario) {
+      if (!login || !grupoAcessoId) {
+        setToast({ message: 'Preencha login e grupo de acesso.', type: 'error' });
+        return;
+      }
 
+      if ((!edit && !password) || (edit && alterarSenha && !password)) {
+        setToast({ message: 'Senha obrigatória.', type: 'error' });
+        return;
+      }
+    }
     const funcionarioPayload = {
       tipoFuncionario,
       dataContratacao,
       cargo: cargo.toUpperCase(),
       salario: converterMoedaParaNumero(salario),
+      criarUsuario,
+      alterarSenha,
+      grupoAcessoId: criarUsuario ? grupoAcessoId : null,
+      login: criarUsuario ? login : null,
+      password: criarUsuario ? password : null, // só envia no modo criação
       cliente: {
         nome,
         cpfCnpj: cpf.replace(/[^\d]/g, ''),
@@ -136,6 +184,9 @@ function ModalFuncionario({ isOpen, onClose, onSubmit, funcionario, edit }) {
         municipio_id: municipio
       }
     };
+
+
+
 
     try {
       if (edit && funcionario?.id) {
@@ -166,7 +217,7 @@ function ModalFuncionario({ isOpen, onClose, onSubmit, funcionario, edit }) {
 
         {/* Tabs */}
         <div className="flex space-x-4 border-b mb-4">
-          {['dados', 'contratacao', 'endereco'].map((t) => (
+          {['dados', 'contratacao', 'endereco', ...(criarUsuario ? ['sistema'] : [])].map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -175,6 +226,7 @@ function ModalFuncionario({ isOpen, onClose, onSubmit, funcionario, edit }) {
               {t === 'dados' && 'Dados Pessoais'}
               {t === 'contratacao' && 'Contratação'}
               {t === 'endereco' && 'Endereço'}
+              {t === 'sistema' && 'Sistema'}
             </button>
           ))}
         </div>
@@ -230,10 +282,21 @@ function ModalFuncionario({ isOpen, onClose, onSubmit, funcionario, edit }) {
                     required
                   />
                 </div>
+                <div className="col-span-2 mt-2">
+                  <label className="inline-flex items-center">
+                    <input
+                      type="checkbox"
+                      className="form-checkbox h-5 w-5 text-blue-600"
+                      checked={criarUsuario}
+                      onChange={(e) => setCriarUsuario(e.target.checked)}
+                      disabled={!permiteEditar}
+                    />
+                    <span className="ml-2 text-gray-700">Usuário de sistema?</span>
+                  </label>
+                </div>
               </div>
             </>
           )}
-
           {tab === 'contratacao' && (
             <>
               <div className="grid grid-cols-2 gap-4">
@@ -279,7 +342,7 @@ function ModalFuncionario({ isOpen, onClose, onSubmit, funcionario, edit }) {
                 </div>
                 <div>
                   <label>CEP</label>
-                  <input type="text" className="input" value={cep} onChange={e => setCep(e.target.value)} disabled={!permiteEditar} required />
+                  <input type="text" className="input" value={cep} onChange={e => setCep(formatarCEP(e.target.value))} disabled={!permiteEditar} required />
                 </div>
                 <div>
                   <label>UF</label>
@@ -302,7 +365,70 @@ function ModalFuncionario({ isOpen, onClose, onSubmit, funcionario, edit }) {
               </div>
             </>
           )}
+          {tab === 'sistema' && criarUsuario && (
+            <div className="col-span-2 space-y-3">
+              <div>
+                <label>Login</label>
+                <input
+                  type="text"
+                  className="input"
+                  value={login}
+                  onChange={(e) => setLogin(e.target.value)}
+                  required
+                />
+              </div>
+              {edit && criarUsuario && (
+                <div className="mt-2">
+                  <label className="inline-flex items-center">
+                    <input
+                      type="checkbox"
+                      className="form-checkbox h-5 w-5 text-blue-600"
+                      checked={alterarSenha}
+                      onChange={(e) => setAlterarSenha(e.target.checked)}
+                    />
+                    <span className="ml-2 text-gray-700">Alterar senha do usuário?</span>
+                  </label>
+                </div>
+              )}
+              <div id="password-container" className="password-container">
+                <label>Senha</label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="input password-input"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={edit && !alterarSenha}
+                  placeholder={edit ? 'Senha oculta por segurança' : ''}
+                  required={criarUsuario && (!edit || alterarSenha)}
+                />
+                {(criarUsuario || (edit && alterarSenha)) && (
+                  <span
+                    id="password-toggle"
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </span>
+                )}
+              </div>
 
+
+              <div>
+                <label>Grupo de Acesso</label>
+                <select
+                  className="input"
+                  value={grupoAcessoId}
+                  onChange={(e) => setGrupoAcessoId(e.target.value)}
+                  required
+                >
+                  <option value="">Selecione um grupo</option>
+                  {gruposAcesso.map((grupo) => (
+                    <option key={grupo.id} value={grupo.id}>{grupo.nome}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
           {permiteEditar && (
             <div className="text-right mt-6">
               <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar</button>

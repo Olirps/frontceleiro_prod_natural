@@ -4,7 +4,7 @@ import Toast from '../components/Toast';
 import SaleModal from '../components/SaleModal';
 import { converterData } from '../utils/functions'; // Funções para formatar valores
 
-export default function ModalPagamentosUnificados({ isOpen, onClose }) {
+export default function ModalPagamentosUnificados({ isOpen, onClose, onSuccess }) {
     const [clientes, setClientes] = useState([]);
     const [clienteSelecionado, setClienteSelecionado] = useState('');
     const [dataInicio, setDataInicio] = useState('');
@@ -94,8 +94,8 @@ export default function ModalPagamentosUnificados({ isOpen, onClose }) {
 
 
     const buscarLancamentos = async () => {
-        if (!clienteSelecionado || !dataInicio || !dataFim) {
-            setToast({ message: 'Preencha todos os campos obrigatórios.', type: 'error' });
+        if (!clienteSelecionado) {
+            setToast({ message: 'O campo Cliente é obrigatório.', type: 'error' });
             return;
         }
 
@@ -126,34 +126,6 @@ export default function ModalPagamentosUnificados({ isOpen, onClose }) {
         }
     };
 
-    const handleLiquidarSelecionados = async (dadosPagamento) => {
-        if (dadosPagamento.length === 0) {
-            setToast({ message: 'Nenhum lançamento selecionado.', type: 'error' });
-            return;
-        }
-
-        try {
-            setLoading(true);
-            let dataHoje = new Date().toLocaleString().replace(',', '');
-            let dataAjustada = converterData(dataHoje);
-            dadosPagamento.dataVenda = dataAjustada;
-            dadosPagamento.movimenta = selecionadosFull
-            // Aqui você deve implementar a lógica para liquidar os lançamentos selecionados
-            // Por exemplo, enviar uma requisição para o backend com os IDs selecionados
-            // await liquidarLancamentos(selecionados);
-            await registraPagamento(dadosPagamento);
-
-            setToast({ message: 'Lançamentos liquidados com sucesso!', type: 'success' });
-            setLancamentos(prev => prev.filter(l => !selecionados.includes(l.id)));
-            setSelecionados([]);
-        } catch (error) {
-            console.error('Erro ao liquidar lançamentos:', error);
-            setToast({ message: 'Erro ao liquidar lançamentos.', type: 'error' });
-        } finally {
-            setLoading(false);
-        }
-    }
-
     const totalSelecionado = selecionadosFull.reduce(
         (acc, curr) => acc + parseFloat(curr.valor_parcela), 0
     );
@@ -180,6 +152,11 @@ export default function ModalPagamentosUnificados({ isOpen, onClose }) {
     };
 
 
+    const handleSuccessFromSaleModal = () => {
+        setIsSaleModalOpen(false); // fecha o SaleModal
+        if (onSuccess) onSuccess(); // repassa para cima
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -199,6 +176,7 @@ export default function ModalPagamentosUnificados({ isOpen, onClose }) {
                                 placeholder="Digite ao menos 3 letras..."
                                 className="w-full border rounded p-2"
                                 value={filtroCliente}
+                                required
                                 onChange={handleInputChange}
                             />
                             {clientes.length > 0 && (
@@ -314,7 +292,7 @@ export default function ModalPagamentosUnificados({ isOpen, onClose }) {
             {isSaleModalOpen && (
                 <SaleModal
                     isOpen={isSaleModalOpen}
-                    onSubmit={handleLiquidarSelecionados}
+                    onSuccess={handleSuccessFromSaleModal}
                     tipo={"liquidacao"}
                     saleData={selecionadosFull}
                     onClose={() => setIsSaleModalOpen(false)}

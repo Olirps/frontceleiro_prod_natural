@@ -18,6 +18,7 @@ import ModalPagarLancamentos from '../components/ModalPagarLancamentos'; // Impo
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import Pagination from '../utils/Pagination';
 
 
 function MovimentacaoFinanceiraReceitas() {
@@ -40,6 +41,8 @@ function MovimentacaoFinanceiraReceitas() {
   const [selectedParcela, setSelectedParcela] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
   const { permissions } = useAuth();
+  const [executarBusca, setExecutarBusca] = useState(true);
+
 
   ////handleSearch
   const [descricao, setDescricao] = useState('');
@@ -73,7 +76,7 @@ function MovimentacaoFinanceiraReceitas() {
     };
 
     fetchMovimentacao();
-  }, []);
+  }, [executarBusca]);
 
 
 
@@ -454,17 +457,6 @@ function MovimentacaoFinanceiraReceitas() {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const currentMovimentacoes = filteredMovimentacoes.slice(startIndex, startIndex + rowsPerPage);
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
 
 
   //responsavel por expandir a linha
@@ -500,286 +492,212 @@ function MovimentacaoFinanceiraReceitas() {
   };
 
   return (
-    <div id="movimentacoes-container">
-      <h1 className="title-page">Consulta de Movimentações Financeiras - Contas a Receber</h1>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-6">Consulta de Movimentações Financeiras - Contas a Receber</h1>
+
       {loading ? (
-        <div className="spinner-container">
-          <div className="spinner"></div>
-        </div>) : (
+        <div className="flex justify-center items-center h-32">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : (
         <>
-          <div id="search-container">
-            <div id="search-fields">
-              <div>
-                <label htmlFor="descricao">Descrição</label>
-                <input
-                  type="text"
-                  id="descricao"
-                  value={descricao}
-                  onChange={(e) => setDescricao(e.target.value)}
-                  maxLength="150"
-                />
-              </div>
-              <div>
-                <label htmlFor="fornecedor">Fornecedor</label>
-                <input
-                  type="text"
-                  id="fornecedor"
-                  value={fornecedor}
-                  onChange={(e) => setFornecedor(e.target.value)}
-                  maxLength="150"
-                />
-              </div>
-              <div>
-                <label htmlFor="funcionario">Funcionário</label>
-                <input
-                  type="text"
-                  id="funcionario"
-                  value={funcionario}
-                  onChange={(e) => setFuncionario(e.target.value)}
-                  maxLength="150"
-                />
-              </div>
-              <div>
-                <label htmlFor="cliente">Cliente</label>
-                <input
-                  type="text"
-                  id="cliente"
-                  value={cliente}
-                  onChange={(e) => setCliente(e.target.value)}
-                  maxLength="150"
-                />
-              </div>
-              <div>
-                <label htmlFor="dataInicio">Data Início</label>
-                <input
-                  type="date"
-                  id="dataInicio"
-                  value={dataInicio}
-                  onChange={(e) => setDataInicio(e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="dataFim">Data Fim</label>
-                <input
-                  type="date"
-                  id="dataFim"
-                  value={dataFim}
-                  onChange={(e) => setDataFim(e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="boleto">Boleto</label>
-                <input
-                  type="text"
-                  id="boleto"
-                  value={boleto}
-                  onChange={(e) => setBoleto(e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="pagamento">Tipo de Pagamento</label>
-                <select
-                  id="pagamento"
-                  value={pagamento}
-                  onChange={(e) => setPagamento(e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  <option value="cotaunica">Cota Única</option>
-                  <option value="parcelada">Parcelada</option>
-                  <option value="recorrente">Recorrente</option>
-                </select>
-              </div>
+          {/* FILTROS */}
+          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium">Descrição</label>
+              <input type="text" value={descricao} onChange={(e) => setDescricao(e.target.value)} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <div id="button-group">
-                <button onClick={handleSearch} className="button">Pesquisar</button>
-                <button onClick={handleClear} className="button">Limpar</button>
-                <button onClick={() => {
-                  handleCadastrarModal();
-                }} className="button">Cadastrar</button>
-                <button onClick={() => {
-                  handleUnificarModal();
-                }} className="button">Unificar Lançamentos</button>
-                <button onClick={() => {
-                  handlePagamentoUnificado();
-                }} className="button">Pagamento Unificado</button>
-              </div>
+              <label className="block text-sm font-medium">Fornecedor</label>
+              <input type="text" value={fornecedor} onChange={(e) => setFornecedor(e.target.value)} className="w-full border rounded px-2 py-1" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Funcionário</label>
+              <input type="text" value={funcionario} onChange={(e) => setFuncionario(e.target.value)} className="w-full border rounded px-2 py-1" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Cliente</label>
+              <input type="text" value={cliente} onChange={(e) => setCliente(e.target.value)} className="w-full border rounded px-2 py-1" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Data Início</label>
+              <input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} className="w-full border rounded px-2 py-1" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Data Fim</label>
+              <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} className="w-full border rounded px-2 py-1" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Boleto</label>
+              <input type="text" value={boleto} onChange={(e) => setBoleto(e.target.value)} className="w-full border rounded px-2 py-1" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Tipo de Pagamento</label>
+              <select value={pagamento} onChange={(e) => setPagamento(e.target.value)} className="w-full border rounded px-2 py-1">
+                <option value="">Todos</option>
+                <option value="cotaunica">Cota Única</option>
+                <option value="parcelada">Parcelada</option>
+                <option value="recorrente">Recorrente</option>
+              </select>
             </div>
           </div>
 
-          <div id="separator-bar"></div>
+          {/* BOTÕES */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            <button onClick={handleSearch} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Pesquisar</button>
+            <button onClick={handleClear} className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">Limpar</button>
+            <button onClick={handleCadastrarModal} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Cadastrar</button>
+            <button onClick={handleUnificarModal} className="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600">Unificar</button>
+            <button onClick={handlePagamentoUnificado} className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">Pagto. Unificado</button>
+          </div>
 
-          <div id="results-container">
-            <div id="grid-padrao-container">
-              <table id='grid-padrao'>
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th>ID</th>
-                    <th>Descrição</th>
-                    <th>Valor</th>
-                    <th>Data Lançamento</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentMovimentacoes.map((movimentacao) => (
-                    <React.Fragment key={movimentacao.id}>
-                      <tr className={expandedRows[movimentacao.id] ? 'selected' : ''}>
-                        <td>
-                          <button onClick={() => toggleExpand(movimentacao.id)}>
-                            {expandedRows[movimentacao.id] ? '▼' : '▶'}
-                          </button>
-                        </td>
-                        <td>{movimentacao.id}</td>
-                        <td>
-                          {
-                            (movimentacao.fornecedor ? (movimentacao.fornecedor.nomeFantasia ? movimentacao.fornecedor.nomeFantasia : movimentacao.fornecedor.nome) : '' ||
-                              movimentacao.cliente?.nome ||
-                              movimentacao.funcionario?.nome || movimentacao.credor_nome || '') + ' / ' + movimentacao.descricao}
-                        </td>
-                        <td>{
-                          new Intl.NumberFormat('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                          }).format(movimentacao.valor || 0)
-                        }</td>
-                        <td>{formatarData(movimentacao.data_lancamento)}</td>
-                        <td>
-                          <div>
-                            {(movimentacao.status === 'aberta') ? (
-                              <>
-                                {movimentacao.tipo_lancamento !== 'automatico' && (
-                                  <button
-                                    onClick={() => handleEditClick(movimentacao)}
-                                    className="edit-button"
-                                  >
-                                    Editar
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => handleLancaParcelas(movimentacao)}
-                                  className="edit-button"
-                                >
-                                  Lançar Parcelas
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                onClick={() => handleGetDespesaCompleta(movimentacao)}
-                                className="edit-button"
-                              >
-                                Visualizar
-                              </button>
+          {/* TABELA */}
+          <div className="overflow-x-auto mb-4">
+            <table className="min-w-full border divide-y divide-gray-200">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="p-2 text-left text-sm font-medium">#</th>
+                  <th className="p-2 text-left text-sm font-medium">ID</th>
+                  <th className="p-2 text-left text-sm font-medium">Descrição</th>
+                  <th className="p-2 text-left text-sm font-medium">Valor</th>
+                  <th className="p-2 text-left text-sm font-medium">Data</th>
+                  <th className="p-2 text-left text-sm font-medium">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {currentMovimentacoes.map((movimentacao) => (
+                  <React.Fragment key={movimentacao.id}>
+                    <tr className={expandedRows[movimentacao.id] ? 'bg-blue-50' : ''}>
+                      <td className="p-2">
+                        <button onClick={() => toggleExpand(movimentacao.id)} className="text-xs">
+                          {expandedRows[movimentacao.id] ? '▼' : '▶'}
+                        </button>
+                      </td>
+                      <td className="p-2">{movimentacao.id}</td>
+                      <td className="p-2">{(movimentacao.fornecedor?.nomeFantasia || movimentacao.fornecedor?.nome || movimentacao.cliente?.nome || movimentacao.funcionario?.nome || movimentacao.credor_nome || '') + ' / ' + movimentacao.descricao}</td>
+                      <td className="p-2">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(movimentacao.valor || 0)}</td>
+                      <td className="p-2">{formatarData(movimentacao.data_lancamento)}</td>
+                      <td className="p-2 space-x-1">
+                        {movimentacao.status === 'aberta' ? (
+                          <>
+                            {movimentacao.tipo_lancamento !== 'automatico' && (
+                              <button onClick={() => handleEditClick(movimentacao)} className="text-blue-500 hover:underline text-sm">Editar</button>
                             )}
-                          </div>
+                            <button onClick={() => handleLancaParcelas(movimentacao)} className="text-green-500 hover:underline text-sm">Parcelas</button>
+                          </>
+                        ) : (
+                          <button onClick={() => handleGetDespesaCompleta(movimentacao)} className="text-gray-500 hover:underline text-sm">Visualizar</button>
+                        )}
+                      </td>
+                    </tr>
+
+                    {/* Parcelas Expandida */}
+                    {expandedRows[movimentacao.id] && parcelas[movimentacao.id]?.map((parcela) => (
+                      <tr key={parcela.id} className="bg-gray-50 text-sm">
+                        <td></td>
+                        <td colSpan={2}>Parcela {parcela.numero} - {parcela.descricao} - Boleto: {parcela.boleto}</td>
+                        <td>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parcela.valor_parcela || 0)}</td>
+                        <td>{new Date(parcela.vencimento).toLocaleDateString('pt-BR')}</td>
+                        <td>
+                          <button onClick={() => handlePagarParcelas(parcela)} className="text-red-500 hover:underline">Pagar</button>
                         </td>
                       </tr>
-                      {expandedRows[movimentacao.id] && parcelas[movimentacao.id] && (
-                        parcelas[movimentacao.id].map((parcela) => (
-                          <tr key={parcela.id} className="parcela-row">
-                            <td></td>
-                            <td colSpan="2">Parcela {parcela.numero} - {parcela.descricao} - Boleto: {parcela.boleto}</td>
-                            <td>{new Intl.NumberFormat('pt-BR', {
-                              style: 'currency',
-                              currency: 'BRL',
-                            }).format(parcela.valor_parcela || 0)}</td>
-                            <td>{new Date(parcela.vencimento).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
-                            <td>
-                              <button
-                                className="edit-button"
-                                onClick={() => {
-                                  handlePagarParcelas(parcela);
-                                }}
-                              >
-                                Pagar
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div id="pagination-container">
-              <button onClick={handlePreviousPage} disabled={currentPage === 1}>
-                Anterior
-              </button>
-              <span>Página {currentPage} de {totalPages}</span>
-              <button onClick={handleNextPage} disabled={currentPage === totalPages}>
-                Próxima
-              </button>
-            </div>
-
-            <div id="show-more-container">
-              <label htmlFor="rows-select">Mostrar</label>
-              <select id="rows-select" value={rowsPerPage} onChange={handleRowsChange}>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
-              <label htmlFor="rows-select">por página</label>
-            </div>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
           </div>
+
+          {/* Paginação */}
+          {currentMovimentacoes && currentMovimentacoes.length > 0 && (
+            <div className="mt-4">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={(page) => {
+                  setCurrentPage(page);
+                  setExecutarBusca(true);
+                }}
+                onRowsChange={(rows) => {
+                  setRowsPerPage(rows);
+                  setCurrentPage(1);
+                  setExecutarBusca(true);
+                }}
+                rowsPerPage={rowsPerPage}
+              />
+            </div>
+          )}
         </>
       )}
-
       {toast.message && <Toast type={toast.type} message={toast.message} />}
-      {isModalOpen && (
-        <ModalMovimentacaoFinanceiraReceitas
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onConfirmar={handleConfirmacaoParcelas}
-          onSubmit={isEdit ? handleEditSubmit : handleAddMovimentacao}
-          movimentacao={selectedMovimentacao}
-          edit={isEdit}
-        />
-      )}
-      {isModalLancaParcelasOpen && (
-        <ModalLancamentoParcelas
-          isOpen={isModalLancaParcelasOpen}
-          onClose={() => setIsModalLancaParcelasOpen(false)}
-          valorTotal={valor}
-          onSubmit={handleSaveParcelas}
-          despesa={selectedMovimentacao}
-          onSave={handleSaveParcelas}
+      {
+        isModalOpen && (
+          <ModalMovimentacaoFinanceiraReceitas
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onConfirmar={handleConfirmacaoParcelas}
+            onSubmit={isEdit ? handleEditSubmit : handleAddMovimentacao}
+            movimentacao={selectedMovimentacao}
+            edit={isEdit}
+          />
+        )
+      }
+      {
+        isModalLancaParcelasOpen && (
+          <ModalLancamentoParcelas
+            isOpen={isModalLancaParcelasOpen}
+            onClose={() => setIsModalLancaParcelasOpen(false)}
+            valorTotal={valor}
+            onSubmit={handleSaveParcelas}
+            despesa={selectedMovimentacao}
+            onSave={handleSaveParcelas}
 
-        />
-      )}
-      {isModalPagarLancamentosOpen && (
-        <ModalPagarLancamentos
-          isOpen={isModalPagarLancamentosOpen}
-          onClose={() => setIsModalPagarLancamentosOpen(false)}
-          onSubmit={handleSavePagamento}
-          parcela={selectedParcela}
-        />
-      )}
-      {isModalLancamentoCompletoOpen && (
-        <ModalLancamentoCompleto
-          isOpen={isModalLancamentoCompletoOpen}
-          onClose={() => setIsModalLancamentoCompletoOpen(false)}
-          lancamento={selectedLancamentoCompleto}
-          onConfirmar={handleConfirmacaoParcelas}
-          onReceita={true}
-        />
-      )}
-      {isModalUnificaLancamentosOpen && (
-        <ModalUnificaLancamentos
-          isOpen={isModalUnificaLancamentosOpen}
-          onClose={() => setIsModalUnificaLancamentosOpen(false)}
-          onSubmit={handleAddMovimentacao}
-        />
-      )}
-      {isModalPagamentoUnificadoOpen && (
-        <ModalPagamentosUnificados
-          isOpen={isModalPagamentoUnificadoOpen}
-          onClose={() => setIsModalPagamentoUnificadoOpen(false)}
-          onSubmit={handleAddPagamentoUnificado}
-        />
-      )}
+          />
+        )
+      }
+      {
+        isModalPagarLancamentosOpen && (
+          <ModalPagarLancamentos
+            isOpen={isModalPagarLancamentosOpen}
+            onClose={() => setIsModalPagarLancamentosOpen(false)}
+            onSubmit={handleSavePagamento}
+            parcela={selectedParcela}
+          />
+        )
+      }
+      {
+        isModalLancamentoCompletoOpen && (
+          <ModalLancamentoCompleto
+            isOpen={isModalLancamentoCompletoOpen}
+            onClose={() => setIsModalLancamentoCompletoOpen(false)}
+            lancamento={selectedLancamentoCompleto}
+            onConfirmar={handleConfirmacaoParcelas}
+            onReceita={true}
+          />
+        )
+      }
+      {
+        isModalUnificaLancamentosOpen && (
+          <ModalUnificaLancamentos
+            isOpen={isModalUnificaLancamentosOpen}
+            onClose={() => setIsModalUnificaLancamentosOpen(false)}
+            onSubmit={handleAddMovimentacao}
+          />
+        )
+      }
+      {
+        isModalPagamentoUnificadoOpen && (
+          <ModalPagamentosUnificados
+            isOpen={isModalPagamentoUnificadoOpen}
+            onClose={() => setIsModalPagamentoUnificadoOpen(false)}
+            onSuccess={() => {
+              setToast({ message: 'Lançamentos liquidados com sucesso!', type: 'success' });
+              setExecutarBusca(true); // se aplicável
+            }}
+          />
+        )
+      }
     </div>
   );
 }

@@ -5,19 +5,21 @@ import {
     getProdutosVenda,
     iniciarVenda,
     consultaItensVenda,
-    getFuncionarios
+    getFuncionarios,
+    getEmpresaById,
+    registravenda
 } from '../services/api';
-import { formatarMoedaBRL } from '../utils/functions';
+import { formatarMoedaBRL, converterData } from '../utils/functions';
 import SaleModal from './SaleModal';
 import Toast from './Toast';
 
-const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit }) => {
+const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSuccess }) => {
     const [clientes, setClientes] = useState([]);
     const [clienteNome, setClienteNome] = useState('');
     const [clienteBusca, setClienteBusca] = useState('');
     const [clientesFiltrados, setClientesFiltrados] = useState([]);
     const [clienteSelected, setClienteSelected] = useState(false);
-    const [clienteId, setClienteId] = useState(null);
+    const [cliente_id, setClienteId] = useState(null);
     const [buscaProduto, setBuscaProduto] = useState('');
     const [produtos, setProdutos] = useState([]);
     const [qtd, setQtd] = useState(1);
@@ -29,6 +31,7 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit }) => {
     const [formDataTemp, setFormDataTemp] = useState(null);
     const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
     const [produtoSelecionado, setProdutoSelecionado] = useState(null);
+    const [totalPrice, setTotalPrice] = useState(null);
 
     useEffect(() => {
         getFuncionarios().then(res => setFuncionarios(res.data));
@@ -115,31 +118,76 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit }) => {
         const total = produtosSelecionados.reduce((acc, p) => acc + (p.valor_unitario * p.quantidade), 0).toFixed(2);
         return total;
     }
+    const handleAddVenda = async (e) => {
+        try {
+            let dataHoje = new Date().toLocaleString().replace(',', '');
+            let dataAjustada = converterData(dataHoje);
 
+            // Obter dados do usuário e empresa
+            const username = localStorage.getItem('username');
+            if (!username) {
+                throw new Error('Usuário não autenticado');
+            }
 
-    const handleSubmit = async () => {
-        if (!clienteId || produtosSelecionados.length === 0 || !funcionarioId) {
-            setToast({ message: 'Cliente, produtos e funcionário são obrigatórios', type: 'error' });
-            return;
+            // Obter dados da empresa
+            const empresaResponse = await getEmpresaById(1);
+            if (!empresaResponse?.data) {
+                throw new Error('Dados da empresa não encontrados');
+            }
+            // Calcular o total antes de criar o objeto vendaData
+            const calculatedTotal = calcularTotal();
+            setTotalPrice(calculatedTotal); // Atualiza o estado se necessário
+            // Preparar dados da venda
+            const vendaData = {
+                cliente_id,
+                cliente: clienteNome,
+                products: produtosSelecionados,
+                funcionarioId,
+                totalPrice: calculatedTotal,
+                dataVenda: dataAjustada,
+                login: username,
+                empresa: empresaResponse.data
+            };
+
+            // Registrar a venda
+            const response = await registravenda(vendaData);
+
+            // Feedback de sucesso
+            setToast({
+                message: "Venda cadastrada com sucesso!",
+                type: "success"
+            });
+
+            // Fechar modais e atualizar a página
+            setIsSaleModalOpen(false);
+            onClose(); // Fecha o modal principal
+
+            // Atualizar os dados sem recarregar toda a página (melhor performance)
+            // window.location.reload(); // Removido - não é a melhor prática
+            if (typeof onVendaSuccess === 'function') {
+                onVendaSuccess(); // Callback para atualizar dados
+            }
+
+        } catch (err) {
+            console.error('Erro ao cadastrar venda:', err);
+
+            // Tratamento aprimorado de erros
+            let errorMessage = "Erro ao cadastrar Venda.";
+
+            if (err.response?.data?.error) {
+                errorMessage = err.response.data.error;
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+
+            setToast({
+                message: errorMessage,
+                type: "error",
+                duration: 5000 // 5 segundos para mensagens de erro
+            });
         }
-
-        const formData = {
-            cliente_id: clienteId,
-            cliente_nome: clienteNome,
-            funcionario_id: funcionarioId,
-            products: produtosSelecionados.map(p => ({
-                id: p.id,
-                xProd: p.xProd,
-                vlrVenda: p.valor_unitario,
-                quantidade: p.quantidade,
-                valorTotal: p.valorTotal
-            })),
-            totalPrice: calcularTotal().toFixed(2),
-        };
-
-        setFormDataTemp(formData);
-        setIsSaleModalOpen(true);
     };
+
 
     if (!isOpen) return null;
 
@@ -311,7 +359,7 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit }) => {
 
                 <div className="mt-6 text-right">
                     {os?.status_id !== 2 && (<button
-                        onClick={handleSubmit}
+                        onClick={handleAddVenda}
                         className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
                     >
                         Finalizar Venda

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
-import { getFormasPagamento, getClientes, processTefPayment } from '../services/api';
+import { getFormasPagamento, getClientes, processTefPayment, getEmpresaById, registraPagamento, registravenda } from '../services/api';
 import Toast from '../components/Toast';
 import CadClienteSimpl from '../components/CadClienteSimpl';
 import TefModal from '../components/TefModal';
@@ -8,7 +8,6 @@ import TefTransactionModal from '../components/TefTransactionModal';
 import { converterMoedaParaNumero, formatarData, formatarMoedaBRL, converterData } from '../utils/functions';
 
 import '../styles/SaleModal.css'; // Estilo do modal
-import { Await } from 'react-router-dom';
 
 const SaleModal = ({
   isOpen,
@@ -18,7 +17,8 @@ const SaleModal = ({
   totalPrice = 0,
   saleData, // Aqui vamos receber os dados da venda (JSON fornecido)
   tipo,
-  pagamento
+  pagamento,
+  onSuccess
 }) => {
   // 07-05-2025 Ajustado de valor_total para totalPrice para igualar o nome do banco
   totalPrice = saleData.totalPrice;
@@ -259,77 +259,47 @@ const SaleModal = ({
   const handleSubmitSale = async (e) => {
     e.preventDefault(); // Evita o comportamento padrão de recarregar a página
 
-    if (loading) return; // Evita múltiplos cliques
-    setLoading(true); // Ativa o estado de carregamento
-
-    if (saldoRestante > 0) {
-      setToast({ message: 'O pagamento não foi completado.', type: 'error' });
-      setLoading(false); // Desativa o carregamento ao mostrar alerta
-
-      if (!formaPagamento) {
-        alert('Selecione uma forma de pagamento.');
-        setLoading(false); // Desativa o carregamento ao mostrar alerta
+    if (tipo === 'liquidacao') {
+      if (pagamentos.length === 0) {
+        setToast({ message: 'Nenhum lançamento selecionado.', type: 'error' });
         return;
       }
 
-      return;
-    }
-
-    try {
-      let dataHoje = new Date().toLocaleString().replace(',', '');
-      let dataAjustada = converterData(dataHoje);
-
-      let descontoAtualizado = converterMoedaParaNumero(desconto);
-      const somaTotal = (Number(valorTotal) - Number(descontoAtualizado)).toFixed(2);
-      if (tipo === 'liquidacao') {
-
-        const dadosSubmit = {
-          desconto: converterMoedaParaNumero(desconto) || 0,
-          tipoVenda: 'liquidacao',
-          valor: somaTotal,
-          pagamentos,
-          data_conclusao: dataAjustada
-        }
-        await onSubmit(dadosSubmit);
-
-      } else if (tipo === 'venda') {
-        const dadosSubmit = {
-          tipoVenda: 'Venda',
-          cliente,
-          cliente_id,
-          veiculo_id,
-          dataVenda: dataAjustada,
-          products: saleData.products,
-          status_id,
-          valor: somaTotal,
-          desconto: converterMoedaParaNumero(desconto) || 0,
-          pagamentos,
-          data_conclusao: dataAjustada
-        }
-        await onSubmit(dadosSubmit);
-      }
-      else {
-        const dadosSubmit = {
-          tipoVenda: 'VendaRest',
-          cliente,
-          cliente_id,
-          venda_id: saleData.vendaVinculada.id,
-          valor: somaTotal,
-          desconto: converterMoedaParaNumero(desconto) || 0,
-          pagamentos,
-          data_conclusao: dataAjustada
-        }
-        await onSubmit(dadosSubmit);
-
+      try {
+        setLoading(true);
+        let dataHoje = new Date().toLocaleString().replace(',', '');
+        let dataAjustada = converterData(dataHoje);
+        saleData.tipo = tipo;
+        saleData.dataPagamento = dataAjustada;
+        await registraPagamento({ movimenta: saleData, pagamentos, tipoVenda: tipo, dataPagamento: dataAjustada });
+        if (onSuccess) onSuccess();
+      } catch (error) {
+        console.error('Erro ao liquidar lançamentos:', error);
+        setToast({ message: 'Erro ao liquidar lançamentos.', type: 'error' });
+      } finally {
+        setLoading(false);
       }
 
-      setToast({ message: 'Venda confirmada com sucesso!', type: 'success' });
-      setLoading(false); // Desativa o estado de carregamento após sucesso
-      onClose();
-    } catch (error) {
-      console.error('Erro ao confirmar venda:', error);
-      setToast({ message: 'Erro ao confirmar venda.', type: 'error' });
-      setLoading(false); // Desativa o estado de carregamento após erro
+    } else if (tipo === 'venda') {
+      try {
+        const username = localStorage.getItem('username');
+        const empresa = await getEmpresaById(1);
+
+
+        const pagamentos = e.pagamentos.map((pagamento) => ({
+          formaId: pagamento.forma,
+          formaPagamentoNome: pagamento.formaPgtoNome,
+          vlrPago: pagamento.vlrPago,
+        }));
+
+        e.login = username;
+        e.empresa = empresa.data;
+        await registravenda(e);
+        setToast({ message: "Venda cadastrada com sucesso!", type: "success" });
+      } catch (err) {
+        const errorMessage = err.response?.data?.error || "Erro ao cadastrar Venda.";
+        setToast({ message: errorMessage, type: "error" });
+      }
     }
   };
 

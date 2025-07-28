@@ -32,6 +32,7 @@ import ContasPendentes from './pages/ContasPendentes';
 import OSStatus from './pages/OSStatus';
 import OSPage from './pages/OSPage';
 import RelatorioSaldoEstoquePage from './pages/RelatorioSaldoEstoquePage';
+import FluxoCaixaPage from './pages/FluxoCaixaPage';
 
 
 import { hasPermission } from './utils/hasPermission'; // Importar a função
@@ -156,6 +157,10 @@ function App() {
           <Route
             path="/clientes_periodo"
             element={isAuthenticated && hasPermission(permissions, 'clientes_periodo', 'view') ? <RelatorioVendasClientePage /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/fluxo-caixa"
+            element={isAuthenticated && hasPermission(permissions, 'fluxo-caixa', 'view') ? <FluxoCaixaPage /> : null} // Condicionalmente não renderiza
           />
         </Route>
       </Routes>

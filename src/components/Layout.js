@@ -177,6 +177,14 @@ function Layout() {
                       </div>
                     </div>
                   )}
+                  {(canViewMenuItem('financeiro')) && (
+                    <div id="finaceiro-relatorios" className="submenu-item submenu-parent">
+                      <span>Financeiro</span>
+                      <div id="financeiro-relatorios-submenu" className="submenu">
+                        {canViewMenuItem('fluxo-caixa') && <Link to="/fluxo-caixa" className="submenu-item">Fluxo de Caixa</Link>}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : null}
