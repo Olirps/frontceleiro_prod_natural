@@ -48,6 +48,11 @@ const FluxoCaixaPage = () => {
     setSaldoEntrada(0);
     setSaldoSaida(0);
     setSaldoFinal(0);
+    if (modoExibicao === 'analitico') {
+      setAgrupamento('dia')
+      setDataInicial(getDataHoje());
+      setDataFinal(getDataHoje())
+    }
   }, [dataInicial, dataFinal, formaId, apenasRecebidos, modoExibicao]);
 
   useEffect(() => {
