@@ -10,7 +10,7 @@ import Toast from './Toast';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/hasPermission';
 
-function ModalFuncionario({ isOpen, onClose, onSubmit, funcionario, edit }) {
+function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit }) {
   const [tab, setTab] = useState('dados'); // 'dados' | 'contratacao' | 'endereco'
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
@@ -47,9 +47,16 @@ function ModalFuncionario({ isOpen, onClose, onSubmit, funcionario, edit }) {
   }, [toast]);
 
   useEffect(() => {
+    const carregarUfs = async () => {
+      const result = await getUfs();
+      setUfs(result.data || []);
+    };
     if (isOpen && edit) {
       const canEdit = hasPermission(permissions, 'funcionarios', 'edit');
       setPermiteEditar(canEdit);
+    }
+    if (isOpen && isNew) {
+      carregarUfs();
     }
     getAllGrupoAcesso().then((res) => {
       setGruposAcesso(res.data || []);

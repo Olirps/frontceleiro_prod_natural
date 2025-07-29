@@ -3,7 +3,7 @@ import { getFuncionarios, addFuncionario, updateFuncionario, getFuncionarioById 
 import '../styles/Funcionarios.css';
 import ModalFuncionario from '../components/ModalCadastraFuncionario';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
-import { formatarCelular,formatarMoedaBRL,converterMoedaParaNumero } from '../utils/functions';
+import { formatarCelular, formatarMoedaBRL, converterMoedaParaNumero } from '../utils/functions';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
@@ -18,6 +18,7 @@ function Funcionarios() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isNew, setIsNew] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '' });
   const [selectedFuncionario, setSelectedFuncionario] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
@@ -69,6 +70,7 @@ function Funcionarios() {
       setToast({ message: "Você não tem permissão para cadastrar funcionarios.", type: "error" });
       return; // Impede a abertura do modal
     }
+    setIsNew(true);
     setIsModalOpen(true);
     setIsEdit(false);
   };
@@ -223,6 +225,7 @@ function Funcionarios() {
       {isModalOpen && (
         <ModalFuncionario
           isOpen={isModalOpen}
+          isNew={isNew}
           onClose={() => setIsModalOpen(false)}
           funcionario={selectedFuncionario}
           edit={isEdit}
