@@ -131,10 +131,13 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
                 onClose(); // só fecha depois de salvar e exibir o toast
             }, 300);
         } catch (error) {
+            const mensagemErro = error?.response?.data?.error || 'Erro ao salvar cliente.';
+
             setToast({
-                message: 'Erro ao salvar cliente.',
+                message: mensagemErro,
                 type: 'error'
             });
+
             setLoading(false);
         }
     };
