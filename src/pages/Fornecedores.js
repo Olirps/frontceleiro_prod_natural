@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getFornecedores, addFornecedor, updateFornecedor, getFornecedorById } from '../services/api';
+import { getFornecedores, getFornecedorById } from '../services/ApiFornecedores/ApiFornecedores';
 import '../styles/Fornecedores.css';
 import Modal from '../components/ModalCadastroFornecedor';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
@@ -49,7 +49,7 @@ function Fornecedores() {
     lowerCpf = removeMaks(lowerCpf);
     const results = fornecedores.filter(fornecedor =>
       (lowerNome ? fornecedor.nome.toLowerCase().includes(lowerNome) : true) &&
-      (lowerNomeFantasia ? fornecedor.nomeFantasia.toLowerCase().includes(lowerNomeFantasia) : true)&&
+      (lowerNomeFantasia ? fornecedor.nomeFantasia.toLowerCase().includes(lowerNomeFantasia) : true) &&
       (lowerCpf ? fornecedor.cpfCnpj.toLowerCase().includes(lowerCpf) : true)
     );
 
@@ -85,38 +85,7 @@ function Fornecedores() {
     setSelectedFornecedor(null);
   };
 
-  const handleAddFornecedor = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const newFornecedor = {
-      tipo_fornecedor: formData.get('tipofornecedor'),
-      nome: formData.get('nome'),
-      nomeFantasia: formData.get('nomeFantasia'),
-      fornecedor_contato: formData.get('fornecedorContato'),
-      cpfCnpj: formData.get('cpfCnpj'),
-      inscricaoestadual: formData.get('inscricaoestadual'),
-      email: formData.get('email'),
-      celular: formData.get('celular').replace(/\D/g, ''),
-      logradouro: formData.get('logradouro'),
-      numero: formData.get('numero'),
-      bairro: formData.get('bairro'),
-      municipio: formData.get('municipio'),
-      uf: formData.get('uf'),
-      cep: formData.get('cep').replace(/\D/g, '')
-    };
 
-    try {
-      await addFornecedor(newFornecedor);
-      setToast({ message: "Fornecedor cadastrado com sucesso!", type: "success" });
-      setIsModalOpen(false);
-      const response = await getFornecedores();
-      setFornecedores(response.data);
-      setFilteredFornecedores(response.data);
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || "Erro ao cadastrar fornecedor.";
-      setToast({ message: errorMessage, type: "error" });
-    }
-  };
 
   const handleEditClick = async (fornecedor) => {
     try {
@@ -137,40 +106,6 @@ function Fornecedores() {
     }
   };
 
-  const handleEditSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const updatedFornecedor = {
-      tipo_fornecedor: formData.get('tipofornecedor'),
-      nome: formData.get('nome'),
-      nomeFantasia: formData.get('nomeFantasia'),
-      cpfCnpj: formData.get('cpfCnpj'),
-      inscricaoestadual: formData.get('inscricaoestadual'),
-      fornecedor_contato: formData.get('fornecedorContato'),
-      email: formData.get('email'),
-      celular: formData.get('celular').replace(/\D/g, ''),
-      logradouro: formData.get('logradouro'),
-      numero: formData.get('numero'),
-      bairro: formData.get('bairro'),
-      municipio: formData.get('municipio'),
-      uf: formData.get('uf'),
-      cep: formData.get('cep').replace(/\D/g, '')
-    };
-
-    try {
-      await updateFornecedor(selectedFornecedor.id, updatedFornecedor);
-      setToast({ message: "Fornecedor atualizado com sucesso!", type: "success" });
-      setIsModalOpen(false);
-      setSelectedFornecedor(null);
-      setIsEdit(false);
-      const response = await getFornecedores();
-      setFornecedores(response.data);
-      setFilteredFornecedores(response.data);
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || "Erro ao atualizar fornecedor.";
-      setToast({ message: errorMessage, type: "error" });
-    }
-  };
 
   useEffect(() => {
     if (toast.message) {
@@ -312,7 +247,6 @@ function Fornecedores() {
         <Modal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onSubmit={isEdit ? handleEditSubmit : handleAddFornecedor}
           fornecedor={selectedFornecedor}
           isEdit={isEdit}
         />

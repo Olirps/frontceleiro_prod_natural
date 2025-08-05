@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getFornecedores } from '../services/api'; // Importa a função que busca fornecedores
+import { getFornecedores } from '../services/ApiFornecedores/ApiFornecedores';
 import '../styles/ModalPesquisaFornecedor.css'; // Certifique-se de criar este CSS também
 import Toast from '../components/Toast';
 

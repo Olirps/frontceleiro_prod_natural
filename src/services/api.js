@@ -592,9 +592,16 @@ export const getProdutoById = async (id) => {
   return api.get(`/produtos/${id}`);
 };
 
-export const getProdutosVendidos = async (id) => {
-  return api.get('produtos/vendidos');
+export const getProdutosVendidos = async (filtros = {}) => {
+  try {
+    const response = await api.get('produtos/vendidos', { params: filtros });
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar produtos vendidos:', error);
+    throw error; // relança o erro para tratamento na camada superior
+  }
 };
+
 
 export const getProdutosVendidosSemana = async (id) => {
   return api.get('produtos/vendidos-semana');

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/ModalPesquisaCredor.css';
 import Toast from '../components/Toast';
-import { getFornecedoresByFiltro, getFuncionariosByFiltro, getClientesByFiltro } from '../services/api';  // Funções de consulta
+import { getFuncionariosByFiltro, getClientesByFiltro } from '../services/api';  // Funções de consulta
+import { getFornecedoresByFiltro } from '../services/ApiFornecedores/ApiFornecedores';
 
 const ModalPesquisaCredor = ({ isOpen, onTipoCredor, onClose, onSelectCredor, tipoLancto }) => {
     const [tipoCredito, setTipoCredito] = useState(

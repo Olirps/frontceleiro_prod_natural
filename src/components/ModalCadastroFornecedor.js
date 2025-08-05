@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import '../styles/ModalCadastroFornecedor.css'; // Certifique-se de criar este CSS também
 import { cpfCnpjMask } from './utils';
 import { getUfs, getMunicipiosUfId } from '../services/api';
-import Toast from '../components/Toast';
+import { addFornecedor, updateFornecedor } from '../services/ApiFornecedores/ApiFornecedores';
 import { formatarCelular } from '../utils/functions';
 
-
 const ModalCadastroFornecedor = ({ isOpen, onClose, isEdit, onSubmit, fornecedor }) => {
+  const [abaAtiva, setAbaAtiva] = useState('dados');
+
   const [tipofornecedor, setTipoFornecedor] = useState('');
   const [nome, setNome] = useState('');
   const [nomeFantasia, setNomeFantasia] = useState('');
@@ -21,12 +21,11 @@ const ModalCadastroFornecedor = ({ isOpen, onClose, isEdit, onSubmit, fornecedor
   const [municipio, setMunicipio] = useState('');
   const [uf, setUf] = useState('');
   const [cep, setCep] = useState('');
-  const [ufs, setUfs] = useState([]); // Estado para armazenar os UFs
-  const [municipios, setMunicipios] = useState([]); // Estado para armazenar os municípios
+  const [ufs, setUfs] = useState([]);
+  const [municipios, setMunicipios] = useState([]);
   const [toast, setToast] = useState({ message: '', type: '' });
 
 
-  // Lista fixa de tipos de fornecedor
   const tiposFornecedor = [
     { id: 'maquinario', nome: 'Maquinário' },
     { id: 'bancario', nome: 'Bancário' },
@@ -36,340 +35,210 @@ const ModalCadastroFornecedor = ({ isOpen, onClose, isEdit, onSubmit, fornecedor
     { id: 'suplemento', nome: 'Suplemento' },
     { id: 'transporte', nome: 'Transporte' },
   ];
+
   useEffect(() => {
-    const fetchUfs = async () => {
-      try {
-        const ufsData = await getUfs();
-        if (Array.isArray(ufsData.data)) {
-          setUfs(ufsData.data);
-        } else {
-          console.error("Erro ao carregar UFs:", ufsData);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar UFs:", error);
-      }
-    };
-    fetchUfs();
+    getUfs().then((res) => setUfs(res.data || []));
   }, []);
 
   useEffect(() => {
     if (uf) {
-      const fetchMunicipios = async () => {
-        try {
-          const municipiosData = await getMunicipiosUfId(uf);
-          if (Array.isArray(municipiosData.data)) {
-            setMunicipios(municipiosData.data);
-          } else {
-            console.error("Erro ao carregar municípios:", municipiosData);
-          }
-        } catch (error) {
-          console.error("Erro ao buscar municípios:", error);
-        }
-      };
-      fetchMunicipios();
+      getMunicipiosUfId(uf).then((res) => setMunicipios(res.data || []));
     } else {
       setMunicipios([]);
     }
   }, [uf]);
 
-
   useEffect(() => {
-    const preencherDadosFornecedor = async () => {
-      if (fornecedor) {
-        // Preencher os campos com os dados da pessoa selecionada para edição
-        setTipoFornecedor(fornecedor.tipo_fornecedor || '');
-        setNome(fornecedor.nome || '');
-        setNomeFantasia(fornecedor.nomeFantasia || '');
-        setfornecedorContato(fornecedor.fornecedor_contato || '');
-        setCpf(fornecedor.cpfCnpj || '');
-        setInscricaoEstadual(fornecedor.inscricaoestadual || '');
-        setEmail(fornecedor.email || '');
-        setCelular(fornecedor.celular || '');
-        setLogradouro(fornecedor.logradouro || '');
-        setNumero(fornecedor.numero || '');
-        setBairro(fornecedor.bairro || '');
-        setUf(fornecedor.uf || '');
-        setCep(fornecedor.cep || '');
-      } else {
-        // Limpar os campos quando não há pessoa selecionada
-        setTipoFornecedor('');
-        setNome('');
-        setNomeFantasia('');
-        setfornecedorContato('');
-        setCpf('');
-        setInscricaoEstadual('');
-        setEmail('');
-        setCelular('');
-        setLogradouro('');
-        setNumero('');
-        setBairro('');
-        setMunicipio('');
-        setUf('');
-        setCep('');
-
-      }
-    };
-    preencherDadosFornecedor();
-
+    if (fornecedor) {
+      setTipoFornecedor(fornecedor.tipo_fornecedor || '');
+      setNome(fornecedor.nome || '');
+      setNomeFantasia(fornecedor.nomeFantasia || '');
+      setfornecedorContato(fornecedor.fornecedor_contato || '');
+      setCpf(fornecedor.cpfCnpj || '');
+      setInscricaoEstadual(fornecedor.inscricaoestadual || '');
+      setEmail(fornecedor.email || '');
+      setCelular(fornecedor.celular || '');
+      setLogradouro(fornecedor.logradouro || '');
+      setNumero(fornecedor.numero || '');
+      setBairro(fornecedor.bairro || '');
+      setUf(fornecedor.uf || '');
+      setCep(fornecedor.cep || '');
+    } else {
+      setTipoFornecedor('');
+      setNome('');
+      setNomeFantasia('');
+      setfornecedorContato('');
+      setCpf('');
+      setInscricaoEstadual('');
+      setEmail('');
+      setCelular('');
+      setLogradouro('');
+      setNumero('');
+      setBairro('');
+      setMunicipio('');
+      setUf('');
+      setCep('');
+    }
   }, [fornecedor]);
-
-
 
   useEffect(() => {
     if (fornecedor?.municipio && municipios.length) {
-      const municipioEncontrado = municipios.find(m => parseInt(m.id) === parseInt(fornecedor.municipio));
-      setMunicipio(municipioEncontrado ? municipioEncontrado.id : '');
+      const m = municipios.find(m => parseInt(m.id) === parseInt(fornecedor.municipio));
+      setMunicipio(m ? m.id : '');
     }
   }, [municipios, fornecedor]);
 
+
+  const handleSubmit = async (e) => {
+    const fornecedorPayload = {
+      tipo_fornecedor: tipofornecedor,
+      nome: nome,
+      nomeFantasia: nomeFantasia,
+      fornecedor_contato: fornecedorContato,
+      cpfCnpj: cpfCnpj,
+      inscricaoestadual: inscricaoestadual,
+      email: email,
+      celular: celular.replace(/\D/g, ''),
+      logradouro: logradouro,
+      numero: numero,
+      bairro: bairro,
+      municipio: municipio,
+      uf: uf,
+      cep: cep.replace(/\D/g, '')
+    };
+
+    try {
+
+      if (isEdit && fornecedor?.id) {
+        updateFornecedor(fornecedor.id, fornecedorPayload);
+        setToast({ message: "Fornecedor atualizado com sucesso!", type: "success" });
+      } else {
+        await addFornecedor(fornecedorPayload);
+        setToast({ message: "Fornecedor cadastrado com sucesso!", type: "success" });
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || "Erro ao cadastrar fornecedor.";
+      setToast({ message: errorMessage, type: "error" });
+    }
+  };
+
+
   if (!isOpen) return null;
 
-  const handleCpfChange = (e) => {
-    const { value } = e.target;
-    setCpf(cpfCnpjMask(value)); // Aplica a máscara ao CPF e atualiza o estado
-  };
+  const renderAbaDados = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      <div>
+        <label>Tipo de Fornecedor</label>
+        <select className="input" value={tipofornecedor} onChange={(e) => setTipoFornecedor(e.target.value)} required>
+          <option value="">Selecione</option>
+          {tiposFornecedor.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
+        </select>
+      </div>
+      <div>
+        <label>Nome</label>
+        <input className="input" value={nome} onChange={e => setNome(e.target.value)} required />
+      </div>
+      <div>
+        <label>Nome Fantasia</label>
+        <input className="input" value={nomeFantasia} onChange={e => setNomeFantasia(e.target.value)} />
+      </div>
+      <div>
+        <label>Contato</label>
+        <input className="input" value={fornecedorContato} onChange={e => setfornecedorContato(e.target.value)} />
+      </div>
+      <div>
+        <label>CPF/CNPJ</label>
+        <input
+          className="input"
+          value={cpfCnpjMask(cpfCnpj)}
+          onChange={(e) => setCpf(e.target.value)}
+          disabled={isEdit}
+        />
+        {isEdit && <input type="hidden" name="cpfCnpj" value={cpfCnpj} />}
+      </div>
+      <div>
+        <label>Inscrição Estadual</label>
+        <input className="input" value={inscricaoestadual} onChange={e => setInscricaoEstadual(e.target.value)} />
+      </div>
+      <div>
+        <label>Email</label>
+        <input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+      </div>
+      <div>
+        <label>Celular</label>
+        <input className="input" value={formatarCelular(celular)} onChange={e => setCelular(e.target.value)} />
+      </div>
+    </div>
+  );
 
-  const handleInscricaoEstadualChange = (e) => {
-    const { value } = e.target;
-    setInscricaoEstadual(value); // Aplica a máscara ao CPF e atualiza o estado
-  };
-
-  const handleNomeChange = (e) => {
-    setNome(e.target.value); // Atualiza o estado do nome
-  };
-
-  const handleNomeFantasiaChange = (e) => {
-    setNomeFantasia(e.target.value); // Atualiza o estado do nome
-  };
-  const handleFornecedorContatoChange = (e) => {
-    setfornecedorContato(e.target.value); // Atualiza o estado do nome
-  };
-
-  const handleEmailChange = (e) => {
-    setEmail(e.target.value); // Atualiza o estado do email
-  };
-
-  const handleCelularChange = (e) => {
-    setCelular(e.target.value); // Atualiza o estado do email
-  };
-
-  const handleLogradouroChange = (e) => {
-    setLogradouro(e.target.value); // Atualiza o estado do logradouro
-  };
-
-  const handleNumeroChange = (e) => {
-    setNumero(e.target.value); // Atualiza o estado do número
-  };
-
-  const handleBairroChange = (e) => {
-    setBairro(e.target.value); // Atualiza o estado do bairro
-  };
-
-  const handleMunicipioChange = (e) => {
-    setMunicipio(e.target.value); // Atualiza o estado do município
-  };
-
-  const handleCepChange = (e) => {
-    setCep(e.target.value); // Atualiza o estado do CEP
-  };
+  const renderAbaEndereco = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      <div>
+        <label>Logradouro</label>
+        <input className="input" value={logradouro} onChange={e => setLogradouro(e.target.value)} />
+      </div>
+      <div>
+        <label>Número</label>
+        <input className="input" value={numero} onChange={e => setNumero(e.target.value)} />
+      </div>
+      <div>
+        <label>Bairro</label>
+        <input className="input" value={bairro} onChange={e => setBairro(e.target.value)} />
+      </div>
+      <div>
+        <label>UF</label>
+        <select className="input" value={uf} onChange={e => setUf(e.target.value)} required>
+          <option value="">Selecione</option>
+          {ufs.map(u => <option key={u.id} value={u.codIBGE}>{u.nome}</option>)}
+        </select>
+      </div>
+      <div>
+        <label>Município</label>
+        <select className="input" value={municipio} onChange={e => setMunicipio(e.target.value)} required>
+          <option value="">Selecione</option>
+          {municipios.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
+        </select>
+      </div>
+      <div>
+        <label>CEP</label>
+        <input className="input" value={cep} onChange={e => setCep(e.target.value)} />
+      </div>
+    </div>
+  );
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <button className="modal-close" onClick={onClose}>X</button>
-        <h2>{isEdit ? 'Editar Fornecedor' : 'Cadastrar Cadastro de Fornecedor'}</h2>
-        <form onSubmit={onSubmit}>
-          <div id='cadastro-padrao'>
-            <div>
-              <label htmlFor="tipofornecedor">Selecione um Tipo de Fornecedor:</label>
-              <select
-                id="tipofornecedor"
-                name="tipofornecedor"
-                value={tipofornecedor}
-                onChange={(e) => setTipoFornecedor(e.target.value)}
-                required
-              >
-                <option value="">Selecione um Tipo</option>
-                {tiposFornecedor.map((tipo) => (
-                  <option key={tipo.id} value={tipo.id}>
-                    {tipo.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="nome">Nome</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="nome"
-                name="nome"
-                value={nome}
-                onChange={handleNomeChange} // Adiciona o onChange para atualizar o estado
-                maxLength="150"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="nome">Nome Fantasia</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="nomeFantasia"
-                name="nomeFantasia"
-                value={nomeFantasia}
-                onChange={handleNomeFantasiaChange} // Adiciona o onChange para atualizar o estado
-                maxLength="150"
-              />
-            </div>
-            <div>
-              <label htmlFor="fornecedorContato">Contato Fornecedor</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="fornecedorContato"
-                name="fornecedorContato"
-                value={fornecedorContato}
-                onChange={handleFornecedorContatoChange} // Adiciona o onChange para atualizar o estado
-                maxLength="150"
-              />
-            </div>
-            <div>
-              <label htmlFor="cpfCnpj">CPF/CNPJ</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="cpfCnpj"
-                name="cpfCnpj"
-                value={cpfCnpjMask(cpfCnpj)} // Controlado pelo estado
-                onChange={handleCpfChange}
-                disabled={isEdit}
-              />
-              {isEdit && <input type="hidden" name="cpfCnpj" value={cpfCnpj} />}
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+      <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl shadow-lg relative">
+        <button className="absolute top-4 right-4 text-gray-600 hover:text-red-500 text-xl" onClick={onClose}>✕</button>
+        <h2 className="text-2xl font-semibold mb-4">{isEdit ? 'Editar Fornecedor' : 'Cadastrar Fornecedor'}</h2>
 
-            </div>
-            <div>
-              <label htmlFor="inscricaoestadual">Inscrição Estadual</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="inscricaoestadual"
-                name="inscricaoestadual"
-                value={inscricaoestadual} // Controlado pelo estado
-                onChange={handleInscricaoEstadualChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="email">Email</label>
-              <input
-                className='input-geral'
-                type="email"
-                id="email"
-                name="email"
-                value={email}
-                onChange={handleEmailChange} // Adiciona o onChange para atualizar o estado
-                maxLength="50"
-              />
-            </div>
-            <div>
-              <label htmlFor="celular">Celular</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="celular"
-                name="celular"
-                value={formatarCelular(celular)}
-                onChange={handleCelularChange} // Adiciona o onChange para atualizar o estado
-                maxLength="150"
-              />
-            </div>
-            <div>
-              <label htmlFor="logradouro">Logradouro</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="logradouro"
-                name="logradouro"
-                value={logradouro}
-                onChange={handleLogradouroChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="numero">Número</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="numero"
-                name="numero"
-                value={numero}
-                onChange={handleNumeroChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="bairro">Bairro</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="bairro"
-                name="bairro"
-                value={bairro}
-                onChange={handleBairroChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="uf">UF</label>
-              <select
-                className="select-geral"
-                id="uf"
-                name="uf"
-                value={uf}
-                onChange={(e) => setUf(e.target.value)}
-                required
-              >
-                <option value="">Selecione um estado</option>
-                {ufs.map((uf) => (
-                  <option key={uf.id} value={uf.codIBGE}>
-                    {uf.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="municipio">Município</label>
-              <select
-                className="select-geral"
-                id="municipio"
-                name="municipio"
-                value={municipio}
-                onChange={(e) => { setMunicipio(e.target.value) }}
-                required
-              >
-                <option value="">Selecione um município</option>
+        {/* Tabs */}
+        <div className="flex space-x-4 border-b mb-4">
+          <button
+            type="button"
+            onClick={() => setAbaAtiva('dados')}
+            className={`pb-2 border-b-2 ${abaAtiva === 'dados' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-gray-500'}`}
+          >
+            Dados
+          </button>
+          <button
+            type="button"
+            onClick={() => setAbaAtiva('endereco')}
+            className={`pb-2 border-b-2 ${abaAtiva === 'endereco' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-gray-500'}`}
+          >
+            Endereço
+          </button>
+        </div>
 
-                {Array.isArray(municipios) &&
-                  municipios.map((mun) => (
-                    <option key={mun.id} value={mun.id}>
-                      {mun.nome}
-                    </option>
-                  ))
-                }
+        <form onSubmit={handleSubmit}        >
+          {/* Conteúdo da aba ativa */}
+          {abaAtiva === 'dados' && renderAbaDados()}
+          {abaAtiva === 'endereco' && renderAbaEndereco()}
 
-              </select>
-            </div>
-            <div>
-              <label htmlFor="cep">CEP</label>
-              <input
-                className='input-geral'
-                type="text"
-                id="cep"
-                name="cep"
-                value={cep}
-                onChange={handleCepChange}
-              />
-            </div>
-            <div id='button-group'>
-              <button type="submit" id="btnsalvar" className="button">Salvar</button>
-            </div>
+          <div className="mt-6 flex justify-end">
+            <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700">
+              Salvar
+            </button>
           </div>
         </form>
       </div>
