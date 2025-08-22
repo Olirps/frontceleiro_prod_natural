@@ -165,296 +165,319 @@ const ModalMovimentacaoFinanceiraDespesa = ({ isOpen, onConfirmar, onSubmit, edi
     if (!isOpen) return null;
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <button className="modal-close" onClick={onClose}>X</button>
-                <h2>{movimentacao ? "Editar Despesa" : "Cadastrar Despesa"}</h2>
-                <div>
-                    <button className='button-geral' onClick={handleOpenPesquisaCredito}>Pesquisar Credor</button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl p-6 relative overflow-y-auto max-h-[90vh]">
+
+                {/* Botão de Fechar */}
+                <button
+                    className="absolute top-4 right-4 text-gray-500 hover:text-red-500 text-lg font-bold"
+                    onClick={onClose}
+                >
+                    ✕
+                </button>
+
+                <h2 className="text-2xl font-semibold mb-4">
+                    {movimentacao ? "Editar Despesa" : "Cadastrar Despesa"}
+                </h2>
+
+                <div className="mb-4">
+                    <button
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
+                        onClick={handleOpenPesquisaCredito}
+                    >
+                        Pesquisar Credor
+                    </button>
                 </div>
+
                 {loading ? (
-                    <div className="spinner-container">
-                        <div className="spinner"></div>
+                    <div className="flex justify-center py-8">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-solid"></div>
                     </div>
                 ) : (
                     <>
-                        <form onSubmit={onSubmit}>
-                            <div id='cadastro-padrao'>
+                        <form onSubmit={onSubmit} className="space-y-6">
+
+                            {/* Campos principais */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label>Credor</label>
+                                    <label className="block text-sm font-medium text-gray-700">Credor</label>
                                     <input type="hidden" name="tipoCredor" value={tipoCredor} />
                                     <input type="hidden" name="credorSelecionado" value={credorSelecionado?.id || credor} />
                                     <input
                                         type="text"
-                                        className="input-geral"
-                                        name='credorSelecionado'
+                                        name="credorSelecionado"
+                                        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                                         value={credorSelecionado ? (credorSelecionado.nome || credorSelecionado.cliente?.nome) : credor}
                                         onChange={handleCredor}
                                         placeholder="Selecionar ou Informe o Credor"
-                                        disabled={credorSelecionado} // Desabilita apenas se cliente_id estiver definido
+                                        disabled={credorSelecionado}
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label htmlFor="descricao">Descrição</label>
+                                    <label className="block text-sm font-medium text-gray-700">Descrição</label>
                                     <input
-                                        className='input-geral'
                                         type="text"
-                                        name='descricao'
+                                        name="descricao"
+                                        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
                                         value={descricao.toUpperCase()}
                                         onChange={(e) => setDescricao(e.target.value.toUpperCase())}
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label htmlFor="boleto">Boleto</label>
+                                    <label className="block text-sm font-medium text-gray-700">Boleto</label>
                                     <input
-                                        className='input-geral'
                                         type="text"
-                                        name='boleto'
+                                        name="boleto"
+                                        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
                                         value={boleto}
                                         onChange={(e) => setBoleto(e.target.value)}
                                     />
                                 </div>
                                 <div>
-                                    <label htmlFor="valor">Valor</label>
+                                    <label className="block text-sm font-medium text-gray-700">Valor</label>
                                     <input
-                                        className='input-geral'
                                         type="text"
-                                        value={valor} // Isso funcionará, pois `valor` é uma string
-                                        name='valor' // Isso funcionará, pois `valor` é uma string
-                                        onChange={(e) => { setValor(formatarMoedaBRL(e.target.value)) }} //forma resumida de atualizar o input
+                                        name="valor"
+                                        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                                        value={valor}
+                                        onChange={(e) => setValor(formatarMoedaBRL(e.target.value))}
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label>Data de Vencimento</label>
+                                    <label className="block text-sm font-medium text-gray-700">Data de Vencimento</label>
                                     <input
-                                        className='input-geral'
                                         type="date"
+                                        name="dataVencimento"
+                                        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
                                         value={dataVencimento}
-                                        name='dataVencimento'
                                         onChange={(e) => setDataVencimento(e.target.value)}
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label>Tipo</label>
+                                    <label className="block text-sm font-medium text-gray-700">Tipo</label>
                                     <select
-                                        className='input-geral'
+                                        name="tipo"
                                         value={tipo}
-                                        name='tipo'
                                         onChange={(e) => setTipo(e.target.value)}
-                                        required>
+                                        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                                        required
+                                    >
                                         <option value="debito">Débito</option>
                                     </select>
                                 </div>
                             </div>
+
+                            {/* Tipo de despesa */}
                             <div>
-                                <div>
-                                    <h2> Tipo de Despesa</h2>
-                                    <div className='radio-group'>
-                                        <label>
+                                <h2 className="text-lg font-semibold mb-2">Tipo de Despesa</h2>
+                                <div className="flex gap-6">
+                                    {["cotaunica", "recorrente", "parcelada"].map((op) => (
+                                        <label key={op} className="flex items-center gap-2">
                                             <input
                                                 type="radio"
-                                                value="cotaunica"
-                                                name='despesaRecorrente'
-                                                checked={despesaRecorrente === 'cotaunica'}
-                                                onChange={() => setDespesaRecorrente('cotaunica')}
-                                            />
-                                            Cota Única
-                                        </label>
-                                        <label>
-                                            <input
-                                                type="radio"
-                                                value="recorrente"
-                                                name='despesaRecorrente'
-                                                checked={despesaRecorrente === 'recorrente'}
-                                                onChange={() => setDespesaRecorrente('recorrente')}
-                                            />
-                                            Recorrente
-                                        </label>
-                                        <label>
-                                            <input
-                                                type="radio"
-                                                value="parcelada"
-                                                name='despesaRecorrente'
-                                                checked={despesaRecorrente === 'parcelada'}
+                                                value={op}
+                                                name="despesaRecorrente"
+                                                checked={despesaRecorrente === op}
                                                 onChange={() => {
-                                                    setDespesaRecorrente('parcelada')
-                                                    setLancarParcelas('')
-                                                }
-                                                }
+                                                    setDespesaRecorrente(op);
+                                                    if (op === "parcelada") setLancarParcelas("");
+                                                }}
                                             />
-                                            Parcelada
+                                            {op === "cotaunica" && "Cota Única"}
+                                            {op === "recorrente" && "Recorrente"}
+                                            {op === "parcelada" && "Parcelada"}
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Campos de parcelamento */}
+                            {despesaRecorrente === "parcelada" && (
+                                <div className="space-y-4 border p-4 rounded-lg bg-gray-50">
+                                    <div className="flex gap-6">
+                                        <label className="flex items-center gap-2">
+                                            <input
+                                                type="radio"
+                                                value="mensal"
+                                                name="tipoParcelamento"
+                                                checked={tipoParcelamento === "mensal"}
+                                                onChange={() => setTipoParcelamento("mensal")}
+                                            />
+                                            Mensal
+                                        </label>
+                                        <label className="flex items-center gap-2">
+                                            <input
+                                                type="radio"
+                                                value="anual"
+                                                name="tipoParcelamento"
+                                                checked={tipoParcelamento === "anual"}
+                                                onChange={() => setTipoParcelamento("anual")}
+                                            />
+                                            Anual
                                         </label>
                                     </div>
-                                </div>
 
-                                {/* Exibe campos de despesa parcelada */}
-                                {despesaRecorrente === 'parcelada' && (
-                                    <>
-                                        <div id='form-parcelas'>
-                                            <div className='radio-group'>
-                                                <label>
-                                                    <input
-                                                        type="radio"
-                                                        value="mensal"
-                                                        name='tipoParcelamento'
-                                                        checked={tipoParcelamento === 'mensal'}
-                                                        onChange={() => {
-                                                            setTipoParcelamento('mensal')
-                                                        }
-                                                        }
-                                                    />
-                                                    Mensal
-                                                </label>
-                                                <label>
-                                                    <input
-                                                        type="radio"
-                                                        value="anual"
-                                                        name='tipoParcelamento'
-                                                        checked={tipoParcelamento === 'anual'}
-                                                        onChange={() => {
-                                                            setTipoParcelamento('anual')
-                                                        }
-                                                        }
-                                                    />
-                                                    Anual
-                                                </label>
-                                            </div>
-                                            <div id='cadastro-padrao'>
-                                                <div>
-                                                    <label>Quantidade de Parcelas</label>
-                                                    <input
-                                                        className='input-geral'
-                                                        type="number"
-                                                        name='lancarParcelas'
-                                                        value={lancarParcelas}
-                                                        onChange={(e) => {
-                                                            // Remove qualquer caractere que não seja um número inteiro
-                                                            const value = e.target.value.replace(/[^0-9]/g, '');
-                                                            // Converte o valor para número inteiro
-                                                            const intValue = parseInt(value, 10);
-                                                            // Define o valor mínimo como 1
-                                                            setLancarParcelas(Math.max(1, intValue || 0));
-                                                        }}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label>Vencimento da Primeira Parcela</label>
-                                                    <input
-                                                        className='input-geral'
-                                                        type="date"
-                                                        name='dataVencimento'
-                                                        value={dataVencimento}
-                                                        onChange={(e) => setDataVencimento(e.target.value)}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label>Valor de Entrada</label>
-                                                    <input
-                                                        className='input-geral'
-                                                        type="text"
-                                                        name='valorEntradaDespesa'
-                                                        value={valorEntradaDespesa}
-                                                        onChange={(e) => setValorEntradaDespesa(formatarMoedaBRL(e.target.value))}
-                                                        required
-                                                    />
-                                                </div>
-                                            </div>
-
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Quantidade de Parcelas</label>
+                                            <input
+                                                type="number"
+                                                name="lancarParcelas"
+                                                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                                                value={lancarParcelas}
+                                                onChange={(e) => {
+                                                    const value = e.target.value.replace(/[^0-9]/g, "");
+                                                    const intValue = parseInt(value, 10);
+                                                    setLancarParcelas(Math.max(1, intValue || 0));
+                                                }}
+                                                required
+                                            />
                                         </div>
-                                    </>
-                                )}
-                                {/* Exibir parcelas em tela após inserção */}
-                                {despesaRecorrente === 'parcelada' && lancarParcelas && dataVencimento && (
-                                    <div>
-                                        <h3>Parcelas</h3>
-                                        <input type="hidden" name="parcelas" value={parcelas} />
-                                        <div className="parcelas-container">
-                                            {parcelas.map((parcela, index) => (
-                                                <div key={index} className="parcela">
-                                                    <span>{`Parcela ${parcela.numeroParcela}`}</span>
-                                                    <span>
-                                                        <label>Vencimento</label>
-                                                        <input
-                                                            type="date"
-                                                            name={`parcelas[${index}].dataVencimento`}  // Aqui estamos usando um nome único para cada parcela
-                                                            value={parcela.dataVencimento}
-                                                            onChange={(e) => handleAlterarVencimentoParcela(index, e.target.value)}
-                                                        />
-                                                    </span>
-                                                    <span>
-                                                        <label>Boleto: </label>
-                                                        <input
-                                                            type="text"
-                                                            name={`parcelas[${index}].boleto`} // Garante que cada parcela tenha seu campo único
-                                                            value={parcela.boleto || ''} // Evita erro caso `boleto` esteja undefined
-                                                            onChange={(e) => handleAlterarBoletoParcela(index, e.target.value)}
-                                                        />
-                                                    </span>
-                                                    <span>
-                                                        <label>Valor</label>
-                                                        <input
-                                                            type="text"
-                                                            name={`parcelas[${index}].valor`}  // Aqui também estamos fazendo a mesma coisa para o valor
-                                                            value={formatarMoedaBRL(parcela.valor)}
-                                                            onChange={(e) => handleAlterarParcela(index, e.target.value)}
-                                                        />
-                                                    </span>
-                                                </div>
-                                            ))}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Vencimento da Primeira Parcela</label>
+                                            <input
+                                                type="date"
+                                                name="dataVencimento"
+                                                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                                                value={dataVencimento}
+                                                onChange={(e) => setDataVencimento(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Valor de Entrada</label>
+                                            <input
+                                                type="text"
+                                                name="valorEntradaDespesa"
+                                                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                                                value={valorEntradaDespesa}
+                                                onChange={(e) => setValorEntradaDespesa(formatarMoedaBRL(e.target.value))}
+                                                required
+                                            />
                                         </div>
                                     </div>
-                                )}
-                                <div id='button-group'>
-                                    <button type="submit"
-                                        className="button"
-                                        disabled={disabledSalvar}
-                                    >
-                                        Salvar
-                                    </button>
-                                    {movimentacao &&
-                                        <button className="button-excluir" onClick={handleCancelar}>
-                                            Excluir
-                                        </button>}
                                 </div>
+                            )}
+                            {despesaRecorrente === "parcelada" && lancarParcelas && dataVencimento && (
+                                <div className="mt-6">
+                                    <h3 className="text-lg font-semibold mb-3">Parcelas</h3>
+
+                                    {/* mantém o hidden como no comportamento anterior */}
+                                    <input type="hidden" name="parcelas" value={parcelas} />
+
+                                    <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                                        {parcelas.map((parcela, index) => (
+                                            <div
+                                                key={index}
+                                                className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end border rounded-lg p-3 bg-white"
+                                            >
+                                                <div className="md:col-span-2">
+                                                    <div className="text-sm text-gray-600">Parcela</div>
+                                                    <div className="text-base font-medium">{parcela.numeroParcela}</div>
+                                                </div>
+
+                                                <div className="md:col-span-3">
+                                                    <label className="block text-sm font-medium text-gray-700">
+                                                        Vencimento
+                                                    </label>
+                                                    <input
+                                                        type="date"
+                                                        name={`parcelas[${index}].dataVencimento`}
+                                                        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                                                        value={parcela.dataVencimento}
+                                                        onChange={(e) =>
+                                                            handleAlterarVencimentoParcela(index, e.target.value)
+                                                        }
+                                                    />
+                                                </div>
+
+                                                <div className="md:col-span-4">
+                                                    <label className="block text-sm font-medium text-gray-700">
+                                                        Boleto
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        name={`parcelas[${index}].boleto`}
+                                                        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                                                        value={parcela.boleto || ""}
+                                                        onChange={(e) => handleAlterarBoletoParcela(index, e.target.value)}
+                                                    />
+                                                </div>
+
+                                                <div className="md:col-span-3">
+                                                    <label className="block text-sm font-medium text-gray-700">
+                                                        Valor
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        name={`parcelas[${index}].valor`}
+                                                        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                                                        value={formatarMoedaBRL(parcela.valor)}
+                                                        onChange={(e) => handleAlterarParcela(index, e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {/* Botões */}
+                            <div className="flex gap-4 mt-6">
+                                <button
+                                    type="submit"
+                                    className="px-5 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 disabled:opacity-50"
+                                    disabled={disabledSalvar}
+                                >
+                                    Salvar
+                                </button>
+                                {movimentacao && (
+                                    <button
+                                        type="button"
+                                        className="px-5 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700"
+                                        onClick={handleCancelar}
+                                    >
+                                        Excluir
+                                    </button>
+                                )}
                             </div>
                         </form>
                     </>
                 )}
-            </div>
-            {toast.message && <Toast message={toast.message} type={toast.type} />}
-            {isConfirmDialogOpen && (
-                <ConfirmarLancarParcelas
-                    isOpen={isConfirmDialogOpen}
-                    message={mensagem}
-                    cancelarLancto={cancelarLancto}
-                    onConfirmar={handleConfirmCancelamento}
-                    onConfirm={cancelarLancto ? handleConfirmCancelamento : handleLancaParcelas}  // Abre o modal de lançamento de parcelas
-                    onCancel={() => setIsConfirmDialogOpen(false)}
-                />
-            )
-            }
-            <ModalPesquisaCredor
-                isOpen={isModalPesquisaOpen}
-                onClose={() => setIsModalPesquisaOpen(false)}
-                onSelectCredor={handleSelectCredor}
-                onTipoCredor={handleTipoCredor}  // Passando a função para o modal
-            />
 
-            <ModalLancamentoParcelas
-                isOpen={isModalParcelasOpen}
-                onClose={() => setIsModalParcelasOpen(false)}
-                valorTotal={valor}
-                despesa={despesaAdicionada}
-                onSave={handleSaveParcelas}
-            />
+                {toast.message && <Toast message={toast.message} type={toast.type} />}
+                {isConfirmDialogOpen && (
+                    <ConfirmarLancarParcelas
+                        isOpen={isConfirmDialogOpen}
+                        message={mensagem}
+                        cancelarLancto={cancelarLancto}
+                        onConfirmar={handleConfirmCancelamento}
+                        onConfirm={cancelarLancto ? handleConfirmCancelamento : handleLancaParcelas}
+                        onCancel={() => setIsConfirmDialogOpen(false)}
+                    />
+                )}
+
+                <ModalPesquisaCredor
+                    isOpen={isModalPesquisaOpen}
+                    onClose={() => setIsModalPesquisaOpen(false)}
+                    onSelectCredor={handleSelectCredor}
+                    onTipoCredor={handleTipoCredor}
+                />
+
+                <ModalLancamentoParcelas
+                    isOpen={isModalParcelasOpen}
+                    onClose={() => setIsModalParcelasOpen(false)}
+                    valorTotal={valor}
+                    despesa={despesaAdicionada}
+                    onSave={handleSaveParcelas}
+                />
+            </div>
         </div>
     );
+
 };
 
 export default ModalMovimentacaoFinanceiraDespesa;

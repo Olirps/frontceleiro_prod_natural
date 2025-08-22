@@ -11,8 +11,15 @@ export const getFornecedores = async (filters = {}) => {
 };
 
 export const addFornecedor = async (pessoa) => {
-    return api.post('/fornecedores', pessoa);
+    try {
+        const response = await api.post('/fornecedores', pessoa);
+        return response.data;
+    } catch (error) {
+        console.error('Erro ao adicionar fornecedor:', error);
+        throw error;
+    }
 };
+
 
 export const updateFornecedor = async (id, pessoa) => {
     return api.put(`/fornecedores/${id}`, pessoa);

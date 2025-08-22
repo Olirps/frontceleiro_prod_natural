@@ -1124,8 +1124,8 @@ export const getVendas = async (filtro = {}) => {
     const response = await api.get('/vendasdetalhes', { params: filtro });
     return response
   } catch (error) {
-    console.error('Erro ao buscar status com filtro:', error);
-    throw error;
+    console.error(error.response.data.erro || 'Erro ao buscar vendas:', error);
+    throw error.response.data.erro;
   }
 };
 

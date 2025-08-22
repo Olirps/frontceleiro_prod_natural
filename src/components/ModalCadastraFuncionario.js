@@ -187,8 +187,8 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
         numero,
         bairro,
         cep,
-        uf_id: uf,
-        municipio_id: municipio
+        uf: uf,
+        municipio: municipio
       }
     };
 
@@ -207,8 +207,12 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
       if (onSubmit) onSubmit(); // callback para recarregar lista, se necessário
       onClose(); // fecha o modal
     } catch (error) {
-      console.error(error);
-      setToast({ message: 'Erro ao salvar funcionário.', type: 'error' });
+      const mensagemErro = error?.response?.data?.error || 'Erro ao salvar cliente.';
+
+      setToast({
+        message: mensagemErro,
+        type: 'error'
+      });
     }
   };
 
@@ -313,7 +317,7 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
                 </div>
                 <div>
                   <label>Tipo</label>
-                  <select className="input" value={tipoFuncionario} onChange={e => settipoFuncionario(e.target.value)} disabled={!permiteEditar} required>
+                  <select className="input" value={tipoFuncionario} onChange={e => settipoFuncionario(e.target.value)} disabled={!permiteEditar} >
                     <option value="">Selecione</option>
                     <option value="administrativo">Administrativo</option>
                     <option value="servico">Serviço</option>
@@ -322,11 +326,11 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
                 </div>
                 <div>
                   <label>Cargo</label>
-                  <input type="text" className="input" value={cargo.toUpperCase()} onChange={e => setCargo(e.target.value)} disabled={!permiteEditar} required />
+                  <input type="text" className="input" value={cargo.toUpperCase()} onChange={e => setCargo(e.target.value)} disabled={!permiteEditar} />
                 </div>
                 <div>
                   <label>Salário</label>
-                  <input type="text" className="input" value={salario} onChange={e => setSalario(formatarMoedaBRL(e.target.value))} disabled={!permiteEditar} required />
+                  <input type="text" className="input" value={salario} onChange={e => setSalario(formatarMoedaBRL(e.target.value))} disabled={!permiteEditar}  />
                 </div>
               </div>
             </>

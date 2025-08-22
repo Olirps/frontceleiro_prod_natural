@@ -50,8 +50,6 @@ const FluxoCaixaPage = () => {
     setSaldoFinal(0);
     if (modoExibicao === 'analitico') {
       setAgrupamento('dia')
-      setDataInicial(getDataHoje());
-      setDataFinal(getDataHoje())
     }
   }, [dataInicial, dataFinal, formaId, apenasRecebidos, modoExibicao]);
 

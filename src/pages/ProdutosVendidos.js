@@ -6,6 +6,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import Pagination from '../utils/Pagination';
 import { use } from 'react';
+import Toast from '../components/Toast';
+
 
 const ProdutosVendidos = () => {
     const [produtosVendidos, setProdutosVendidos] = useState([]);
@@ -24,6 +26,8 @@ const ProdutosVendidos = () => {
     const [empresa, setEmpresa] = useState(null);
     const [agruparSintetico, setAgruparSintetico] = useState(false);
     const [executarBusca, setExecutarBusca] = useState(true);
+    const [toast, setToast] = useState({ message: '', type: '' });
+
 
 
 
@@ -47,6 +51,15 @@ const ProdutosVendidos = () => {
         setTotalQuantidade(0);
 
     }, [filtroProduto, dataInicio, dataFim, analitico, agruparSintetico]);
+
+
+    useEffect(() => {
+        if (toast.message) {
+            const timer = setTimeout(() => setToast({ message: '', type: '' }), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [toast]);
+
 
     const limparFiltros = () => {
         setDataInicio('');
@@ -74,6 +87,11 @@ const ProdutosVendidos = () => {
             setError(null);
             setProdutosVendidos(data.items || []);
             setProdutosFiltrados(data.items || []);
+            if (data.items.length === 0) {
+                setToast({ message: "Nenhum produto encontrado para os filtros aplicados.", type: "info" });
+            }else{
+                setToast({ message: "Produtos vendidos carregados com sucesso!", type: "success" });
+            }
 
             // Buscar informações da empresa (substitua 1 pelo ID correto da empresa)
             const dataEmpresa = await getEmpresaById(1); // Substitua 1 pelo ID da empresa
@@ -482,6 +500,7 @@ const ProdutosVendidos = () => {
                     </table>
 
                 </div>
+                {toast.message && <Toast type={toast.type} message={toast.message} />}
                 {produtosVendidos && produtosVendidos.length > 0 && (
                     <div className="mt-4">
                         {/* Paginação */}

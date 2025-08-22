@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getAllMovimentacaofinanceiraDespesa, addMovimentacaofinanceiraDespesa, getLancamentoCompletoById, updateLancamentoDespesa, getLancamentoDespesaById, getParcelaByID, pagamentoParcela, updateMovimentacaofinanceiraDespesa, addParcelasDespesa, getParcelasDespesa } from '../services/api';
 import '../styles/MovimentacaoFinanceiraDespesa.css';
 import ModalMovimentacaoFinanceiraDespesa from '../components/ModalMovimentacaoFinanceiraDespesa';
-import { converterMoedaParaNumero, formatarData, dataAtual } from '../utils/functions';
+import { converterMoedaParaNumero, dataAtual, formatarDataNew } from '../utils/functions';
 import ModalLancamentoCompleto from '../components/ModalLancamentoCompleto';
 import ModalUnificaLancamentos from '../components/ModalUnificaLancamentos';
 import ModalLancamentoParcelas from '../components/ModalLancamentoParcelas'; // Importe o novo modal
@@ -53,7 +53,7 @@ function MovimentacaoFinanceiraDespesa() {
   useEffect(() => {
     const fetchMovimentacao = async () => {
       try {
-        const response = await getAllMovimentacaofinanceiraDespesa({tipo :'debito'});
+        const response = await getAllMovimentacaofinanceiraDespesa({ tipo: 'debito' });
         setMovimentacoes(response.data);
         setFilteredMovimentacoes(response.data);
       } catch (err) {
@@ -193,23 +193,11 @@ function MovimentacaoFinanceiraDespesa() {
     };
 
     try {
-      let valorTotalOriginal;
-      if (parcelas.length > 1) {
-        valorTotalOriginal = (parcelas.reduce((total, parcela) => total + converterMoedaParaNumero(parcela.valor), 0)).toFixed(2);
-        const valorEntradaSum = converterMoedaParaNumero(valorEntrada);
-        valorTotalOriginal = Number((Number(valorTotalOriginal) + Number(valorEntradaSum)));
-        const valorLancamentoLimpo = converterMoedaParaNumero(valorLancamento);
-
-        if (Number(valorTotalOriginal) !== valorLancamentoLimpo) {
-          throw new Error('Somatória das Parcelas devem ser o mesmo do valor do Lançamento');
-        }
-      }
-
       await addMovimentacaofinanceiraDespesa(newMovimentacao);
       setToast({ message: "Movimentação financeira cadastrada com sucesso!", type: "success" });
       setIsModalOpen(false);
       setIsModalUnificaLancamentosOpen(false);
-      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'debito'});
+      const response = await getAllMovimentacaofinanceiraDespesa({ tipo: 'debito' });
       setMovimentacoes(response.data);
       setFilteredMovimentacoes(response.data);
     } catch (err) {
@@ -231,8 +219,8 @@ function MovimentacaoFinanceiraDespesa() {
       return; // Impede a abertura do modal
     }
     const response = await getLancamentoDespesaById(movimentacao.id);
-    setSelectedMovimentacao(response.data);
-    setValor(response.data.valor);
+    setSelectedMovimentacao(response);
+    setValor(response.valor);
     setIsModalLancaParcelasOpen(true);
   };
 
@@ -276,7 +264,7 @@ function MovimentacaoFinanceiraDespesa() {
       // Aqui você pode enviar as parcelas para o backend ou processá-las conforme necessário
       setToast({ message: "Parcelas salvas com sucesso!", type: "success" });
       setIsModalLancaParcelasOpen(false);
-      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'debito'});
+      const response = await getAllMovimentacaofinanceiraDespesa({ tipo: 'debito' });
       setMovimentacoes(response.data);
       setFilteredMovimentacoes(response.data);
 
@@ -306,7 +294,7 @@ function MovimentacaoFinanceiraDespesa() {
       // Aqui você pode enviar as parcelas para o backend ou processá-las conforme necessário
       setToast({ message: "Parcelas Liquidada com sucesso!", type: "success" });
       setIsModalPagarLancamentosOpen(false);
-      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'debito'});
+      const response = await getAllMovimentacaofinanceiraDespesa({ tipo: 'debito' });
       setMovimentacoes(response.data);
       setFilteredMovimentacoes(response.data);
       toggleExpand(selectedParcela.financeiro_id)
@@ -346,7 +334,7 @@ function MovimentacaoFinanceiraDespesa() {
       setIsModalOpen(false);
       setSelectedMovimentacao(null);
       setIsEdit(false);
-      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'debito'});
+      const response = await getAllMovimentacaofinanceiraDespesa({ tipo: 'debito' });
       setMovimentacoes(response.data);
       setFilteredMovimentacoes(response.data);
     } catch (err) {
@@ -371,7 +359,7 @@ function MovimentacaoFinanceiraDespesa() {
       setToast({ message: "Movimentação financeira atualizada com sucesso!", type: "success" });
       setIsModalLancamentoCompletoOpen(false);
       setIsEdit(false);
-      const response = await getAllMovimentacaofinanceiraDespesa({tipo :'debito'});
+      const response = await getAllMovimentacaofinanceiraDespesa({ tipo: 'debito' });
       setMovimentacoes(response.data);
       setFilteredMovimentacoes(response.data);
     } catch (err) {
@@ -578,7 +566,7 @@ function MovimentacaoFinanceiraDespesa() {
                             currency: 'BRL',
                           }).format(movimentacao.valor || 0)
                         }</td>
-                        <td>{formatarData(movimentacao.data_lancamento)}</td>
+                        <td>{formatarDataNew(movimentacao.data_lancamento)}</td>
                         <td>
                           <div>
                             {(movimentacao.status === 'aberta') ? (
@@ -618,7 +606,7 @@ function MovimentacaoFinanceiraDespesa() {
                               style: 'currency',
                               currency: 'BRL',
                             }).format(parcela.valor_parcela || 0)}</td>
-                            <td>{formatarData(parcela.vencimento)}</td>
+                            <td>{formatarDataNew(parcela.vencimento)}</td>
                             <td>
                               <button
                                 className="edit-button"

@@ -70,169 +70,201 @@ const ModalPesquisaCredor = ({ isOpen, onTipoCredor, onClose, onSelectCredor, ti
     if (!isOpen) return null;
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <button className="modal-close" onClick={onClose}>X</button>
-                {tipoLancto == 'credito' ? <h2> Pesquisar Pagador</h2> : <h2>Pesquisar Credor</h2>}
-                <div className="radio-group">
-                    <div className="radio-option">
-                        <input
-                            type="radio"
-                            id="fornecedor"
-                            name="tipoCredito"
-                            value="fornecedor"
-                            checked={tipoCredito === 'fornecedor'}
-                            onClick={() => setResultados([])}
-                            onChange={() => setTipoCredito('fornecedor')}
-                        />
-                        <label htmlFor="fornecedor">Fornecedor</label>
-                    </div>
-                    <div className="radio-option">
-                        <input
-                            type="radio"
-                            id="funcionario"
-                            name="tipoCredito"
-                            value="funcionario"
-                            checked={tipoCredito === 'funcionario'}
-                            onClick={() => setResultados([])}
-                            onChange={() => setTipoCredito('funcionario')}
-                        />
-                        <label htmlFor="funcionario">Funcionário</label>
-                    </div>
-                    <div className="radio-option">
-                        <input
-                            type="radio"
-                            id="cliente"
-                            name="tipoCredito"
-                            value="cliente"
-                            checked={tipoCredito === 'cliente'}
-                            onClick={() => setResultados([])}
-                            onChange={() => setTipoCredito('cliente')}
-                        />
-                        <label htmlFor="cliente">Cliente</label>
-                    </div>
-                </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl p-6 relative overflow-y-auto max-h-[90vh]">
 
-                {tipoCredito === 'funcionario' && (
-                    <div id='cadastro-padrao'>
-                        <label>Nome</label>
-                        <input
-                            className='input-geral'
-                            type="text"
-                            value={funcionarioInputs.nome}
-                            onChange={(e) => setFuncionarioInputs({ ...funcionarioInputs, nome: e.target.value })}
-                            placeholder="Digite o nome"
-                        />
-                        <label>CPF</label>
-                        <input
-                            className='input-geral'
-                            type="text"
-                            value={funcionarioInputs.cpf}
-                            onChange={(e) => setFuncionarioInputs({ ...funcionarioInputs, cpf: e.target.value })}
-                            placeholder="Digite o CPF"
-                        />
-                    </div>
-                )}
-
-                {tipoCredito === 'fornecedor' && (
-                    <div id='cadastro-padrao'>
-                        <label>Razão Social</label>
-                        <input
-                            className='input-geral'
-                            type="text"
-                            value={fornecedorInputs.razaoSocial}
-                            onChange={(e) => setFornecedorInputs({ ...fornecedorInputs, razaoSocial: e.target.value })}
-                            placeholder="Digite a Razão Social"
-                        />
-                        <label>Nome Fantasia</label>
-                        <input
-                            className='input-geral'
-                            type="text"
-                            value={fornecedorInputs.nomeFantasia}
-                            onChange={(e) => setFornecedorInputs({ ...fornecedorInputs, nomeFantasia: e.target.value })}
-                            placeholder="Digite o Nome Fantasia"
-                        />
-                        <label>CNPJ</label>
-                        <input
-                            className='input-geral'
-                            type="text"
-                            value={fornecedorInputs.cnpj}
-                            onChange={(e) => setFornecedorInputs({ ...fornecedorInputs, cnpj: e.target.value })}
-                            placeholder="Digite o CNPJ"
-                        />
-                    </div>
-                )}
-
-                {tipoCredito === 'cliente' && (
-                    <div id='cadastro-padrao'>
-                        <label>Nome/Razão Social</label>
-                        <input
-                            className='input-geral'
-                            type="text"
-                            value={clienteInputs.razaoSocial}
-                            onChange={(e) => setClienteInputs({ ...clienteInputs, razaoSocial: e.target.value })}
-                            placeholder="Digite o Nome ou Razão Social"
-                        />
-                        <label>Nome Fantasia</label>
-                        <input
-                            className='input-geral'
-                            type="text"
-                            value={clienteInputs.nomeFantasia}
-                            onChange={(e) => setClienteInputs({ ...clienteInputs, nomeFantasia: e.target.value })}
-                            placeholder="Digite o Nome Fantasia"
-                        />
-                        <label>CPF/CNPJ</label>
-                        <input
-                            className='input-geral'
-                            type="text"
-                            value={clienteInputs.cpfCnpj}
-                            onChange={(e) => setClienteInputs({ ...clienteInputs, cpfCnpj: e.target.value })}
-                            placeholder="Digite o CPF ou CNPJ"
-                        />
-                    </div>
-                )}
-
-                <button className='button-geral' onClick={handleSearch} disabled={loading}>
-                    {loading ? 'Pesquisando...' : 'Pesquisar'}
+                {/* Botão Fechar */}
+                <button
+                    className="absolute top-4 right-4 text-gray-500 hover:text-red-500 text-lg font-bold"
+                    onClick={onClose}
+                >
+                    ✕
                 </button>
 
-                {loading && (
-                    <div className="spinner-container">
-                        <div className="spinner"></div>
-                    </div>)}
+                {/* Título */}
+                <h2 className="text-2xl font-semibold mb-4">
+                    {tipoLancto === "credito" ? "Pesquisar Pagador" : "Pesquisar Credor"}
+                </h2>
 
-                <div id="results-container">
-                    <div id="grid-padrao-container">
-                        <table id="grid-padrao">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nome</th>
-                                    <th>CPF/CNPJ</th>
-                                    <th>Selecionar</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {resultados.map((item) => (
-                                    <tr key={item.id}>
-                                        <td>{item.id}</td>
-                                        <td>{item.nome || item.cliente?.nome}</td>
-                                        <td>{item?.cpfCnpj || item.cliente?.cpfCnpj}</td>
-                                        <td>
-                                            <button className='button-geral' onClick={() => handleSelect(item)}>
-                                                Selecionar
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                {/* Seleção Tipo Crédito */}
+                <div className="flex gap-6 mb-4">
+                    {[
+                        { id: "fornecedor", label: "Fornecedor" },
+                        { id: "funcionario", label: "Funcionário" },
+                        { id: "cliente", label: "Cliente" },
+                    ].map(({ id, label }) => (
+                        <label key={id} className="flex items-center gap-2">
+                            <input
+                                type="radio"
+                                id={id}
+                                name="tipoCredito"
+                                value={id}
+                                checked={tipoCredito === id}
+                                onClick={() => setResultados([])}
+                                onChange={() => setTipoCredito(id)}
+                                className="text-blue-600 focus:ring-blue-500"
+                            />
+                            {label}
+                        </label>
+                    ))}
                 </div>
+
+                {/* Campos por Tipo */}
+                {tipoCredito === "funcionario" && (
+                    <div className="space-y-3 mb-4">
+                        <div>
+                            <label className="block text-sm font-medium">Nome</label>
+                            <input
+                                type="text"
+                                value={funcionarioInputs.nome}
+                                onChange={(e) => setFuncionarioInputs({ ...funcionarioInputs, nome: e.target.value })}
+                                placeholder="Digite o nome"
+                                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">CPF</label>
+                            <input
+                                type="text"
+                                value={funcionarioInputs.cpf}
+                                onChange={(e) => setFuncionarioInputs({ ...funcionarioInputs, cpf: e.target.value })}
+                                placeholder="Digite o CPF"
+                                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {tipoCredito === "fornecedor" && (
+                    <div className="space-y-3 mb-4">
+                        <div>
+                            <label className="block text-sm font-medium">Razão Social</label>
+                            <input
+                                type="text"
+                                value={fornecedorInputs.razaoSocial}
+                                onChange={(e) => setFornecedorInputs({ ...fornecedorInputs, razaoSocial: e.target.value })}
+                                placeholder="Digite a Razão Social"
+                                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">Nome Fantasia</label>
+                            <input
+                                type="text"
+                                value={fornecedorInputs.nomeFantasia}
+                                onChange={(e) => setFornecedorInputs({ ...fornecedorInputs, nomeFantasia: e.target.value })}
+                                placeholder="Digite o Nome Fantasia"
+                                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">CNPJ</label>
+                            <input
+                                type="text"
+                                value={fornecedorInputs.cnpj}
+                                onChange={(e) => setFornecedorInputs({ ...fornecedorInputs, cnpj: e.target.value })}
+                                placeholder="Digite o CNPJ"
+                                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {tipoCredito === "cliente" && (
+                    <div className="space-y-3 mb-4">
+                        <div>
+                            <label className="block text-sm font-medium">Nome/Razão Social</label>
+                            <input
+                                type="text"
+                                value={clienteInputs.razaoSocial}
+                                onChange={(e) => setClienteInputs({ ...clienteInputs, razaoSocial: e.target.value })}
+                                placeholder="Digite o Nome ou Razão Social"
+                                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">Nome Fantasia</label>
+                            <input
+                                type="text"
+                                value={clienteInputs.nomeFantasia}
+                                onChange={(e) => setClienteInputs({ ...clienteInputs, nomeFantasia: e.target.value })}
+                                placeholder="Digite o Nome Fantasia"
+                                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">CPF/CNPJ</label>
+                            <input
+                                type="text"
+                                value={clienteInputs.cpfCnpj}
+                                onChange={(e) => setClienteInputs({ ...clienteInputs, cpfCnpj: e.target.value })}
+                                placeholder="Digite o CPF ou CNPJ"
+                                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* Botão Pesquisar */}
+                <button
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition mb-4 disabled:opacity-50"
+                    onClick={handleSearch}
+                    disabled={loading}
+                >
+                    {loading ? "Pesquisando..." : "Pesquisar"}
+                </button>
+
+                {/* Spinner */}
+                {loading && (
+                    <div className="flex justify-center py-4">
+                        <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+                    </div>
+                )}
+
+                {/* Resultados */}
+                <div className="overflow-x-auto">
+                    <table className="min-w-full border border-gray-300 rounded-lg">
+                        <thead className="bg-gray-100">
+                            <tr>
+                                <th className="px-3 py-2 border-b text-left">ID</th>
+                                <th className="px-3 py-2 border-b text-left">Nome</th>
+                                <th className="px-3 py-2 border-b text-left">CPF/CNPJ</th>
+                                <th className="px-3 py-2 border-b text-center">Selecionar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {resultados.map((item) => (
+                                <tr key={item.id} className="hover:bg-gray-50">
+                                    <td className="px-3 py-2 border-b">{item.id}</td>
+                                    <td className="px-3 py-2 border-b">{item.nome || item.cliente?.nome}</td>
+                                    <td className="px-3 py-2 border-b">{item?.cpfCnpj || item.cliente?.cpfCnpj}</td>
+                                    <td className="px-3 py-2 border-b text-center">
+                                        <button
+                                            className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                                            onClick={() => handleSelect(item)}
+                                        >
+                                            Selecionar
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {resultados.length === 0 && !loading && (
+                                <tr>
+                                    <td colSpan="4" className="px-3 py-4 text-center text-gray-500">
+                                        Nenhum resultado encontrado
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
             </div>
+
             {toast.message && <Toast message={toast.message} type={toast.type} />}
         </div>
     );
+
 };
 
 export default ModalPesquisaCredor;

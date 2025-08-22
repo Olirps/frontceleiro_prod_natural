@@ -20,6 +20,7 @@ function Funcionarios() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isNew, setIsNew] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '' });
+  const [executarBusca, setExecutarBusca] = useState(true);
   const [selectedFuncionario, setSelectedFuncionario] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
   const { permissions } = useAuth();
@@ -28,36 +29,37 @@ function Funcionarios() {
   useEffect(() => {
     const fetchFuncionarios = async () => {
       try {
-        const response = await getFuncionarios();
+        const filtros = {
+          nome: nome.trim() || undefined,
+          cpfCnpj: cpf || undefined,
+          page: currentPage,
+          limit: rowsPerPage
+        };
+        const response = await getFuncionarios(filtros);
         setFuncionarios(response.data);
         setFilteredFuncionarios(response.data);
       } catch (err) {
         console.error('Erro ao buscar funcionários', err);
       } finally {
         setLoading(false);
+        setExecutarBusca(false); // Reseta a flag após a busca inicial
       }
     };
 
     fetchFuncionarios();
-  }, []);
+  }, [executarBusca]);
 
   const handleSearch = () => {
-    const lowerNome = nome.toLowerCase();
-    let lowerCpf = cpf.toLowerCase();
-    lowerCpf = removeMaks(lowerCpf);
-    const results = funcionarios.filter(funcionario =>
-      (lowerNome ? funcionario.cliente.nome.toLowerCase().includes(lowerNome) : true) &&
-      (lowerCpf ? removeMaks(funcionario.cliente.cpfCnpj).includes(lowerCpf) : true)
-    );
-
-    setFilteredFuncionarios(results);
+    setLoading(true);
+    setExecutarBusca(true);
     setCurrentPage(1);
   };
 
   const handleClear = () => {
     setNome('');
     setCpf('');
-    setFilteredFuncionarios(funcionarios);
+    setFilteredFuncionarios([]);
+    setExecutarBusca(true);
     setCurrentPage(1);
   };
 
@@ -75,41 +77,6 @@ function Funcionarios() {
     setIsEdit(false);
   };
 
-
-  const handleAddFuncionario = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const cpfCnpj = formData.get('cpf')
-    const newFuncionario = {
-      nome: formData.get('nome'),
-      cpfCnpj: removeMaks(cpfCnpj),
-      email: formData.get('email'),
-      celular: formData.get('celular').replace(/\D/g, ''),
-      tipoFuncionario: formData.get('tipoFuncionario'),
-      dataContratacao: formData.get('dataContratacao'),
-      cargo: formData.get('cargo'),
-      numero: formData.get('numero'),
-      bairro: formData.get('bairro'),
-      uf_id: formData.get('uf'),
-      municipio_id: formData.get('municipio'),
-      cep: formData.get('cep'),
-      salario: converterMoedaParaNumero(formData.get('salario')),
-      logradouro: formData.get('logradouro')
-    };
-
-    try {
-      await addFuncionario(newFuncionario);
-      setToast({ message: "Funcionário cadastrado com sucesso!", type: "success" });
-      setIsModalOpen(false);
-      const response = await getFuncionarios();
-      setFuncionarios(response.data);
-      setFilteredFuncionarios(response.data);
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || "Erro ao cadastrar funcionário.";
-      setToast({ message: errorMessage, type: "error" });
-    }
-  };
-
   const handleEditClick = async (funcionario) => {
     try {
       if (!hasPermission(permissions, 'funcionarios', 'viewcadastro')) {
@@ -122,41 +89,6 @@ function Funcionarios() {
       setIsModalOpen(true);
     } catch (err) {
       setToast({ message: "Erro ao buscar detalhes do funcionário.", type: "error" });
-    }
-  };
-
-  const handleEditSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const updatedFuncionario = {
-      nome: formData.get('nome'),
-      cpfCnpj: formData.get('cpf'),
-      email: formData.get('email'),
-      celular: formData.get('celular').replace(/\D/g, ''),
-      tipoFuncionario: formData.get('tipoFuncionario'),
-      dataContratacao: formData.get('dataContratacao'),
-      cargo: formData.get('cargo'),
-      numero: formData.get('numero'),
-      bairro: formData.get('bairro'),
-      uf_id: formData.get('uf'),
-      municipio_id: formData.get('municipio'),
-      cep: formData.get('cep'),
-      salario: converterMoedaParaNumero(formData.get('salario')),
-      logradouro: formData.get('logradouro')
-    };
-
-    try {
-      await updateFuncionario(selectedFuncionario.id, updatedFuncionario);
-      setToast({ message: "Funcionario atualizado com sucesso!", type: "success" });
-      setIsModalOpen(false);
-      setSelectedFuncionario(null);
-      setIsEdit(false);
-      const response = await getFuncionarios();
-      setFuncionarios(response.data);
-      setFilteredFuncionarios(response.data);
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || "Erro ao atualizar funcionario.";
-      setToast({ message: errorMessage, type: "error" });
     }
   };
 
@@ -226,9 +158,16 @@ function Funcionarios() {
         <ModalFuncionario
           isOpen={isModalOpen}
           isNew={isNew}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false);
+            setExecutarBusca(true); // isso vai disparar fetchMovimentacoes com filtros e paginação
+          }}
           funcionario={selectedFuncionario}
           edit={isEdit}
+          onSuccess={() => {
+            setExecutarBusca(true); // se aplicável
+          }
+          }
         />
       )}
     </div>

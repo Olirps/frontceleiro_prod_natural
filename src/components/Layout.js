@@ -2,12 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, Link } from 'react-router-dom';
 import '../styles/Layout.css';
+import AlteraSenhaUsuario from '../components/AlteraSenhaUsuario';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/hasPermission'; // Importar a função para checar permissões
 
 function Layout() {
   const { permissions } = useAuth(); // Pega as permissões do usuário
-
+  const [open, setOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [username, setUser] = useState('');
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isCadastrosOpen, setCadastrosOpen] = useState(false);
@@ -192,11 +194,49 @@ function Layout() {
           </nav>
         </div>
         {/* User information and logout button */}
-        <div>
-          <span id="usuario">{`Bem vindo ${username.toUpperCase()}`}</span>
-        </div>
-        <div>
-          <button onClick={handleLogout} id="logout-button">Sair</button>
+        <div className="relative inline-block text-left">
+          {/* Botão principal */}
+          <button
+            onClick={() => setOpen(!open)}
+            className="px-3 py-2 bg-blue-500 hover:bg-blue-300 rounded-lg text-sm font-medium"
+          >
+            {`Bem vindo ${username.toUpperCase()}`}
+          </button>
+
+          {/* Dropdown */}
+          {open && (
+            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-[9999]">
+              <ul className="py-1 text-sm text-gray-700">
+                <li>
+                  <button
+                    onClick={() => { setModalOpen(true); setOpen(false); }}
+                    className="w-full px-4 py-2 text-left hover:bg-gray-100"
+                  >
+                    Alterar Senha
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => {
+                      setOpen(false);
+                      handleLogout();
+                    }}
+                    className="w-full px-4 py-2 text-left hover:bg-gray-100 text-red-600"
+                  >
+                    Sair
+                  </button>
+                </li>
+              </ul>
+            </div>
+          )}
+          <AlteraSenhaUsuario
+            isOpen={modalOpen}
+            onClose={() => setModalOpen(false)}
+            onSave={(dados) => {
+              console.log("Alterar senha:", dados);
+              setModalOpen(false);
+            }}
+          />
         </div>
       </header>
       {/* Main content area */}

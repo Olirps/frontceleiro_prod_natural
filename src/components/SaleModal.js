@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
-import { getFormasPagamento, getClientes, processTefPayment, getEmpresaById, registraPagamento, registravenda } from '../services/api';
+import { getFormasPagamento, getClientes, processTefPayment, getEmpresaById, registraPagamento } from '../services/api';
+import { registravenda } from '../services/ApiVendas/ApiVendas';
 import Toast from '../components/Toast';
 import CadClienteSimpl from '../components/CadClienteSimpl';
 import TefModal from '../components/TefModal';

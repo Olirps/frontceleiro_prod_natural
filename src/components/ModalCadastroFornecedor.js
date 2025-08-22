@@ -3,6 +3,7 @@ import { cpfCnpjMask } from './utils';
 import { getUfs, getMunicipiosUfId } from '../services/api';
 import { addFornecedor, updateFornecedor } from '../services/ApiFornecedores/ApiFornecedores';
 import { formatarCelular } from '../utils/functions';
+import Toast from '../components/Toast';
 
 const ModalCadastroFornecedor = ({ isOpen, onClose, isEdit, onSubmit, fornecedor }) => {
   const [abaAtiva, setAbaAtiva] = useState('dados');
@@ -49,6 +50,13 @@ const ModalCadastroFornecedor = ({ isOpen, onClose, isEdit, onSubmit, fornecedor
   }, [uf]);
 
   useEffect(() => {
+    if (toast.message) {
+      const timer = setTimeout(() => setToast({ message: '', type: '' }), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  useEffect(() => {
     if (fornecedor) {
       setTipoFornecedor(fornecedor.tipo_fornecedor || '');
       setNome(fornecedor.nome || '');
@@ -90,6 +98,8 @@ const ModalCadastroFornecedor = ({ isOpen, onClose, isEdit, onSubmit, fornecedor
 
 
   const handleSubmit = async (e) => {
+    e.preventDefault(); // <-- impede refresh
+
     const fornecedorPayload = {
       tipo_fornecedor: tipofornecedor,
       nome: nome,
@@ -108,19 +118,20 @@ const ModalCadastroFornecedor = ({ isOpen, onClose, isEdit, onSubmit, fornecedor
     };
 
     try {
-
       if (isEdit && fornecedor?.id) {
-        updateFornecedor(fornecedor.id, fornecedorPayload);
+        await updateFornecedor(fornecedor.id, fornecedorPayload);
         setToast({ message: "Fornecedor atualizado com sucesso!", type: "success" });
+        onClose();
       } else {
-        await addFornecedor(fornecedorPayload);
-        setToast({ message: "Fornecedor cadastrado com sucesso!", type: "success" });
+        const fornecedorResp = await addFornecedor(fornecedorPayload);
+        setToast({ message: `Fornecedor cadastrado com sucesso! ${fornecedorResp.nome}`, type: "success" });
       }
     } catch (err) {
       const errorMessage = err.response?.data?.error || "Erro ao cadastrar fornecedor.";
       setToast({ message: errorMessage, type: "error" });
     }
   };
+
 
 
   if (!isOpen) return null;
@@ -242,6 +253,8 @@ const ModalCadastroFornecedor = ({ isOpen, onClose, isEdit, onSubmit, fornecedor
           </div>
         </form>
       </div>
+      {toast.message && <Toast type={toast.type} message={toast.message} />}
+
     </div>
   );
 };

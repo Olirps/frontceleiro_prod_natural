@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import {
   getEmpresaById,
-  getVendaById,
-  registravenda,
   updateVenda,
   cancelaVenda,
   geraNFC,
   cancelaNf,
   statusNfe,
 } from '../../../services/api';
+import { getVendaById, registravenda } from '../../../services/ApiVendas/ApiVendas';
 import { hasPermission } from '../../../utils/hasPermission';
 import { converterData } from '../../../utils/functions';
 import imprimeVenda from '../../../utils/impressaovenda';

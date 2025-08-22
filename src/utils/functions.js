@@ -289,6 +289,19 @@ const formatarDataBR = (dataString) => {
   return !isNaN(data) ? new Intl.DateTimeFormat('pt-BR').format(data) : 'Data inválida';
 };
 
+
+const formatarDataNew = (dataISO) => {
+  const data = new Date(dataISO);
+
+  // Ajuste para UTC -> fuso local
+  const dia = data.getUTCDate();
+  const mes = data.getUTCMonth() + 1;
+  const ano = data.getUTCFullYear();
+
+  return `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${ano}`;
+};
+
+
 module.exports = {
   converterData,
   formatarDataResumida,
@@ -306,5 +319,6 @@ module.exports = {
   mascaraPercentual,
   formatarPercentual,
   formatarCEP,
-  formatarDataBR
+  formatarDataBR,
+  formatarDataNew
 };

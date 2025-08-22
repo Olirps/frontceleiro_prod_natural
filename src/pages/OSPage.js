@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { addOS, getAllOS, getByIdOS, updateOS, getWorkFlowIdOS, aprovarOS, registravenda, getEmpresaById } from '../services/api'; // Adicione os serviços corretos
+import { addOS, getAllOS, getByIdOS, updateOS, getWorkFlowIdOS, aprovarOS, getEmpresaById } from '../services/api'; // Adicione os serviços corretos
+import { registravenda } from '../services/ApiVendas/ApiVendas';
 import ModalCadastroOS from '../components/ModalCadastroOS'; // Componente para o modal de cadastro
 import ConfirmDialog from '../components/ConfirmDialog'; // Componente para o modal de confirmação
 import SaleModal from '../components/SaleModal'; // Componente para o modal de confirmação

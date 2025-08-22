@@ -89,7 +89,7 @@ export default function ComandasAbertasPage() {
 
     return (
         <div className="p-4">
-            <h2 className="text-xl font-bold mb-4">Comandas Abertas</h2>
+            <h2 className="text-xl font-bold mb-4">Vendas Abertas</h2>
 
             {loading && <p className="text-blue-500">Carregando...</p>}
             {erro && <p className="text-red-500">{erro}</p>}
@@ -99,9 +99,10 @@ export default function ComandasAbertasPage() {
                     <button
                         key={venda.venda_id}
                         className="bg-white border rounded-2xl shadow p-4 hover:bg-blue-100 transition"
-                        onClick={() => selecionarComanda(venda.comanda_id)}
+                        onClick={() => selecionarComanda(venda.venda_id)}
                     >
-                        <p className="font-semibold">Comanda #{venda.comanda_id}</p>
+                        <p className="font-semibold">Venda #{venda.venda_id}</p>
+                        {venda.cliente ? <p className="font-semibold">Cliente: {venda.cliente.nome}</p> : <p className="font-semibold">Cliente: Não informado</p>}
                         <p>Status: {venda.status_id === 1 ? 'Aberta' : 'Outro'}</p>
                         <p>Total: R$ {Number(venda.totalPrice).toFixed(2)}</p>
                         <p>Data: {new Date(venda.dataVenda).toLocaleString()}</p>
@@ -123,9 +124,10 @@ export default function ComandasAbertasPage() {
 
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-xl font-bold">Comanda #{vendaSelecionada.vendaVinculada.comanda_id}</h3>
+                                <h3 className="text-xl font-bold">Venda #{vendaSelecionada.vendaVinculada.comanda_id ? vendaSelecionada.vendaVinculada.comanda_id : vendaSelecionada.vendaVinculada.id}</h3>
+                                {vendaSelecionada.vendaVinculada.comanda_id ? <p></p> : <p><strong>{vendaSelecionada.vendaVinculada.cliente}</strong></p>}
                                 <span className="text-sm px-3 py-1 bg-yellow-200 text-yellow-800 rounded-full">
-                                    Status: {vendaSelecionada.comanda_status}
+                                    Status: {vendaSelecionada.comanda_status ? vendaSelecionada.comanda_status : vendaSelecionada.venda_status === 1 ? 'Aberta' : 'Fechada'}
                                 </span>
                             </div>
 

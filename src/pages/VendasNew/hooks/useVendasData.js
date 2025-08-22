@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { getVendas, getFormasPagamento } from '../../../services/api';
+import { getFormasPagamento } from '../../../services/api';
+import { getVendas } from '../../../services/ApiVendas/ApiVendas';
 
 export function useVendasData(filters) {
   const [vendas, setVendas] = useState([]);
@@ -43,7 +44,7 @@ export function useVendasData(filters) {
     try {
       setLoading(true);
       let response;
-      
+
       // Limpar parâmetros vazios
       const cleanParams = Object.fromEntries(
         Object.entries(params).filter(([_, value]) => value !== undefined && value !== '')

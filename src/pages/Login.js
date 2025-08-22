@@ -11,9 +11,11 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
+  const [loading, setLoading] = useState(false);
+
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const response = await loginService(username, password);
 
@@ -39,6 +41,8 @@ function Login() {
     } catch (err) {
       console.error('Erro no login:', err);
       setError('Usuário ou senha inválido. Por favor tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,7 +53,7 @@ function Login() {
         <h1 id="login-title">Login</h1>
         <form onSubmit={handleLogin} id="login-form">
           <div id="username-group" className="input-group">
-            <label htmlFor="username" id="username-label">Username</label>
+            <label htmlFor="username" id="username-label">Usuário</label>
             <input
               type="text"
               id="username"
@@ -60,7 +64,7 @@ function Login() {
             />
           </div>
           <div id="password-group" className="input-group password-group">
-            <label htmlFor="password" id="password-label">Password</label>
+            <label htmlFor="password" id="password-label">Senha</label>
             <div id="password-container" className="password-container">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -80,7 +84,18 @@ function Login() {
             </div>
           </div>
           {error && <p id="error-message" className="error">{error}</p>}
-          <button type="submit" id="login-button" className="button">Login</button>
+          <button
+            type="submit"
+            id="login-button"
+            className={`button relative flex items-center justify-center px-4 py-2 rounded bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors ${loading ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
+            disabled={loading}
+          >
+            {loading && (
+              <span className="absolute left-3 w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            )}
+            {loading ? 'Carregando...' : 'Login'}
+          </button>
         </form>
       </div>
     </div>

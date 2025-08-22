@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { getClientes } from '../services/ApiClientes/ApiClientes';
 import { debounce } from 'lodash';
 import {
-    getClientes,
     getProdutosVenda,
     iniciarVenda,
     consultaItensVenda,
     getFuncionarios,
-    getEmpresaById,
-    registravenda
+    getEmpresaById
 } from '../services/api';
+import { registravenda, atualizaVenda } from '../services/ApiVendas/ApiVendas';
 import { formatarMoedaBRL, converterData } from '../utils/functions';
 import SaleModal from './SaleModal';
 import Toast from './Toast';
 
-const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSuccess }) => {
+const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSuccess, statusVenda, formaPagamento }) => {
     const [clientes, setClientes] = useState([]);
     const [clienteNome, setClienteNome] = useState('');
     const [clienteBusca, setClienteBusca] = useState('');
@@ -26,7 +26,7 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
     const [sugestoes, setSugestoes] = useState([]);
     const [produtosSelecionados, setProdutosSelecionados] = useState([]);
     const [funcionarios, setFuncionarios] = useState([]);
-    const [funcionarioId, setFuncionarioId] = useState('');
+    const [funcionario_id, setFuncionarioId] = useState('');
     const [toast, setToast] = useState({ message: '', type: '' });
     const [formDataTemp, setFormDataTemp] = useState(null);
     const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
@@ -56,6 +56,7 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
 
             setClienteNome(os.cliente || '');
             setClienteBusca(os.cliente || '');
+            setClienteId(os.cliente_id || '');
             setFuncionarioId(os.funcionario_id || '');
         }
     }, [edit, os]);
@@ -78,7 +79,7 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
             const nome = termo;
             if (!edit) {
                 const res = await getClientes({ nome });
-                setClientesFiltrados(res.data);
+                setClientesFiltrados(res.data.clientes || []);
             }
         } catch {
             setToast({ message: 'Erro ao buscar clientes', type: 'error' });
@@ -142,15 +143,21 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
                 cliente_id,
                 cliente: clienteNome,
                 products: produtosSelecionados,
-                funcionarioId,
+                funcionario_id,
                 totalPrice: calculatedTotal,
                 dataVenda: dataAjustada,
                 login: username,
                 empresa: empresaResponse.data
             };
 
-            // Registrar a venda
-            const response = await registravenda(vendaData);
+
+            if (edit) {
+                // Atualizar venda existente
+                const atualiza = await atualizaVenda(os.id, vendaData);
+            } else {
+                const response = await registravenda(vendaData);
+            }
+
 
             // Feedback de sucesso
             setToast({
@@ -193,9 +200,9 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg w-full max-w-4xl shadow-xl p-6 relative">
+            <div className="bg-white rounded-lg w-full max-w-4xl shadow-xl p-6 relative max-h-[90vh] overflow-y-auto">
                 <button onClick={onClose} className="absolute top-2 right-2 text-gray-500 hover:text-red-600 font-bold text-lg">×</button>
-                <h2 className="text-2xl font-semibold mb-4">{edit ? 'Editar Venda' : 'Nova Venda'}</h2>
+                <h2 className="text-2xl font-semibold mb-4">{statusVenda === 2 ? 'Visualizar Venda' : edit ? 'Editar Venda' : 'Nova Venda'}</h2>
 
                 {/* Cliente */}
                 <div className="mb-4 relative">
@@ -234,7 +241,7 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
                 <div className="mb-4">
                     <label className="block text-sm font-medium">Funcionário Responsável</label>
                     <select
-                        value={funcionarioId}
+                        value={funcionario_id}
                         onChange={e => setFuncionarioId(e.target.value)}
                         className="w-full border border-gray-300 rounded px-3 py-2 mt-1"
                     >
@@ -319,44 +326,64 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
 
                 {/* Tabela de produtos selecionados */}
                 <div className="overflow-x-auto mb-4">
-                    <table className="w-full table-auto text-sm border">
-                        <thead>
-                            <tr className="bg-gray-100">
-                                <th className="p-2 text-left">Produto</th>
-                                <th className="p-2">Qtd</th>
-                                <th className="p-2">Unitário</th>
-                                <th className="p-2">Total</th>
-                                <th className="p-2">Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {produtosSelecionados.map((p, i) => (
-                                <tr key={i}>
-                                    <td className="p-2">{p.xProd}</td>
-                                    <td className="p-2 text-center">{p.quantidade}</td>
-                                    <td className="p-2 text-center">{formatarMoedaBRL(p.valor_unitario)}</td>
-                                    <td className="p-2 text-center">{formatarMoedaBRL(p.valorTotal)}</td>
-                                    <td className="p-2 text-center">
-                                        {os?.status_id !== 2 && (<button
-                                            onClick={() => removerProduto(i)}
-                                            className="text-red-600 hover:underline"
-                                        >
-                                            Remover
-                                        </button>)}
-                                    </td>
+                    <div className="max-h-64 overflow-y-auto border rounded">
+                        <table className="w-full table-auto text-sm">
+                            <thead className="sticky top-0 bg-gray-100 z-10">
+                                <tr>
+                                    <th className="p-2 text-left">Produto</th>
+                                    <th className="p-2">Qtd</th>
+                                    <th className="p-2">Unitário</th>
+                                    <th className="p-2">Total</th>
+                                    <th className="p-2">Ação</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                        <tfoot>
-                            <tr className="font-bold">
-                                <td colSpan="3" className="text-right p-2">Total:</td>
-                                <td className="p-2">{formatarMoedaBRL(calcularTotal())}</td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {produtosSelecionados.map((p, i) => (
+                                    <tr key={i}>
+                                        <td className="p-2">{p.xProd}</td>
+                                        <td className="p-2 text-center">{p.quantidade}</td>
+                                        <td className="p-2 text-center">{formatarMoedaBRL(p.valor_unitario)}</td>
+                                        <td className="p-2 text-center">{formatarMoedaBRL(p.valorTotal)}</td>
+                                        <td className="p-2 text-center">
+                                            {os?.status_id !== 2 && (
+                                                <button
+                                                    onClick={() => removerProduto(i)}
+                                                    className="text-red-600 hover:underline"
+                                                >
+                                                    Remover
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                            <tfoot>
+                                <tr className="font-bold bg-gray-50">
+                                    <td colSpan="3" className="text-right p-2">Total:</td>
+                                    <td className="p-2">{formatarMoedaBRL(calcularTotal())}</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
-
+                {/*Formas de Pagamento*/}
+                <div>
+                    {formaPagamento && formaPagamento.length > 0 && (
+                        <div className="mb-4">
+                            <h3 className="text-lg font-medium mb-2">Forma(s) de Pagamento</h3>
+                            <list className="space-y-2">
+                                {formaPagamento.map((forma, index) => (
+                                    <li key={index} className="flex items-center justify-between p-2 border rounded bg-gray-50">
+                                        <span>{forma.descricao}</span>
+                                        <span className="text-sm text-gray-600">
+                                            {forma.valor ? formatarMoedaBRL(forma.valor) : 'Valor não informado'}
+                                        </span>
+                                    </li>
+                                ))}
+                            </list>
+                        </div>)}
+                </div>
                 <div className="mt-6 text-right">
                     {os?.status_id !== 2 && (<button
                         onClick={handleAddVenda}

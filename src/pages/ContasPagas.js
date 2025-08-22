@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getContasPagas } from '../services/api';
-import { formatarData, formatarMoedaBRL } from '../utils/functions';
+import { formatarData, formatarMoedaBRL,formatarDataNew } from '../utils/functions';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -105,7 +105,7 @@ function ContasPagas() {
 
         // Informações sobre os filtros utilizados
         doc.setFontSize(12);
-        doc.text(`Período: ${dataInicio ? formatarData(dataInicio) : 'Início'} a ${dataFim ? formatarData(dataFim) : 'Fim'}`, 14, 52);
+        doc.text(`Período: ${dataInicio ? formatarDataNew(dataInicio) : 'Início'} a ${dataFim ? formatarDataNew(dataFim) : 'Fim'}`, 14, 52);
 
         // Agrupa os lançamentos por método de pagamento
         const grupos = contasFiltradas.reduce((acc, conta) => {
@@ -126,7 +126,7 @@ function ContasPagas() {
             const rows = contasDoGrupo.map((conta) => ({
                 descricao: conta.credor_nome + ' - ' + conta.descricao,
                 valor_pago: formatarMoedaBRL(conta.valor_pago),
-                data_pagamento: formatarData(conta.data_pagamento),
+                data_pagamento: formatarDataNew(conta.data_pagamento),
                 status: conta.conta_bancaria_nome
             }));
 
@@ -267,7 +267,7 @@ function ContasPagas() {
                                     <td>{conta.credor_nome}</td>
                                     <td>{conta.descricao}</td>
                                     <td>{formatarMoedaBRL(conta.valor_pago)}</td>
-                                    <td>{formatarData(conta.data_pagamento)}</td>
+                                    <td>{formatarDataNew(conta.data_pagamento)}</td>
                                     <td>{conta.metodo_pagamento}</td>
                                     <td>{conta.conta_bancaria_nome}</td>
                                 </tr>
