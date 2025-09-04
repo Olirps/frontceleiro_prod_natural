@@ -33,6 +33,7 @@ import OSStatus from './pages/OSStatus';
 import OSPage from './pages/OSPage';
 import RelatorioSaldoEstoquePage from './pages/RelatorioSaldoEstoquePage';
 import FluxoCaixaPage from './pages/FluxoCaixaPage';
+import TefTransacoesPage from './pages/TefTransacoesPage';
 
 
 import { hasPermission } from './utils/hasPermission'; // Importar a função
@@ -161,6 +162,10 @@ function App() {
           <Route
             path="/fluxo-caixa"
             element={isAuthenticated && hasPermission(permissions, 'fluxo-caixa', 'view') ? <FluxoCaixaPage /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/movimentacaotef"
+            element={isAuthenticated && hasPermission(permissions, 'movimentacaotef', 'view') ? <TefTransacoesPage /> : null} // Condicionalmente não renderiza
           />
         </Route>
       </Routes>

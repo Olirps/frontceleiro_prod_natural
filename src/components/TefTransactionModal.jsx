@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-export default function TefTransactionModal({ isOpen, tempoTotalSegundos = 90 }) {
+export default function TefTransactionModal({ isOpen,mensagem, tempoTotalSegundos = 90 }) {
   const [progresso, setProgresso] = useState(0);
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function TefTransactionModal({ isOpen, tempoTotalSegundos = 90 })
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md flex flex-col items-center relative">
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-opacity-60 mb-6"></div>
-        <h2 className="text-xl font-semibold text-gray-800 mb-2">Aguardando Pagamento...</h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">Aguardando {mensagem}...</h2>
         <p className="text-gray-600 text-center mb-4">
           Estamos processando a transação bancária.<br />
           Por favor, não feche esta janela.

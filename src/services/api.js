@@ -1,9 +1,19 @@
 import axios from 'axios';
 import { dataAtual } from '../utils/functions';
 
+const ambiente = 1; // 1 - Produção, 2 - Homologação
+// Crie uma instância do axios com a URL base
+let baseURL = "";
+
+if (ambiente === 1) {
+  baseURL = "https://celeiro.sessoftware.com.br/api";
+} else {
+  baseURL = "http://192.168.3.108:3001/api";
+}
+
 // Crie uma instância do axios com a URL base
 const api = axios.create({
-  baseURL: 'http://3.13.205.247:3001/api',
+  baseURL
 });
 
 // Função para definir o token de autenticação no header

@@ -282,7 +282,7 @@ function Vendas() {
     setIsComunicacaoSEFAZOpen(true);
 
     try {
-      const response = await geraNF(idVenda.vendaId);
+      const response = await geraNF(idVenda);
       // supondo que geraxml faça a requisição fetch e retorne a resposta completa
       if (response.status === 200) {
         setToast({
@@ -420,7 +420,7 @@ function Vendas() {
                       <button onClick={() => handleSearchClick(venda.venda_id, venda.status_id, venda.pagamentos)} className="text-blue-600 hover:text-blue-800">🔍</button>
                     </>
                     <button onClick={() => handlePrintClick(venda)} className="text-gray-700 hover:text-black">🖨️</button>
-                    <button onClick={() => handleConfirmacaoEmitirNFe(venda)} className="text-green-600 hover:text-green-800">📤</button>
+                    <button onClick={() => handleConfirmacaoEmitirNFe(venda.venda_id)} className="text-green-600 hover:text-green-800">📤</button>
                     <ComunicacaoSEFAZ isOpen={isComunicacaoSefazOpen} onClose={handleCloseModal} />
 
                   </td>
