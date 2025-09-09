@@ -8,8 +8,9 @@ import ModalUnificaLancamentos from '../components/ModalUnificaLancamentos';
 import ModalLancamentoParcelas from '../components/ModalLancamentoParcelas'; // Importe o novo modal
 import ModalPagarLancamentos from '../components/ModalPagarLancamentos'; // Importe o novo modal
 import Toast from '../components/Toast';
+import Pagination from '../utils/Pagination';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 
 function MovimentacaoFinanceiraDespesa() {
@@ -18,8 +19,11 @@ function MovimentacaoFinanceiraDespesa() {
   const [valor, setValor] = useState('');
   const [boleto, setBoleto] = useState('');
   const [loading, setLoading] = useState(true);
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [linhasPorPagina, setLinhasPorPagina] = useState(50);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalLancaParcelasOpen, setIsModalLancaParcelasOpen] = useState(false);
   const [isModalUnificaLancamentosOpen, setIsModalUnificaLancamentosOpen] = useState(false);
@@ -30,7 +34,10 @@ function MovimentacaoFinanceiraDespesa() {
   const [selectedLancamentoCompleto, setSelectedLancamentoCompleto] = useState(null);
   const [selectedParcela, setSelectedParcela] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
+  const [executarBusca, setExecutarBusca] = useState(false);
+  //Permissoes
   const { permissions } = useAuth();
+  const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
   ////handleSearch
   const [descricao, setDescricao] = useState('');
@@ -47,24 +54,57 @@ function MovimentacaoFinanceiraDespesa() {
 
   // responsavel por expandir
   const [expandedRows, setExpandedRows] = useState({});
+
   const [parcelas, setParcelas] = useState({});
+  const handleChangeRowsPerPage = (newRowsPerPage) => {
+    setLinhasPorPagina(newRowsPerPage);
+    setPaginaAtual(1);  // Reseta para a primeira página
+  };
 
   //
   useEffect(() => {
-    const fetchMovimentacao = async () => {
+    const fetchMovimentacao = async (
+      page = currentPage,
+      limit = rowsPerPage
+    ) => {
       try {
-        const response = await getAllMovimentacaofinanceiraDespesa({ tipo: 'debito' });
+        setLoading(true);
+
+        // monta os filtros dinamicamente
+        const filtros = { tipo: "debito" };
+        if (descricao) filtros.descricao = descricao.trim();
+        if (fornecedor) filtros.fornecedor = fornecedor;
+        if (funcionario) filtros.funcionario = funcionario;
+        if (cliente) filtros.cliente = cliente;
+        if (dataInicio) filtros.dataInicio = dataInicio;
+        if (dataFim) filtros.dataFim = dataFim;
+        if (boleto) filtros.boleto = boleto;
+        if (pagamento) filtros.pagamento = pagamento;
+
+        // adiciona paginação
+        filtros.page = page;
+        filtros.limit = limit;
+
+        // chamada API
+        const response = await getAllMovimentacaofinanceiraDespesa(filtros);
+
+        // supondo que o backend retorna { data, total, totalPages }
         setMovimentacoes(response.data);
         setFilteredMovimentacoes(response.data);
+        setTotalPages(
+          response.totalPages || Math.ceil((response.total || 0) / limit)
+        );
       } catch (err) {
-        console.error('Erro ao buscar movimentações financeiras', err);
+        console.error("Erro ao buscar movimentações financeiras", err);
       } finally {
         setLoading(false);
+        setExecutarBusca(false); // Reseta o estado após a busca
       }
     };
 
+
     fetchMovimentacao();
-  }, []);
+  }, [paginaAtual, linhasPorPagina, executarBusca]);
 
 
 
@@ -116,21 +156,17 @@ function MovimentacaoFinanceiraDespesa() {
   };
 
   const handleCadastrarModal = () => {
-    if (!hasPermission(permissions, 'movimentacaofinanceiradespesas', 'insert')) {
-      setToast({ message: "Você não tem permissão para cadastrar despesas.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    setIsModalOpen(true);
-    setIsEdit(false);
-    setSelectedMovimentacao(null);
+    checkPermission('movimentacaofinanceiradespesas', 'insert', () => {
+      setIsModalOpen(true);
+      setIsEdit(false);
+      setSelectedMovimentacao(null);
+    });
   };
 
   const handleUnificarModal = () => {
-    if (!hasPermission(permissions, 'unificar-lancamentos', 'insert')) {
-      setToast({ message: "Você não tem permissão para unificar despesas.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    setIsModalUnificaLancamentosOpen(true);
+    checkPermission('unificar-lancamentos', 'insert', () => {
+      setIsModalUnificaLancamentosOpen(true);
+    });
   };
 
   const handleAddMovimentacao = async (e) => {
@@ -214,14 +250,12 @@ function MovimentacaoFinanceiraDespesa() {
   };
 
   const handleLancaParcelas = async (movimentacao) => {
-    if (!hasPermission(permissions, 'lancarparcelas', 'insert')) {
-      setToast({ message: "Você não tem permissão para lançar parcelas.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    const response = await getLancamentoDespesaById(movimentacao.id);
-    setSelectedMovimentacao(response);
-    setValor(response.valor);
-    setIsModalLancaParcelasOpen(true);
+    checkPermission('lancarparcelas', 'insert', async () => {
+      const response = await getLancamentoDespesaById(movimentacao.id);
+      setSelectedMovimentacao(response);
+      setValor(response.valor);
+      setIsModalLancaParcelasOpen(true);
+    });
   };
 
   const handleSaveParcelas = async (e) => {
@@ -304,13 +338,11 @@ function MovimentacaoFinanceiraDespesa() {
     }
   };
   const handlePagarParcelas = async (parcela) => {
-    if (!hasPermission(permissions, 'pagamentosparcelas', 'insert')) {
-      setToast({ message: "Você não tem permissão para realizar pagamentos.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    const response = await getParcelaByID(parcela.id);
-    setSelectedParcela(response.data);
-    setIsModalPagarLancamentosOpen(true);
+    checkPermission('pagamentosparcelas', 'insert', async () => {
+      const response = await getParcelaByID(parcela.id);
+      setSelectedParcela(response.data);
+      setIsModalPagarLancamentosOpen(true);
+    })
   };
 
 
@@ -344,14 +376,12 @@ function MovimentacaoFinanceiraDespesa() {
   };
 
   const handleGetDespesaCompleta = async (lancto) => {
-    if (!hasPermission(permissions, 'lancamento-completo', 'view')) {
-      setToast({ message: "Você não tem permissão visualizar o lançamento.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    const lancamentoCompleto = await getLancamentoCompletoById(lancto.id);
-    setSelectedLancamentoCompleto(lancamentoCompleto)
-    setIsModalLancamentoCompletoOpen(true)
-  }
+    checkPermission('lancamento-completo', 'view', async () => {
+      const lancamentoCompleto = await getLancamentoCompletoById(lancto.id);
+      setSelectedLancamentoCompleto(lancamentoCompleto)
+      setIsModalLancamentoCompletoOpen(true)
+    });
+  };
   const handleConfirmacaoParcelas = async (dadosRecebidos) => {
 
     try {
@@ -375,22 +405,8 @@ function MovimentacaoFinanceiraDespesa() {
     }
   }, [toast]);
 
-  const totalPages = Math.ceil(filteredMovimentacoes.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const currentMovimentacoes = filteredMovimentacoes.slice(startIndex, startIndex + rowsPerPage);
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
 
   //responsavel por expandir a linha
   const toggleExpand = async (movimentacaoId) => {
@@ -425,88 +441,125 @@ function MovimentacaoFinanceiraDespesa() {
   };
 
   return (
-    <div id="movimentacoes-container">
-      <h1 className="title-page">Consulta de Movimentações Financeiras - Contas a Pagar</h1>
+    <div className="p-4 space-y-6">
+      {/* Título */}
+      <h1 className="text-2xl font-bold text-gray-700">
+        Consulta de Movimentações Financeiras - Contas a Pagar
+      </h1>
+
       {loading ? (
-        <div className="spinner-container">
-          <div className="spinner"></div>
-        </div>) : (
+        <div className="flex justify-center items-center py-10">
+          <div className="w-10 h-10 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
+        </div>
+      ) : (
         <>
-          <div id="search-container">
-            <div id="search-fields">
+          {/* Filtros */}
+          <div className="bg-white p-4 rounded-xl shadow space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label htmlFor="descricao">Descrição</label>
+                <label className="block text-sm font-medium text-gray-600" htmlFor="descricao">
+                  Descrição
+                </label>
                 <input
                   type="text"
                   id="descricao"
                   value={descricao}
                   onChange={(e) => setDescricao(e.target.value)}
                   maxLength="150"
+                  className="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
               <div>
-                <label htmlFor="fornecedor">Fornecedor</label>
+                <label className="block text-sm font-medium text-gray-600" htmlFor="fornecedor">
+                  Fornecedor
+                </label>
                 <input
                   type="text"
                   id="fornecedor"
                   value={fornecedor}
                   onChange={(e) => setFornecedor(e.target.value)}
                   maxLength="150"
+                  className="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
               <div>
-                <label htmlFor="funcionario">Funcionário</label>
+                <label className="block text-sm font-medium text-gray-600" htmlFor="funcionario">
+                  Funcionário
+                </label>
                 <input
                   type="text"
                   id="funcionario"
                   value={funcionario}
                   onChange={(e) => setFuncionario(e.target.value)}
                   maxLength="150"
+                  className="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
               <div>
-                <label htmlFor="cliente">Cliente</label>
+                <label className="block text-sm font-medium text-gray-600" htmlFor="cliente">
+                  Cliente
+                </label>
                 <input
                   type="text"
                   id="cliente"
                   value={cliente}
                   onChange={(e) => setCliente(e.target.value)}
                   maxLength="150"
+                  className="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
               <div>
-                <label htmlFor="dataInicio">Data Início</label>
+                <label className="block text-sm font-medium text-gray-600" htmlFor="dataInicio">
+                  Data Início
+                </label>
                 <input
                   type="date"
                   id="dataInicio"
                   value={dataInicio}
                   onChange={(e) => setDataInicio(e.target.value)}
+                  className="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
               <div>
-                <label htmlFor="dataFim">Data Fim</label>
+                <label className="block text-sm font-medium text-gray-600" htmlFor="dataFim">
+                  Data Fim
+                </label>
                 <input
                   type="date"
                   id="dataFim"
                   value={dataFim}
                   onChange={(e) => setDataFim(e.target.value)}
+                  className="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
               <div>
-                <label htmlFor="boleto">Boleto</label>
+                <label className="block text-sm font-medium text-gray-600" htmlFor="boleto">
+                  Boleto
+                </label>
                 <input
                   type="text"
                   id="boleto"
                   value={boleto}
                   onChange={(e) => setBoleto(e.target.value)}
+                  className="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
               <div>
-                <label htmlFor="pagamento">Tipo de Pagamento</label>
+                <label className="block text-sm font-medium text-gray-600" htmlFor="pagamento">
+                  Tipo de Pagamento
+                </label>
                 <select
                   id="pagamento"
                   value={pagamento}
                   onChange={(e) => setPagamento(e.target.value)}
+                  className="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Todos</option>
                   <option value="cotaunica">Cota Única</option>
@@ -515,136 +568,109 @@ function MovimentacaoFinanceiraDespesa() {
                 </select>
               </div>
             </div>
-            <div>
-              <div id="button-group">
-                <button onClick={handleSearch} className="button">Pesquisar</button>
-                <button onClick={handleClear} className="button">Limpar</button>
-                <button onClick={() => {
-                  handleCadastrarModal();
-                }} className="button">Cadastrar</button>
-                <button onClick={() => {
-                  handleUnificarModal();
-                }} className="button">Unificar Lançamentos</button>
-              </div>
+
+            {/* Botões */}
+            <div className="flex flex-wrap gap-3 pt-2">
+              <button onClick={() => setExecutarBusca(true)} className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">
+                Pesquisar
+              </button>
+              <button onClick={handleClear} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300">
+                Limpar
+              </button>
+              <button onClick={handleCadastrarModal} className="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700">
+                Cadastrar
+              </button>
+              <button onClick={handleUnificarModal} className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
+                Unificar Lançamentos
+              </button>
             </div>
           </div>
 
-          <div id="separator-bar"></div>
-
-          <div id="results-container">
-            <div id="grid-padrao-container">
-              <table id='grid-padrao'>
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th>ID</th>
-                    <th>Descrição</th>
-                    <th>Valor</th>
-                    <th>Data Lançamento</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentMovimentacoes.map((movimentacao) => (
-                    <React.Fragment key={movimentacao.id}>
-                      <tr className={expandedRows[movimentacao.id] ? 'selected' : ''}>
-                        <td>
-                          <button onClick={() => toggleExpand(movimentacao.id)}>
-                            {expandedRows[movimentacao.id] ? '▼' : '▶'}
-                          </button>
-                        </td>
-                        <td>{movimentacao.id}</td>
-                        <td>
-                          {
-                            (movimentacao.fornecedor ? (movimentacao.fornecedor.nomeFantasia ? movimentacao.fornecedor.nomeFantasia : movimentacao.fornecedor.nome) : '' ||
-                              movimentacao.cliente?.nome ||
-                              movimentacao.funcionario?.nome || movimentacao.credor_nome || '') + ' / ' + movimentacao.descricao}
-                        </td>
-                        <td>{
-                          new Intl.NumberFormat('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                          }).format(movimentacao.valor || 0)
-                        }</td>
-                        <td>{formatarDataNew(movimentacao.data_lancamento)}</td>
-                        <td>
-                          <div>
-                            {(movimentacao.status === 'aberta') ? (
-                              <>
-                                {movimentacao.tipo_lancamento !== 'automatico' && (
-                                  <button
-                                    onClick={() => handleEditClick(movimentacao)}
-                                    className="edit-button"
-                                  >
-                                    Editar
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => handleLancaParcelas(movimentacao)}
-                                  className="edit-button"
-                                >
-                                  Lançar Parcelas
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                onClick={() => handleGetDespesaCompleta(movimentacao)}
-                                className="edit-button"
-                              >
-                                Visualizar
+          {/* Tabela */}
+          <div className="bg-white rounded-xl shadow overflow-hidden">
+            <table className="w-full text-sm text-left border-collapse">
+              <thead className="bg-gray-100 text-gray-700">
+                <tr>
+                  <th className="p-2"></th>
+                  <th className="p-2">ID</th>
+                  <th className="p-2">Descrição</th>
+                  <th className="p-2">Valor</th>
+                  <th className="p-2">Data Lançamento</th>
+                  <th className="p-2">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {currentMovimentacoes.map((movimentacao) => (
+                  <React.Fragment key={movimentacao.id}>
+                    <tr className={`${expandedRows[movimentacao.id] ? "bg-blue-50" : "hover:bg-gray-50"}`}>
+                      <td className="p-2">
+                        <button onClick={() => toggleExpand(movimentacao.id)} className="text-lg">
+                          {expandedRows[movimentacao.id] ? "▼" : "▶"}
+                        </button>
+                      </td>
+                      <td className="p-2">{movimentacao.id}</td>
+                      <td className="p-2">
+                        {(movimentacao.fornecedor?.nomeFantasia || movimentacao.fornecedor?.nome || movimentacao.cliente?.nome || movimentacao.funcionario?.nome || movimentacao.credor_nome || "") + " / " + movimentacao.descricao}
+                      </td>
+                      <td className="p-2 font-medium text-green-600">
+                        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(movimentacao.valor || 0)}
+                      </td>
+                      <td className="p-2">{formatarDataNew(movimentacao.data_lancamento)}</td>
+                      <td className="p-2 flex gap-2">
+                        {movimentacao.status === "aberta" ? (
+                          <>
+                            {movimentacao.tipo_lancamento !== "automatico" && (
+                              <button onClick={() => handleEditClick(movimentacao)} className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                                Editar
                               </button>
                             )}
-                          </div>
-                        </td>
-                      </tr>
-                      {expandedRows[movimentacao.id] && parcelas[movimentacao.id] && (
-                        parcelas[movimentacao.id].map((parcela) => (
-                          <tr key={parcela.id} className="parcela-row">
-                            <td></td>
-                            <td colSpan="2">Parcela {parcela.numero} - {parcela.descricao} - Boleto: {parcela.boleto}</td>
-                            <td>{new Intl.NumberFormat('pt-BR', {
-                              style: 'currency',
-                              currency: 'BRL',
-                            }).format(parcela.valor_parcela || 0)}</td>
-                            <td>{formatarDataNew(parcela.vencimento)}</td>
-                            <td>
-                              <button
-                                className="edit-button"
-                                onClick={() => {
-                                  handlePagarParcelas(parcela);
-                                }}
-                              >
-                                Pagar
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                            <button onClick={() => handleLancaParcelas(movimentacao)} className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                              Lançar Parcelas
+                            </button>
+                          </>
+                        ) : (
+                          <button onClick={() => handleGetDespesaCompleta(movimentacao)} className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700">
+                            Visualizar
+                          </button>
+                        )}
+                      </td>
+                    </tr>
 
-            <div id="pagination-container">
-              <button onClick={handlePreviousPage} disabled={currentPage === 1}>
-                Anterior
-              </button>
-              <span>Página {currentPage} de {totalPages}</span>
-              <button onClick={handleNextPage} disabled={currentPage === totalPages}>
-                Próxima
-              </button>
-            </div>
+                    {/* Parcelas expand */}
+                    {expandedRows[movimentacao.id] &&
+                      parcelas[movimentacao.id]?.map((parcela) => (
+                        <tr key={parcela.id} className="bg-gray-50">
+                          <td></td>
+                          <td colSpan="2" className="p-2">
+                            Parcela {parcela.numero} - {parcela.descricao} - Boleto: {parcela.boleto}
+                          </td>
+                          <td className="p-2 font-medium text-blue-600">
+                            {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(parcela.valor_parcela || 0)}
+                          </td>
+                          <td className="p-2">{formatarDataNew(parcela.vencimento)}</td>
+                          <td className="p-2">
+                            <button onClick={() => handlePagarParcelas(parcela)} className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">
+                              Pagar
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-            <div id="show-more-container">
-              <label htmlFor="rows-select">Mostrar</label>
-              <select id="rows-select" value={rowsPerPage} onChange={handleRowsChange}>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
-              <label htmlFor="rows-select">por página</label>
-            </div>
+          {/* Paginação */}
+          <div className="mt-4">
+            <Pagination
+              currentPage={paginaAtual}
+              totalPages={totalPages}
+              onPageChange={setPaginaAtual}
+              onRowsChange={handleChangeRowsPerPage}  // Alterado para usar função personalizada
+              rowsPerPage={linhasPorPagina}
+              rowsPerPageOptions={[50, 100, 150]}
+            />
           </div>
         </>
       )}
@@ -668,6 +694,12 @@ function MovimentacaoFinanceiraDespesa() {
           onSubmit={handleSaveParcelas}
           despesa={selectedMovimentacao}
           onSave={handleSaveParcelas}
+          onSuccess={() => {
+            setIsModalLancaParcelasOpen(false);
+            setToast({ message: "Parcelas salvas com sucesso!", type: "success" });
+            setExecutarBusca(true); // Recarrega a lista após salvar
+          }}
+
 
         />
       )}
@@ -694,6 +726,8 @@ function MovimentacaoFinanceiraDespesa() {
           onSubmit={handleAddMovimentacao}
         />
       )}
+      {/* Renderização do modal de autorização */}
+      <PermissionModalUI />
     </div>
   );
 }

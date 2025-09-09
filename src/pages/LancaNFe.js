@@ -7,9 +7,9 @@ import ModalImportacaoXML from '../components/ModalImportacaoXML'; // Ajuste o c
 import ModalProdutosNF from '../components/ModalProdutosNF'; // Ajuste o caminho conforme necessário
 import ModalCadastroNFe from '../components/ModalCadastroNFe'; // Ajuste o caminho conforme necessário
 import { cpfCnpjMask } from '../components/utils';
-import { converterMoedaParaNumero,formatarNumero } from '../utils/functions';
+import { converterMoedaParaNumero, formatarNumero } from '../utils/functions';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 
 
@@ -40,8 +40,13 @@ function LancaNFe() {
   const [importSuccess, setImportSuccess] = useState(false);
   const [onNFOpen, setOnNFOpen] = useState(false);
   const [ufId, setUfId] = useState('');
+  //Permissoes
   const { permissions } = useAuth();
+  const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
+  useEffect(() => {
+    checkPermission("notafiscal", "view")
+  }, [])
 
   useEffect(() => {
 
@@ -49,11 +54,9 @@ function LancaNFe() {
   }, [importSuccess]);
 
   const openImportModal = () => {
-    if (!hasPermission(permissions, 'notafiscal', 'insert')) {
-      setToast({ message: "Você não tem permissão para cadastrar nota fiscal.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    setIsImportModalOpen(true);
+    checkPermission('notafiscal', 'insert', () => {
+      setIsImportModalOpen(true);
+    })
   };
 
   const closeImportModal = () => {
@@ -68,14 +71,13 @@ function LancaNFe() {
   };
 
   const openNotaFiscalModal = () => {
-    if (!hasPermission(permissions, 'notafiscal', 'insert')) {
-      setToast({ message: "Você não tem permissão para cadastrar nota fiscal.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    setSelectedNFe(null)
-    setIsReadOnly(false)
-    setIsEdit(false)
-    setIsNotaFicalModalOpen(true);
+    checkPermission('notafiscal', 'insert', () => {
+      setSelectedNFe(null)
+      setIsReadOnly(false)
+      setIsEdit(false)
+      setIsNotaFicalModalOpen(true);
+    })
+
   };
 
   const closeNotaFiscalModal = () => {
@@ -483,6 +485,9 @@ function LancaNFe() {
           isEdit={isEdit}  // Passa o estado isReadOnly para o modal
         />
       )}
+      {/* Renderização do modal de autorização */}
+      <PermissionModalUI />
+
     </div>
   );
 }

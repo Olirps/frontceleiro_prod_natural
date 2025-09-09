@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Outlet, useNavigate, Link } from 'react-router-dom';
+
 import { getAllContainers, addContainer, updateContainer, getContainerById, getAllTiposContainers, getAllContainersStatus } from '../services/api';
 import ModalCadastroContainers from '../components/ModalCadastroContainers';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission';
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 const Containers = () => {
     const [containers, setContainers] = useState([]);
@@ -20,10 +22,13 @@ const Containers = () => {
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState({ message: '', type: '' });
     const [isEdit, setIsEdit] = useState(false);
-    const { permissions } = useAuth();
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    //Permissoes
+    const { permissions } = useAuth();
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
+    const navigate = useNavigate();
 
 
     useEffect(() => {
@@ -37,22 +42,12 @@ const Containers = () => {
         handleSearch();
     }, [currentPage, rowsPerPage]);
 
-
     useEffect(() => {
-        const fetchContainers = async () => {
-            try {
-                const response = await getAllContainers();
-                setContainers(response.data);
-                setFilteredContainers(response.data);
-            } catch (error) {
-                console.error('Erro ao buscar containers:', error);
-                setContainers([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchContainers();
+        checkPermission("container", "view", async () => {
+            const response = await getAllContainers();
+            setContainers(response.data);
+            setFilteredContainers(response.data);
+        });
     }, []);
 
     useEffect(() => {
@@ -112,13 +107,11 @@ const Containers = () => {
     };
 
     const handleCadastrarModal = () => {
-        if (!hasPermission(permissions, 'container', 'insert')) {
-            setToast({ message: "Você não tem permissão para cadastrar containers.", type: "error" });
-            return;
-        }
-        setIsModalOpen(true);
-        setIsEdit(false);
-        setSelectedContainer(null);
+        checkPermission('container', 'insert', () => {
+            setIsModalOpen(true);
+            setIsEdit(false);
+            setSelectedContainer(null);
+        })
     };
 
     const handleRowsChange = (e) => {
@@ -174,15 +167,14 @@ const Containers = () => {
     };
 
     const handleEditClick = async (container) => {
-        if (!hasPermission(permissions, 'container', 'viewcadastro')) {
-            setToast({ message: "Você não tem permissão para visualizar containers.", type: "error" });
-            return;
-        }
         try {
-            const response = await getContainerById(container.id);
-            setSelectedContainer(response);
-            setIsEdit(true);
-            setIsModalOpen(true);
+            checkPermission('container', 'viewcadastro', async () => {
+                const response = await getContainerById(container.id);
+                setSelectedContainer(response);
+                setIsEdit(true);
+                setIsModalOpen(true);
+            });
+
         } catch (err) {
             setToast({ message: "Erro ao carregar dados do container.", type: "error" });
         }
@@ -384,6 +376,8 @@ const Containers = () => {
                     edit={isEdit}
                 />
             )}
+            {/* Renderização do modal de autorização */}
+            <PermissionModalUI />
         </div>
     );
 };

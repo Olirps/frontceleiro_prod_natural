@@ -8,7 +8,7 @@ import { getClientes } from '../services/ApiClientes/ApiClientes';
 
 import Toast from './Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission';
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit }) {
   const [tab, setTab] = useState('dados'); // 'dados' | 'contratacao' | 'endereco'
@@ -29,7 +29,7 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
   const [ufs, setUfs] = useState([]);
   const [municipios, setMunicipios] = useState([]);
   const [toast, setToast] = useState({ message: '', type: '' });
-  const [permiteEditar, setPermiteEditar] = useState(true);
+  const [permiteEditar, setPermiteEditar] = useState(false);
   const [gruposAcesso, setGruposAcesso] = useState([]);
   const [grupoAcessoId, setGrupoAcessoId] = useState('');
   const [criarUsuario, setCriarUsuario] = useState(false);
@@ -37,7 +37,10 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
   const [password, setPassword] = useState('');
   const [alterarSenha, setAlterarSenha] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  //Permissoes
   const { permissions } = useAuth();
+  const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
   useEffect(() => {
     if (toast.message) {
@@ -52,8 +55,12 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
       setUfs(result.data || []);
     };
     if (isOpen && edit) {
-      const canEdit = hasPermission(permissions, 'funcionarios', 'edit');
-      setPermiteEditar(canEdit);
+      checkPermission(permissions, 'funcionarios', 'edit', () => {
+        setPermiteEditar(true);
+      });
+
+    } else {
+      setPermiteEditar(true);
     }
     if (isOpen && isNew) {
       carregarUfs();
@@ -157,6 +164,7 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     if (criarUsuario) {
       if (!login || !grupoAcessoId) {
         setToast({ message: 'Preencha login e grupo de acesso.', type: 'error' });
@@ -182,7 +190,7 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
         nome,
         cpfCnpj: cpf.replace(/[^\d]/g, ''),
         email,
-        celular,
+        celular: celular.replace(/[^\d]+/g, ''),
         logradouro,
         numero,
         bairro,
@@ -191,10 +199,6 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
         municipio: municipio
       }
     };
-
-
-
-
     try {
       if (edit && funcionario?.id) {
         await updateFuncionario(funcionario.id, funcionarioPayload);
@@ -213,6 +217,8 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
         message: mensagemErro,
         type: 'error'
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -330,7 +336,7 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
                 </div>
                 <div>
                   <label>Salário</label>
-                  <input type="text" className="input" value={salario} onChange={e => setSalario(formatarMoedaBRL(e.target.value))} disabled={!permiteEditar}  />
+                  <input type="text" className="input" value={salario} onChange={e => setSalario(formatarMoedaBRL(e.target.value))} disabled={!permiteEditar} />
                 </div>
               </div>
             </>
@@ -442,7 +448,14 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
           )}
           {permiteEditar && (
             <div className="text-right mt-6">
-              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar</button>
+
+              <button type="submit"
+                className={`px-4 py-2 rounded text-white ${loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+                  }`}
+                disabled={loading}
+              >{loading ? 'Salvando' : 'Salvar'}</button>
             </div>
           )}
         </form>
@@ -450,6 +463,8 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
         {toast.message && (
           <Toast type={toast.type} message={toast.message} onClose={() => setToast({ message: '', type: '' })} />
         )}
+        {/* Renderização do modal de autorização */}
+        <PermissionModalUI />
       </div>
     </div>
   );

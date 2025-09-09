@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getClientes } from '../services/ApiClientes/ApiClientes';
-import { debounce } from 'lodash';
+import { debounce, set } from 'lodash';
 import {
     getProdutosVenda,
     iniciarVenda,
@@ -32,6 +32,8 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
     const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
     const [produtoSelecionado, setProdutoSelecionado] = useState(null);
     const [totalPrice, setTotalPrice] = useState(null);
+    const [loading, setLoading] = useState(false);
+
 
     useEffect(() => {
         getFuncionarios().then(res => setFuncionarios(res.data));
@@ -121,6 +123,7 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
     }
     const handleAddVenda = async (e) => {
         try {
+            setLoading(true);
             let dataHoje = new Date().toLocaleString().replace(',', '');
             let dataAjustada = converterData(dataHoje);
 
@@ -147,7 +150,8 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
                 totalPrice: calculatedTotal,
                 dataVenda: dataAjustada,
                 login: username,
-                empresa: empresaResponse.data
+                empresa: empresaResponse.data,
+                tipoVenda: 'Venda'
             };
 
 
@@ -192,6 +196,8 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
                 type: "error",
                 duration: 5000 // 5 segundos para mensagens de erro
             });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -369,7 +375,7 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
                 </div>
                 {/*Formas de Pagamento*/}
                 <div>
-                    {formaPagamento && formaPagamento.length > 0 && (
+                    {formaPagamento && formaPagamento.length > 0 && edit && (
                         <div className="mb-4">
                             <h3 className="text-lg font-medium mb-2">Forma(s) de Pagamento</h3>
                             <list className="space-y-2">
@@ -385,12 +391,14 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
                         </div>)}
                 </div>
                 <div className="mt-6 text-right">
-                    {os?.status_id !== 2 && (<button
-                        onClick={handleAddVenda}
-                        className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-                    >
-                        Finalizar Venda
-                    </button>)}
+                    {os?.status_id !== 2 && (
+                        <button
+                            onClick={handleAddVenda}
+                            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            disabled={loading || produtosSelecionados.length === 0}
+                        >
+                            {loading ? 'Salvando' : 'Salvar Venda'}
+                        </button>)}
                 </div>
             </div>
 

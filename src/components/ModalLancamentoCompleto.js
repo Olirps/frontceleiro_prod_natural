@@ -3,7 +3,7 @@ import '../styles/ModalLancamentoCompleto.css';
 import ConfirmarLancarParcelas from '../components/ConfirmarLancarParcelas'; // Importando o novo modal
 import { cpfCnpjMask } from './utils';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { usePermissionModal } from "../hooks/usePermissionModal";
 import { formatarMoedaBRL } from '../utils/functions';
 import Toast from '../components/Toast';
 
@@ -15,11 +15,9 @@ const ModalLancamentoCompleto = ({ isOpen, onClose, onConfirmar, lancamento, onR
     const [cancelarLancto, setCancelarLancto] = useState(false); // Estado para controlar o modal de parcelas
     const [mensagem, setMensagem] = useState('');
     const [toast, setToast] = useState({ message: '', type: '' });
-
+    //Permissoes
     const { permissions } = useAuth();
-
-
-
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
     useEffect(() => {
         if (lancamento) {
@@ -36,14 +34,12 @@ const ModalLancamentoCompleto = ({ isOpen, onClose, onConfirmar, lancamento, onR
     }, [toast]);
 
     const handleCancelar = () => {
-        if (!hasPermission(permissions, 'lancamento-completo', 'delete')) {
-            setToast({ message: "Você não tem permissão para cancelar despesas.", type: "error" });
-            return; // Impede a abertura do modal
-        }
-        if (!lancamento.data) return;
-        setCancelarLancto(true)
-        setMensagem('Deseja realmente excluir esta despesa?')
-        setIsConfirmDialogOpen(true);
+        checkPermission('lancamento-completo', 'delete', () => {
+            if (!lancamento.data) return;
+            setCancelarLancto(true)
+            setMensagem('Deseja realmente excluir esta despesa?')
+            setIsConfirmDialogOpen(true);
+        })
     };
 
     const handleConfirmCancelamento = async () => {
@@ -180,8 +176,9 @@ const ModalLancamentoCompleto = ({ isOpen, onClose, onConfirmar, lancamento, onR
                     onConfirm={handleConfirmCancelamento}  // Abre o modal de lançamento de parcelas
                     onCancel={() => setIsConfirmDialogOpen(false)}
                 />
-            )
-            }
+            )}
+            {/* Renderização do modal de autorização */}
+            <PermissionModalUI />
         </div>
     );
 };

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { updateUsuarioSenha } from "../services/ApiUsers/ApiUsers";
 
 export default function AlteraSenhaUsuario({ isOpen, onClose, onSave }) {
     const [showPassword, setShowPassword] = useState(false);
@@ -6,10 +8,12 @@ export default function AlteraSenhaUsuario({ isOpen, onClose, onSave }) {
     const [novaSenha, setNovaSenha] = useState("");
     const [confirmaSenha, setConfirmaSenha] = useState("");
     const [erro, setErro] = useState("");
+    const [sucesso, setSucesso] = useState("");
+    const { user } = useAuth();
 
     if (!isOpen) return null;
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!senhaAtual || !novaSenha || !confirmaSenha) {
             setErro("Todos os campos são obrigatórios.");
             return;
@@ -18,12 +22,32 @@ export default function AlteraSenhaUsuario({ isOpen, onClose, onSave }) {
             setErro("A nova senha e a confirmação não coincidem.");
             return;
         }
-        setErro("");
-        onSave({ senhaAtual, novaSenha });
-        // limpa campos
-        setSenhaAtual("");
-        setNovaSenha("");
-        setConfirmaSenha("");
+        if (!user?.id) {
+            setErro("Usuário não identificado.");
+            return;
+        }
+
+        try {
+            setErro("");
+            setSucesso("");
+            await updateUsuarioSenha(user.id, { oldPassword: senhaAtual, newPassword: novaSenha });
+            // limpa campos
+            setSenhaAtual("");
+            setNovaSenha("");
+            setConfirmaSenha("");
+            setSucesso("Senha alterada com sucesso!");
+            if (typeof onSave === 'function') {
+                onSave({ senhaAtual, novaSenha });
+            }
+            // aguarda um instante para o usuário ver o feedback e fecha o modal
+            setTimeout(() => {
+                setSucesso("");
+                onClose();
+            }, 1500);
+        } catch (e) {
+            const msg = typeof e === 'string' ? e : (e?.message || 'Erro ao alterar a senha.');
+            setErro(msg);
+        }
     };
 
     return (
@@ -32,6 +56,9 @@ export default function AlteraSenhaUsuario({ isOpen, onClose, onSave }) {
                 <h2 className="text-lg font-bold mb-4">Alterar Senha</h2>
 
                 {erro && <p className="text-red-500 text-sm mb-2">{erro}</p>}
+                {sucesso && (
+                    <p className="text-green-600 text-sm mb-2">{sucesso}</p>
+                )}
 
                 <div className="mb-3">
                     <label className="block text-gray-800 text-sm mb-1">Senha Atual</label>

@@ -5,7 +5,7 @@ import Modal from '../components/ModalCadastroFornecedor';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { usePermissionModal } from "../hooks/usePermissionModal";
 import { formatarCelular } from '../utils/functions';
 
 
@@ -23,8 +23,13 @@ function Fornecedores() {
   const [toast, setToast] = useState({ message: '', type: '' });
   const [selectedFornecedor, setSelectedFornecedor] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
+  //Permissoes
   const { permissions } = useAuth();
+  const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
+  useEffect(() => {
+    checkPermission("fornecedores", "view")
+  }, [])
 
   useEffect(() => {
     const fetchFornecedores = async () => {
@@ -76,30 +81,27 @@ function Fornecedores() {
   };
 
   const handleCadastrarModal = () => {
-    if (!hasPermission(permissions, 'fornecedores', 'insert')) {
-      setToast({ message: "Você não tem permissão para cadastrar fornecedores.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    setIsModalOpen(true);
-    setIsEdit(false);
-    setSelectedFornecedor(null);
+    checkPermission(permissions, 'fornecedores', 'insert', () => {
+      setIsModalOpen(true);
+      setIsEdit(false);
+      setSelectedFornecedor(null);
+    })
   };
 
 
 
   const handleEditClick = async (fornecedor) => {
     try {
-      if (!hasPermission(permissions, 'fornecedores', 'viewcadastro')) {
-        setToast({ message: "Você não tem permissão para visualizar o cadastro de fornecedores.", type: "error" });
-        return; // Impede a abertura do modal
-      }
-      setIsModalOpen(true);
-      setIsEdit(true);
-      setSelectedFornecedor(null);
-      const response = await getFornecedorById(fornecedor.id);
-      setSelectedFornecedor(response.data);
-      setIsEdit(true);
-      setIsModalOpen(true);
+      checkPermission('fornecedores', 'viewcadastro', async () => {
+        setIsModalOpen(true);
+        setIsEdit(true);
+        setSelectedFornecedor(null);
+        const response = await getFornecedorById(fornecedor.id);
+        setSelectedFornecedor(response.data);
+        setIsEdit(true);
+        setIsModalOpen(true);
+      });
+
     } catch (err) {
       console.error('Erro ao buscar detalhes do fornecedor', err);
       setToast({ message: "Erro ao buscar detalhes do fornecedor.", type: "error" });
@@ -251,6 +253,8 @@ function Fornecedores() {
           isEdit={isEdit}
         />
       )}
+      {/* Renderização do modal de autorização */}
+      <PermissionModalUI />
     </div>
   );
 }

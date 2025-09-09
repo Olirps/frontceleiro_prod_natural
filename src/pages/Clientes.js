@@ -6,7 +6,7 @@ import { cpfCnpjMask, removeMaks } from '../components/utils';
 import Toast from '../components/Toast';
 import { formatarCelular } from '../utils/functions';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { usePermissionModal } from "../hooks/usePermissionModal";
 import Pagination from '../utils/Pagination';
 
 
@@ -25,7 +25,14 @@ function Clientes() {
   const [toast, setToast] = useState({ message: '', type: '' });
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
+  //Permissoes
   const { permissions } = useAuth();
+  const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
+
+
+  useEffect(() => {
+    checkPermission("clientes", "view")
+  }, [])
 
   useEffect(() => {
     if (executarBusca) {
@@ -78,25 +85,21 @@ function Clientes() {
   };
 
   const handleCadastrarModal = () => {
-    if (!hasPermission(permissions, 'clientes', 'insert')) {
-      setToast({ message: "Você não tem permissão para cadastrar clientes.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    setIsModalOpen(true);
-    setIsEdit(false);
-    setSelectedCliente(null);
+    checkPermission("clientes", "insert", () => {
+      setIsEdit(false);
+      setSelectedCliente(null);
+      setIsModalOpen(true);
+    });
   };
 
   const handleEditClick = async (cliente) => {
     try {
-      if (!hasPermission(permissions, 'clientes', 'viewcadastro')) {
-        setToast({ message: "Você não tem permissão para visualizar o cadastro de clientes.", type: "error" });
-        return; // Impede a abertura do modal
-      }
-      const response = await getClienteById(cliente.id);
-      setSelectedCliente(response.data);
-      setIsEdit(true);
-      setIsModalOpen(true);
+      checkPermission("clientes", "viewcadastro", async () => {
+        const response = await getClienteById(cliente.id);
+        setSelectedCliente(response.data);
+        setIsEdit(true);
+        setIsModalOpen(true);
+      })
     } catch (err) {
       console.error('Erro ao buscar detalhes do cliente', err);
       setToast({ message: "Erro ao buscar detalhes do cliente.", type: "error" });
@@ -246,6 +249,8 @@ function Clientes() {
         />
 
       )}
+      {/* Renderização do modal de autorização */}
+      <PermissionModalUI />
     </div>
   );
 }

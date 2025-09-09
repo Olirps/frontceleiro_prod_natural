@@ -9,7 +9,7 @@ import {
 import Toast from '../components/Toast';
 import Modal from '../components/ModalCadastroSubgrupo';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission';
+import { usePermissionModal } from "../hooks/usePermissionModal";
 import Pagination from '../utils/Pagination';
 
 const SubgrupoPage = () => {
@@ -27,8 +27,9 @@ const SubgrupoPage = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ message: '', type: '' });
+  //Permissoes
   const { permissions } = useAuth();
-
+  const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -98,13 +99,12 @@ const SubgrupoPage = () => {
   };
 
   const handleCadastrarModal = () => {
-    if (!hasPermission(permissions, 'subgrupoproduto', 'insert')) {
-      setToast({ message: "Você não tem permissão para cadastrar subgrupos.", type: "error" });
-      return;
-    }
-    setIsModalOpen(true);
-    setIsEdit(false);
-    setSelectedSubgrupo(null);
+    checkPermission('subgrupoproduto', 'insert', () => {
+      setIsModalOpen(true);
+      setIsEdit(false);
+      setSelectedSubgrupo(null);
+    })
+
   };
 
   const handleAtualizarPage = () => {
@@ -133,16 +133,13 @@ const SubgrupoPage = () => {
   };
 
   const handleEditClick = async (subgrupo) => {
-    if (!hasPermission(permissions, 'subgrupoproduto', 'viewcadastro')) {
-      setToast({ message: "Você não tem permissão para visualizar subgrupos.", type: "error" });
-      return;
-    }
-
     try {
-      const response = await getSubGrupoProdutoById(subgrupo.id);
-      setSelectedSubgrupo(response.data);
-      setIsEdit(true);
-      setIsModalOpen(true);
+      checkPermission('subgrupoproduto', 'viewcadastro', async () => {
+        const response = await getSubGrupoProdutoById(subgrupo.id);
+        setSelectedSubgrupo(response.data);
+        setIsEdit(true);
+        setIsModalOpen(true);
+      })
     } catch (err) {
       setToast({ message: "Erro ao carregar dados do subgrupo.", type: "error" });
     }
@@ -304,6 +301,8 @@ const SubgrupoPage = () => {
           grupos={grupos} // Se quiser popular o select do modal também
         />
       )}
+      {/* Renderização do modal de autorização */}
+      <PermissionModalUI />
     </div>
   );
 };

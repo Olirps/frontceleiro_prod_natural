@@ -8,7 +8,7 @@ import {
 import ModalCadastroGrupo from '../components/ModalCadastroGrupo';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission';
+import { usePermissionModal } from "../hooks/usePermissionModal";
 import Pagination from '../utils/Pagination';
 
 
@@ -21,12 +21,14 @@ const GrupoPage = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ message: '', type: '' });
-  const { permissions } = useAuth();
   const [executarBusca, setExecutarBusca] = useState(true);
 
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  //Permissoes
+  const { permissions } = useAuth();
+  const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
   useEffect(() => {
     if (toast.message) {
@@ -72,13 +74,12 @@ const GrupoPage = () => {
   };
 
   const handleCadastrarModal = () => {
-    if (!hasPermission(permissions, 'grupoproduto', 'insert')) {
-      setToast({ message: "Você não tem permissão para cadastrar grupos.", type: "error" });
-      return;
-    }
-    setIsModalOpen(true);
-    setIsEdit(false);
-    setSelectedGrupo(null);
+    checkPermission('grupoproduto', 'insert', () => {
+      setIsModalOpen(true);
+      setIsEdit(false);
+      setSelectedGrupo(null);
+    })
+
   };
 
   const handleAtualizarPage = () => {
@@ -100,16 +101,13 @@ const GrupoPage = () => {
   };
 
   const handleEditClick = async (grupo) => {
-    if (!hasPermission(permissions, 'grupoproduto', 'viewcadastro')) {
-      setToast({ message: "Você não tem permissão para visualizar grupos.", type: "error" });
-      return;
-    }
-
     try {
-      const response = await getGrupoProdutoById(grupo.id);
-      setSelectedGrupo(response.data);
-      setIsEdit(true);
-      setIsModalOpen(true);
+      checkPermission('grupoproduto', 'viewcadastro', async () => {
+        const response = await getGrupoProdutoById(grupo.id);
+        setSelectedGrupo(response.data);
+        setIsEdit(true);
+        setIsModalOpen(true);
+      })
     } catch (err) {
       setToast({ message: "Erro ao carregar dados do grupo.", type: "error" });
     }
@@ -244,6 +242,8 @@ const GrupoPage = () => {
           onClose={handleAtualizarPage}
         />
       )}
+      {/* Renderização do modal de autorização */}
+      <PermissionModalUI />
     </div>
   );
 };

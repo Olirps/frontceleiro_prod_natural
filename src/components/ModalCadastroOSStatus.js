@@ -2,22 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { addOSStatus, getAllOSStatus } from '../services/api'; // Funções de API
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Função de permissão
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
-const ModalCadastroOSStatus = ({ isOpen, onClose, edit, onSubmit, osStatus,status }) => {
+const ModalCadastroOSStatus = ({ isOpen, onClose, edit, onSubmit, osStatus, status }) => {
     const [nome, setNome] = useState('');
     const [descricao, setDescricao] = useState('');
     const [ativo, setAtivo] = useState(true);
     const [ordem, setOrdem] = useState('');
     const [toast, setToast] = useState({ message: '', type: '' });
     const [loading, setLoading] = useState(false);
-    const [permiteEditar, setPermiteEditar] = useState(true);
+    const [permiteEditar, setPermiteEditar] = useState(false);
+    //Permissoes
     const { permissions } = useAuth();
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
     useEffect(() => {
-        if (isOpen && edit) {
-            const canEdit = hasPermission(permissions, 'osstatus', edit ? 'edit' : 'insert');
-            setPermiteEditar(canEdit);
+        if (isOpen) {
+            checkPermission('osstatus', edit ? 'edit' : 'insert', () => {
+                setPermiteEditar(true);
+            })
         }
     }, [isOpen, edit, permissions]);
 
@@ -111,6 +114,8 @@ const ModalCadastroOSStatus = ({ isOpen, onClose, edit, onSubmit, osStatus,statu
                 </form>
             </div>
             {toast.message && <Toast type={toast.type} message={toast.message} />}
+            {/* Renderização do modal de autorização */}
+            <PermissionModalUI />
         </div>
     );
 };

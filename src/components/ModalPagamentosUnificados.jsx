@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { getLancamentosAReceber, getClientes, registraPagamento } from '../services/api';
+import { getLancamentosAReceber, registraPagamento } from '../services/api';
+import { getClientes } from '../services/ApiClientes/ApiClientes';
 import Toast from '../components/Toast';
 import SaleModal from '../components/SaleModal';
 import { converterData } from '../utils/functions'; // Funções para formatar valores
@@ -43,9 +44,9 @@ export default function ModalPagamentosUnificados({ isOpen, onClose, onSuccess }
             }
 
             try {
-                const { data } = await getClientes({ nome: debouncedFiltroCliente });
-                if (data.length > 0) {
-                    setClientes(data);
+                const { data } = await getClientes({ nome: debouncedFiltroCliente, page: 1, limit: 100 });
+                if (data.clientes.length > 0) {
+                    setClientes(data.clientes || []);
                 } else {
                     setClientes([]);
                     setToast({ message: 'Nenhum cliente encontrado', type: 'info' });

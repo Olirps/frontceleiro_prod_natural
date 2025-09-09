@@ -1,4 +1,4 @@
-export const menuData = [
+/*export const menuData = [
   {
     id: 'home',
     label: 'Home',
@@ -13,8 +13,21 @@ export const menuData = [
       {
         id: 'permissoes',
         label: 'Permissões',
-        path: '/permissoes',
-        permission: 'permissoes'
+        permission: ['permissoes', 'usuarios'],
+        submenu: [
+          {
+            id: 'usuarios',
+            label: 'Usuários',
+            path: '/usuarios',
+            permission: 'usuarios'
+          },
+          {
+            id: 'permissoes',
+            label: 'Permissões',
+            path: '/permissoes',
+            permission: 'permissoes'
+          }
+        ]
       },
       {
         id: 'empresas',
@@ -249,4 +262,4 @@ export const menuData = [
       }
     ]
   }
-];
+];*/

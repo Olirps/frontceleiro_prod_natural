@@ -3,9 +3,10 @@ import '../styles/ModalLancamentoParcelas.css';
 import Toast from '../components/Toast';
 import { formatarMoedaBRL, converterMoedaParaNumero } from '../utils/functions';
 import { calcularParcelas, atualizarValorParcela, atualizarDataVencimentoParcela } from '../utils/parcelasUtils'; // Importando a função de cálculo de parcelas
+import { addParcelasDespesa } from '../services/api';
 
 
-const ModalLancamentoParcelas = ({ isOpen, onSubmit, onClose, valorTotal, despesa, onSave }) => {
+const ModalLancamentoParcelas = ({ isOpen, onClose, valorTotal, despesa, onSuccess }) => {
     const [quantidadeParcelas, setQuantidadeParcelas] = useState(1);
     const [vencimento, setVencimento] = useState(new Date().toISOString().split('T')[0]);
     const [valorEntrada, setValorEntrada] = useState(0);
@@ -71,139 +72,192 @@ const ModalLancamentoParcelas = ({ isOpen, onSubmit, onClose, valorTotal, despes
         );
     };
 
+    const handleSubmit = async (e) => {
+        e.preventDefault(); // impede recarregar a página
+
+        try {
+
+            const parcelasPayload = {
+                descricao: despesa.descricao,
+                financeiro_id: despesa.id,
+                quantidadeParcelas: quantidadeParcelas,
+                valor: despesa.valor,
+                boleto: boleto,
+                vencimento: vencimento,
+                valorEntrada: converterMoedaParaNumero(valorEntrada),
+                tipo_parcelamento: tipoParcelamento,
+                parcelas: parcelas.map(parcela => ({
+                    numeroParcela: parcela.numeroParcela,
+                    dataVencimento: parcela.dataVencimento,
+                    valor: parcela.valor,
+                    boleto: parcela.boleto || null
+                }))
+            };
+
+            // Salva as parcelas
+            await addParcelasDespesa(parcelasPayload);
+            if (onSuccess) onSuccess(); // <-- chamar onSuccess ao final
+
+            // Feedback e fechamento do modal
+            setToast({ message: 'Parcelas salvas com sucesso!', type: 'success' });
+        } catch (error) {
+            console.error(error);
+            setToast({ message: 'Erro ao salvar parcelas. Tente novamente.', type: 'error' });
+        }
+    };
+
 
     if (!isOpen) return null;
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <button className="modal-close" onClick={onClose}>X</button>
-                <h2>Lançamento de Parcelas - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorTotal)}</h2>
-                <form onSubmit={onSubmit}>
-                    <div>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl p-6 relative">
+                {/* Botão de fechar */}
+                <button
+                    className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+                    onClick={onClose}
+                >
+                    ✕
+                </button>
+
+                {/* Título */}
+                <h2 className="text-xl font-semibold mb-4">
+                    Lançamento de Parcelas -{" "}
+                    {new Intl.NumberFormat("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                    }).format(valorTotal)}
+                </h2>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Tipo de parcelamento */}
+                    <div className="flex gap-6">
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="radio"
+                                value="mensal"
+                                name="tipoParcelamento"
+                                checked={tipoParcelamento === "mensal"}
+                                onChange={() => setTipoParcelamento("mensal")}
+                                className="text-blue-600 focus:ring-blue-500"
+                            />
+                            Mensal
+                        </label>
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="radio"
+                                value="anual"
+                                name="tipoParcelamento"
+                                checked={tipoParcelamento === "anual"}
+                                onChange={() => setTipoParcelamento("anual")}
+                                className="text-blue-600 focus:ring-blue-500"
+                            />
+                            Anual
+                        </label>
+                    </div>
+
+                    {/* Campos principais */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <div className='radio-group'>
-                                <label>
-                                    <input
-                                        type="radio"
-                                        value="mensal"
-                                        name='tipoParcelamento'
-                                        checked={tipoParcelamento === 'mensal'}
-                                        onChange={() => {
-                                            setTipoParcelamento('mensal')
-                                        }
-                                        }
-                                    />
-                                    Mensal
-                                </label>
-                                <label>
-                                    <input
-                                        type="radio"
-                                        value="anual"
-                                        name='tipoParcelamento'
-                                        checked={tipoParcelamento === 'anual'}
-                                        onChange={() => {
-                                            setTipoParcelamento('anual')
-                                        }
-                                        }
-                                    />
-                                    Anual
-                                </label>
-                            </div>
-                            <div id='cadastro-padrao'>
-                                <div>
-                                    <label>Quantidade de Parcelas:</label>
-                                    <input
-                                        className='input-geral'
-                                        type="text"
-                                        value={quantidadeParcelas}
-                                        name='quantidadeParcelas'
-                                        onChange={(e) => setQuantidadeParcelas(Math.max(1, Number(e.target.value.replace(',', ''))))}
-                                        min="1"
-                                    />
-                                </div>
-                                <div>
-                                    <label>Data de Vencimento:</label>
-                                    <input
-                                        className='input-geral'
-                                        type="date"
-                                        name='vencimento'
-                                        value={vencimento}
-                                        onChange={(e) => setVencimento(e.target.value)}
-                                    />
-                                </div>
-                                <div >
-                                    <label>Boleto:</label>
-                                    <input
-                                        className='input-geral'
-                                        type="text"
-                                        name='boleto'
-                                        value={boleto}
-                                        onChange={(e) => setBoleto(e.target.value)}
-                                    />
-                                </div>
-                                <div >
-                                    <label>Valor de Entrada:</label>
-                                    <input
-                                        className='input-geral'
-                                        type="text"
-                                        value={valorEntrada}
-                                        name='valorEntrada'
-                                        onChange={(e) => setValorEntrada(formatarMoedaBRL(e.target.value))}
-                                        min="0"
-                                        step="0.01"
-                                    />
-                                </div>
-                            </div>
+                            <label className="block text-sm font-medium">Quantidade de Parcelas:</label>
+                            <input
+                                type="number"
+                                min="1"
+                                value={quantidadeParcelas}
+                                onChange={(e) =>
+                                    setQuantidadeParcelas(Math.max(1, Number(e.target.value)))
+                                }
+                                className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">Data de Vencimento:</label>
+                            <input
+                                type="date"
+                                value={vencimento}
+                                onChange={(e) => setVencimento(e.target.value)}
+                                className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">Boleto:</label>
+                            <input
+                                type="text"
+                                value={boleto}
+                                onChange={(e) => setBoleto(e.target.value)}
+                                className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">Valor de Entrada:</label>
+                            <input
+                                type="text"
+                                value={valorEntrada}
+                                onChange={(e) => setValorEntrada(formatarMoedaBRL(e.target.value))}
+                                className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"
+                            />
                         </div>
                     </div>
+
+                    {/* Lista de parcelas */}
+                    {/* Lista de parcelas */}
                     {parcelas.length > 0 && (
-                        <div>
-                            <h3>Parcelas</h3>
-                            <input type="hidden" name="parcelas" value={parcelas} />
-                            <div className="parcelas-container">
+                        <div className="mt-4">
+                            <h3 className="text-lg font-medium mb-2">Parcelas</h3>
+                            {/* container com scroll */}
+                            <div className="max-h-64 overflow-y-auto pr-2 space-y-2">
                                 {parcelas.map((parcela, index) => (
-                                    <div key={index} className="parcela">
-                                        <span>{`Parcela ${parcela.numeroParcela}`}</span>
-                                        <span>
-                                            <label>Vencimento: </label>
-                                            <input
-                                                type="date"
-                                                name={`parcelas[${index}].dataVencimento`}  // Aqui estamos usando um nome único para cada parcela
-                                                value={parcela.dataVencimento}
-                                                onChange={(e) => handleAlterarVencimentoParcela(index, e.target.value)}
-                                            />
+                                    <div
+                                        key={index}
+                                        className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center border rounded-lg p-3 bg-white shadow-sm"
+                                    >
+                                        <span className="font-semibold">
+                                            Parcela {parcela.numeroParcela}
                                         </span>
-                                        <span>
-                                            <label>Boleto: </label>
-                                            <input
-                                                type="text"
-                                                name={`parcelas[${index}].boleto`} // Garante que cada parcela tenha seu campo único
-                                                value={parcela.boleto || ''} // Evita erro caso `boleto` esteja undefined
-                                                onChange={(e) => handleAlterarBoletoParcela(index, e.target.value)}
-                                            />
-                                        </span>
-                                        <span>
-                                            <label>Valor: </label>
-                                            <input
-                                                type="text"
-                                                name={`parcelas[${index}].valor`}  // Aqui também estamos fazendo a mesma coisa para o valor
-                                                value={formatarMoedaBRL(parcela.valor)}
-                                                onChange={(e) => handleAlterarParcela(index, e.target.value)}
-                                            />
-                                        </span>
+                                        <input
+                                            type="date"
+                                            value={parcela.dataVencimento}
+                                            onChange={(e) =>
+                                                handleAlterarVencimentoParcela(index, e.target.value)
+                                            }
+                                            className="border rounded-lg p-2"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={parcela.boleto || ""}
+                                            onChange={(e) =>
+                                                handleAlterarBoletoParcela(index, e.target.value)
+                                            }
+                                            className="border rounded-lg p-2"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={formatarMoedaBRL(parcela.valor)}
+                                            onChange={(e) => handleAlterarParcela(index, e.target.value)}
+                                            className="border rounded-lg p-2"
+                                        />
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
-                    <div id='button-group'>
-                        <button type='submit' className="button">Salvar Parcelas</button>
-                    </div>
 
+
+                    {/* Botão de salvar */}
+                    <div className="flex justify-end mt-4">
+                        <button
+                            type="submit"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                        >
+                            Salvar Parcelas
+                        </button>
+                    </div>
                 </form>
+
+                {toast.message && (
+                    <Toast message={toast.message} type={toast.type} />
+                )}
             </div>
-            {toast.message && <Toast message={toast.message} type={toast.type} />}
         </div>
     );
 };

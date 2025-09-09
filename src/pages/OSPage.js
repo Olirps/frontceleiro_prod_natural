@@ -9,7 +9,7 @@ import Pagination from '../utils/Pagination'; // Importando o componente
 import gerarOSPDF from '../relatorios/gerarOSPDF'; // Importando o componente
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission';
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 const OSPage = () => {
     const [osList, setOsList] = useState([]);
@@ -21,7 +21,6 @@ const OSPage = () => {
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState({ message: '', type: '' });
     const [isEdit, setIsEdit] = useState(false);
-    const { permissions } = useAuth();
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
     const [workFlow, setWorkFlow] = useState([]);
@@ -31,8 +30,13 @@ const OSPage = () => {
     const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
     const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
     const [osToApprove, setOsToApprove] = useState(null); // Guardar a O.S. a ser aprovada
+    //Permissoes
+    const { permissions } = useAuth();
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
-
+    useEffect(() => {
+        checkPermission("os", "view")
+    }, [])
 
     useEffect(() => {
         if (toast.message) {
@@ -77,13 +81,11 @@ const OSPage = () => {
     };
 
     const handleCadastrarModal = () => {
-        if (!hasPermission(permissions, 'os', 'insert')) {
-            setToast({ message: "Você não tem permissão para cadastrar O.S.", type: "error" });
-            return;
-        }
-        setIsModalOpen(true);
-        setIsEdit(false);
-        setSelectedOs(null);
+        checkPermission('os', 'insert', () => {
+            setIsModalOpen(true);
+            setIsEdit(false);
+            setSelectedOs(null);
+        })
     };
 
     const handleApproveClick = (os) => {
@@ -447,6 +449,8 @@ const OSPage = () => {
                 onCancel={() => setIsConfirmationModalOpen(false)}
                 message="Você tem certeza que deseja aprovar esta O.S.?"
             />
+            {/* Renderização do modal de autorização */}
+            <PermissionModalUI />
         </div>
     );
 };

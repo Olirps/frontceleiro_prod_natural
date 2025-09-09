@@ -10,7 +10,7 @@ import {
 import Toast from '../components/Toast';
 import { formatarMoedaBRL, converterMoedaParaNumero, formatarValor } from '../utils/functions';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission';
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, isInativar, onInativar, additionalFields = [] }) => {
   const [formData, setFormData] = useState({});
@@ -40,11 +40,12 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
   const [xProd, setxProd] = useState('');
   const [isService, setIsService] = useState(false);
   const [isInativado, setIsInativado] = useState(isInativar);
-  const [permiteEditar, setPermiteEditar] = useState(true);
+  const [permiteEditar, setPermiteEditar] = useState(false);
   const [openGrupo, setOpenGrupo] = useState(false);
   const [openSubGrupo, setOpenSubGrupo] = useState(false);
-
+  //Permissoes
   const { permissions } = useAuth();
+  const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
   useEffect(() => {
     if (produto) {
@@ -89,7 +90,11 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
 
   useEffect(() => {
     if (isOpen && edit) {
-      setPermiteEditar(hasPermission(permissions, 'produtos', edit ? 'edit' : 'insert'));
+      checkPermission('produtos', edit ? 'edit' : 'insert', () => {
+        setPermiteEditar(true);
+      });
+    } else {
+      setPermiteEditar(true);
     }
   }, [isOpen, edit, permissions]);
 
@@ -550,6 +555,8 @@ const ModalCadastraProduto = ({ isOpen, onClose, onSubmit, produto, prod, edit, 
           </div>
         </form>
         {toast.message && <Toast type={toast.type} message={toast.message} />}
+        {/* Renderização do modal de autorização */}
+        <PermissionModalUI />
       </div>
     </div>
   );

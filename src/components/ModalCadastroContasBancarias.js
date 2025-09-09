@@ -3,7 +3,7 @@ import '../styles/ModalCadastroContasBancarias.css';
 import { addContabancaria, getAllBancos } from '../services/api';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 
 const ModalCadastroContasBancarias = ({ isOpen, onClose, edit, onSubmit, conta }) => {
@@ -17,13 +17,17 @@ const ModalCadastroContasBancarias = ({ isOpen, onClose, edit, onSubmit, conta }
     const [documento, setDocumento] = useState('');
     const [toast, setToast] = useState({ message: '', type: '' });
     const [loading, setLoading] = useState(true);
-    const [permiteEditar, setPermiteEditar] = useState(true);
+    const [permiteEditar, setPermiteEditar] = useState(false);
+    //Permissoes
     const { permissions } = useAuth();
-
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
     useEffect(() => {
         if (isOpen && edit) {
-            const canEdit = hasPermission(permissions, 'contasbancarias', edit ? 'edit' : 'insert');
-            setPermiteEditar(canEdit)
+            checkPermission('contasbancarias', edit ? 'edit' : 'insert', () => {
+                setPermiteEditar(true);
+            });
+        } else {
+            setPermiteEditar(true);
         }
     }, [isOpen, edit, permissions]);
 
@@ -184,6 +188,8 @@ const ModalCadastroContasBancarias = ({ isOpen, onClose, edit, onSubmit, conta }
                 </form>
             </div>
             {toast.message && <Toast type={toast.type} message={toast.message} />}
+            {/* Renderização do modal de autorização */}
+            <PermissionModalUI />
         </div>
     );
 };

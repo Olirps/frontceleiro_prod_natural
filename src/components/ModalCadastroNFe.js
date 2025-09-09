@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import '../styles/ModalCadastroNFe.css';
 import ModalPesquisaFornecedor from './ModalPesquisaFornecedor';
 import { getUfs, getMunicipios, getUFIBGE } from '../services/api';
-import {formatarMoedaBRL } from '../utils/functions';
+import { formatarMoedaBRL } from '../utils/functions';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 
 const ModalCadastroNFe = ({ isOpen, onClose, onSubmit, notaFiscal, isEdit, onUfChange, isReadOnly }) => {
@@ -27,13 +27,16 @@ const ModalCadastroNFe = ({ isOpen, onClose, onSubmit, notaFiscal, isEdit, onUfC
     const [municipios, setMunicipios] = useState([]);
     const [selectedUfCodIBGE, setSelectedUfCodIBGE] = useState(null);
     const [selectedMunicipioCodIBGE, setSelectedMunicipioCodIBGE] = useState(null);
-    const [permiteEditar, setPermiteEditar] = useState(true);
+    const [permiteEditar, setPermiteEditar] = useState(false);
+    //Permissoes
     const { permissions } = useAuth();
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
     useEffect(() => {
         if (isOpen && isEdit) {
-            const canEdit = hasPermission(permissions, 'notafiscal', isEdit ? 'edit' : 'insert');
-            setPermiteEditar(canEdit)
+            checkPermission('notafiscal', isEdit ? 'edit' : 'insert', () => {
+                setPermiteEditar(true);
+            });
         }
     }, [isOpen, isEdit, permissions]);
 
@@ -174,8 +177,8 @@ const ModalCadastroNFe = ({ isOpen, onClose, onSubmit, notaFiscal, isEdit, onUfC
     const handleSubmit = (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        
-        const valorNF = formData.get('vNF'); 
+
+        const valorNF = formData.get('vNF');
         const today = new Date(); // Data atual
         const dataEmissaoDate = new Date(dataEmissao); // Converter string para objeto Date
         const dataSaidaDate = new Date(dataSaida);
@@ -326,7 +329,7 @@ const ModalCadastroNFe = ({ isOpen, onClose, onSubmit, notaFiscal, isEdit, onUfC
                             ))}
                         </div>
                         <div id='botao-salva'>
-                            {permiteEditar && !isReadOnly? (
+                            {permiteEditar && !isReadOnly ? (
                                 <button
                                     type="submit"
                                     id="btnsalvar"
@@ -347,6 +350,8 @@ const ModalCadastroNFe = ({ isOpen, onClose, onSubmit, notaFiscal, isEdit, onUfC
                     onSelectFornecedor={handleSelectFornecedor}
                 />
             )}
+            {/* Renderização do modal de autorização */}
+            <PermissionModalUI />
         </div>
     );
 };

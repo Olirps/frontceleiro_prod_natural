@@ -3,7 +3,7 @@ import '../styles/ModalCadastroCarro.css';
 import { getMarcas, getTipoVeiculo } from '../services/api';
 import { formatPlaca, formatarNumeroMilhares } from '../utils/functions';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { usePermissionModal } from "../hooks/usePermissionModal";
 import Toast from '../components/Toast';
 
 const ModalCadastroCarro = ({ isOpen, onClose, isEdit, onSubmit, carro }) => {
@@ -14,15 +14,20 @@ const ModalCadastroCarro = ({ isOpen, onClose, isEdit, onSubmit, carro }) => {
   const [tipoVeiculoId, setTipoVeiculoId] = useState('');
   const [marcas, setMarcas] = useState([]);
   const [tiposVeiculo, setTiposVeiculo] = useState([]);
-  const [permiteEditar, setPermiteEditar] = useState(true);
-  const { permissions } = useAuth();
+  const [permiteEditar, setPermiteEditar] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '' });
+  //Permissoes
+  const { permissions } = useAuth();
+  const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
 
   useEffect(() => {
     if (isOpen && isEdit) {
-      const canEdit = hasPermission(permissions, 'veiculos', isEdit ? 'edit' : 'insert');
-      setPermiteEditar(canEdit)
+      checkPermission('veiculos', isEdit ? 'edit' : 'insert', () => {
+        setPermiteEditar(true)
+      });
+    } else {
+      setPermiteEditar(true)
     }
   }, [isOpen, isEdit, permissions]);
 
@@ -181,6 +186,8 @@ const ModalCadastroCarro = ({ isOpen, onClose, isEdit, onSubmit, carro }) => {
           </div>
         </form>
         {toast.message && <Toast type={toast.type} message={toast.message} />}
+        {/* Renderização do modal de autorização */}
+        <PermissionModalUI />
       </div>
     </div>
   );

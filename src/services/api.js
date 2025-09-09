@@ -1,19 +1,12 @@
 import axios from 'axios';
 import { dataAtual } from '../utils/functions';
 
-const ambiente = 1; // 1 - Produção, 2 - Homologação
-// Crie uma instância do axios com a URL base
-let baseURL = "";
+// Base URL parametrizada por variável de ambiente
+// Se não definida, axios usará caminhos relativos (mesma origem)
+const baseURL = process.env.REACT_APP_API_URL || '';
 
-if (ambiente === 1) {
-  baseURL = "https://celeiro.sessoftware.com.br/api";
-} else {
-  baseURL = "http://192.168.3.108:3001/api";
-}
-
-// Crie uma instância do axios com a URL base
 const api = axios.create({
-  baseURL
+  baseURL,
 });
 
 // Função para definir o token de autenticação no header
@@ -29,6 +22,45 @@ const setAuthToken = (token) => {
 // Recuperar o token do localStorage e definir no Axios
 const token = localStorage.getItem('authToken');
 setAuthToken(token);
+
+// Interceptor de requisição: anexa o token mais recente
+api.interceptors.request.use(
+  (config) => {
+    try {
+      const currentToken = localStorage.getItem('authToken');
+      if (currentToken) {
+        config.headers = config.headers || {};
+        config.headers['Authorization'] = `Bearer ${currentToken}`;
+      }
+    } catch (e) {
+      // silencioso
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Interceptor de resposta: trata 401/403 (token inválido/expirado)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    if (status === 401 || status === 403) {
+      try {
+        localStorage.removeItem('authToken');
+      } catch (_) {
+        // ignore
+      }
+      // Redireciona para login sem quebrar execução
+      if (typeof window !== 'undefined' && window.location?.pathname !== '/login') {
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 0);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;
 
@@ -1484,5 +1516,31 @@ export const getVendasPorClientePeriodo = async (filters = {}) => {
       status: 400,
       message: error.message
     };
+  }
+};
+
+export const listarVendasEmAberto = async (filtro = {}) => {
+  try {
+    const response = await api.get('/vendas-abertas', { params: filtro });
+
+    // Retorna diretamente os dados esperados
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar vendas em aberto:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getVendasComanda = async (id) => {
+  try {
+    const response = await api.get(`/venda-comanda/${id}`, {
+      validateStatus: function (status) {
+        return true; // Aceita qualquer status e permite você tratar no .status depois
+      }
+    });
+    return response;
+  } catch (error) {
+    console.error('Erro ao buscar XML por ID:', error);
+    throw error;
   }
 };

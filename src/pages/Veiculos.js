@@ -6,7 +6,7 @@ import '../styles/Veiculos.css';
 import Modal from '../components/ModalCadastroCarro';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 
 function Veiculos() {
@@ -23,8 +23,13 @@ function Veiculos() {
   const [isEdit, setIsEdit] = useState(false);
   const [marcas, setMarcas] = useState([]);
   const [marcaId, setMarcaId] = useState('');
+  //Permissoes
   const { permissions } = useAuth();
+  const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
+  useEffect(() => {
+    checkPermission("veiculos", "view")
+  }, [])
 
   useEffect(() => {
     const fetchCarros = async () => {
@@ -80,13 +85,11 @@ function Veiculos() {
   };
 
   const handleCadastrarModal = () => {
-    if (!hasPermission(permissions, 'veiculos', 'insert')) {
-      setToast({ message: "Você não tem permissão para cadastrar veiculos.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    setIsModalOpen(true);
-    setIsEdit(false);
-    setSelectedCarro(null);
+    checkPermission('veiculos', 'insert', () => {
+      setIsModalOpen(true);
+      setIsEdit(false);
+      setSelectedCarro(null);
+    })
   };
 
   const handleAddCarro = async (e) => {
@@ -118,14 +121,12 @@ function Veiculos() {
 
   const handleEditClick = async (carro) => {
     try {
-      if (!hasPermission(permissions, 'veiculos', 'viewcadastro')) {
-        setToast({ message: "Você não tem permissão para visualizar o cadastro de veículos.", type: "error" });
-        return; // Impede a abertura do modal
-      }
-      const response = await getVeiculosById(carro.id);
-      setSelectedCarro(response.data);
-      setIsEdit(true);
-      setIsModalOpen(true);
+      checkPermission('veiculos', 'viewcadastro', async () => {
+        const response = await getVeiculosById(carro.id);
+        setSelectedCarro(response.data);
+        setIsEdit(true);
+        setIsModalOpen(true);
+      })
     } catch (err) {
       console.error('Erro ao buscar detalhes do veículo', err);
       setToast({ message: "Erro ao buscar detalhes do veículo.", type: "error" });
@@ -314,6 +315,8 @@ function Veiculos() {
         </>
       )}
       {toast.message && <Toast message={toast.message} type={toast.type} />}
+      {/* Renderização do modal de autorização */}
+      <PermissionModalUI />
     </div>
   );
 }

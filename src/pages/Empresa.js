@@ -4,9 +4,7 @@ import ModalCadastraEmpresa from '../components/ModalCadastraEmpresa';
 import Toast from '../components/Toast';
 import { cpfCnpjMask, removeMaks } from '../components/utils';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
-
-
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 function Empresa() {
     const [empresas, setEmpresas] = useState([]);
@@ -22,9 +20,13 @@ function Empresa() {
     const [isEdit, setIsEdit] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
+    //Permissoes
     const { permissions } = useAuth();
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
-
+    useEffect(() => {
+        checkPermission("empresas", "view")
+    }, [])
 
     useEffect(() => {
         const fetchEmpresas = async () => {
@@ -70,13 +72,11 @@ function Empresa() {
 
 
     const handleCadastrarModal = () => {
-        if (!hasPermission(permissions, 'empresas', 'insert')) {
-            setToast({ message: "Você não tem permissão para cadastrar empresas.", type: "error" });
-            return; // Impede a abertura do modal
-        }
-        setIsModalOpen(true);
-        setIsEdit(false);
-        setSelectedEmpresa(null);
+        checkPermission('empresas', 'insert', () => {
+            setIsEdit(false);
+            setSelectedEmpresa(null);
+            setIsModalOpen(true);
+        });
     };
 
     const handleAddEmpresa = async (e) => {
@@ -90,7 +90,7 @@ function Empresa() {
             numero: formData.get('numero'),
             bairro: formData.get('bairro'),
             municipio_id: formData.get('municipio'),
-            status :1,
+            status: 1,
             uf_id: formData.get('uf'),
             cep: formData.get('cep').replace(/\D/g, ''),
         };
@@ -110,14 +110,12 @@ function Empresa() {
 
     const handleEditClick = async (empresa) => {
         try {
-            if (!hasPermission(permissions, 'empresas', 'viewcadastro')) {
-                setToast({ message: "Você não tem permissão para visualizar o cadastro de empresas.", type: "error" });
-                return; // Impede a abertura do modal
-            }
-            const response = await getEmpresaById(empresa.id);
-            setSelectedEmpresa(response.data);
-            setIsEdit(true);
-            setIsModalOpen(true);
+            checkPermission('empresas', 'viewcadastro', async () => {
+                const response = await getEmpresaById(empresa.id);
+                setSelectedEmpresa(response.data);
+                setIsEdit(true);
+                setIsModalOpen(true);
+            });
         } catch (err) {
             console.error('Erro ao buscar detalhes do empresa', err);
             setToast({ message: "Erro ao buscar detalhes do empresa.", type: "error" });
@@ -245,6 +243,8 @@ function Empresa() {
                     </table>
                 </div>
             </div>
+            {/* Renderização do modal de autorização */}
+            <PermissionModalUI />
         </div>
 
     );

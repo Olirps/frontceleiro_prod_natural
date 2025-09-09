@@ -5,8 +5,7 @@ import '../styles/Fornecedores.css';
 import ModalCadastraProduto from '../components/ModalCadastraProduto';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission';
-
+import { usePermissionModal } from "../hooks/usePermissionModal";
 function Produtos() {
     const [produtos, setProdutos] = useState([]);
     const [filteredProdutos, setFilteredProdutos] = useState([]);
@@ -17,7 +16,6 @@ function Produtos() {
     const [isEdit, setIsEdit] = useState(false);
     const [isInativar, setIsInativar] = useState(false);
     const [importSuccess, setCadastroSuccess] = useState(false);
-    const { permissions } = useAuth();
     const [searchParams, setSearchParams] = useState({
         nome: '',
         cEAN: '',
@@ -41,6 +39,13 @@ function Produtos() {
         totalItems: 0,
         totalPages: 1
     });
+    //Permissoes
+    const { permissions } = useAuth();
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
+
+    useEffect(() => {
+        checkPermission("produtos", "view")
+    }, [])
 
     // Busca produtos com paginação
     useEffect(() => {
@@ -124,13 +129,12 @@ function Produtos() {
     };
 
     const handleCadastrarModal = () => {
-        if (!hasPermission(permissions, 'clientes', 'insert')) {
-            setToast({ message: "Você não tem permissão para cadastrar clientes.", type: "error" });
-            return;
-        }
-        openCadastraProdutoModal();
-        setIsEdit(false);
-        setSelectedProduto(null);
+        checkPermission('clientes', 'insert', () => {
+            openCadastraProdutoModal();
+            setIsEdit(false);
+            setSelectedProduto(null);
+        })
+
     };
 
     const handleaddProdutos = async (e) => {
@@ -168,14 +172,12 @@ function Produtos() {
 
     const handleEditClick = async (produto) => {
         try {
-            if (!hasPermission(permissions, 'produtos', 'viewcadastro')) {
-                setToast({ message: "Você não tem permissão para visualizar o cadastro de produtos/serviços.", type: "error" });
-                return;
-            }
-            const response = await getProdutoById(produto.id);
-            setSelectedProduto(response.data);
-            setIsEdit(true);
-            openCadastraProdutoModal();
+            checkPermission('produtos', 'viewcadastro', async () => {
+                const response = await getProdutoById(produto.id);
+                setSelectedProduto(response.data);
+                setIsEdit(true);
+                openCadastraProdutoModal();
+            })
         } catch (err) {
             console.error('Erro ao buscar detalhes do produto', err);
             setToast({ message: "Erro ao buscar detalhes do produto.", type: "error" });
@@ -183,36 +185,36 @@ function Produtos() {
     };
 
     const handleEditSubmit = async (e) => {
-        if (!hasPermission(permissions, 'produtos', 'edit')) {
-            setToast({ message: "Você não tem permissão para editar produtos.", type: "error" });
-            return;
-        }
-
-        const updatedProduto = {
-            xProd: e.xProd,
-            cod_interno: e.cod_interno,
-            tipo: e.productType,
-            cEAN: e.cEAN,
-            qtdMinima: e.qtdMinima,
-            uCom: e.uCom,
-            qCom: e.qCom,
-            vUnCom: Number(e.vUnCom),
-            NCM: e.ncm,
-            CFOP: e.cfop,
-            gpid: e.grupoId,
-            subgpid: e.subGrupoId,
-            CEST: e.cest,
-            vlrVenda: Number(e.vlrVenda),
-            vlrVendaAtacado: Number(e.vlrVendaAtacado),
-            pct_servico: Number(e.percentual)
-        };
-
-        try {
+        checkPermission('produtos', 'edit', async () => {
+            const updatedProduto = {
+                xProd: e.xProd,
+                cod_interno: e.cod_interno,
+                tipo: e.productType,
+                cEAN: e.cEAN,
+                qtdMinima: e.qtdMinima,
+                uCom: e.uCom,
+                qCom: e.qCom,
+                vUnCom: Number(e.vUnCom),
+                NCM: e.ncm,
+                CFOP: e.cfop,
+                gpid: e.grupoId,
+                subgpid: e.subGrupoId,
+                CEST: e.cest,
+                vlrVenda: Number(e.vlrVenda),
+                vlrVendaAtacado: Number(e.vlrVendaAtacado),
+                pct_servico: Number(e.percentual)
+            };
             await updateProduto(selectedProduto.id, updatedProduto);
             setToast({ message: "Produto atualizado com sucesso!", type: "success" });
             setIsEdit(false);
             closeCadastraProdutoModal();
             setCadastroSuccess(prev => !prev);
+        })
+
+
+
+        try {
+
         } catch (err) {
             const errorMessage = err.response?.data?.erro || 'Erro ao atualizar produto';
             setToast({ message: errorMessage, type: "error" });
@@ -374,6 +376,8 @@ function Produtos() {
                     onInativar={handleInativarProduto}
                 />
             )}
+            {/* Renderização do modal de autorização */}
+            <PermissionModalUI />
         </div>
     );
 }

@@ -7,8 +7,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import TefTransactionModal from '../components/TefTransactionModal';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
-
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 const TefTransacoesPage = () => {
     const getDataHoje = () => {
@@ -20,13 +19,15 @@ const TefTransacoesPage = () => {
     const [tefProcessing, setTefProcessing] = useState(false);
     const [mensagem, setMensagem] = useState('');
     const [transacaoId, setTransacaoId] = useState('');
-    const { permissions } = useAuth();
     const [dados, setDados] = useState([]);
     const [paginaAtual, setPaginaAtual] = useState(1);
     const [linhasPorPagina, setLinhasPorPagina] = useState(50);
     const [totalPaginas, setTotalPaginas] = useState(1);
     const [toast, setToast] = useState({ message: '', type: '' });
     const [loading, setLoading] = useState(true);
+    //Permissoes
+    const { permissions } = useAuth();
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
     // Filtros
     const [dataInicial, setDataInicial] = useState(getDataHoje());
@@ -87,14 +88,12 @@ const TefTransacoesPage = () => {
     };
 
     const handleCancelar = (transacaoId) => {
-        if (!hasPermission(permissions, 'movimentacaotef', 'delete')) {
-            setToast({ message: "Você não tem permissão para Cancelar  lançamentos TEF.", type: "error" });
-            return; // Impede a abertura do modal
-        } else {
+        checkPermission('movimentacaotef', 'delete', () => {
             setTransacaoId(transacaoId);
             setIsConfirmationModalOpen(true);
-        }
+        })
     };
+
     const handleCancel = () => {
         setIsConfirmationModalOpen(false); // Fechar o modal sem realizar nada
     };
@@ -291,6 +290,9 @@ const TefTransacoesPage = () => {
                     onClose={() => setToast({ message: '', type: '' })}
                 />
             )}
+            {/* Renderização do modal de autorização */}
+            <PermissionModalUI />
+
         </div>
     );
 };

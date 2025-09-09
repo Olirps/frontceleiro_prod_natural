@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission';
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 const ModalCadastroTipoContainer = ({ isOpen, onClose, edit, onSubmit, tipoContainer }) => {
   const [nome, setNome] = useState('');
@@ -10,12 +10,15 @@ const ModalCadastroTipoContainer = ({ isOpen, onClose, edit, onSubmit, tipoConta
   const [toast, setToast] = useState({ message: '', type: '' });
   const [loading, setLoading] = useState(false);
   const [permiteEditar, setPermiteEditar] = useState(true);
+  //Permissoes
   const { permissions } = useAuth();
+  const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
   useEffect(() => {
     if (isOpen) {
-      const canEdit = hasPermission(permissions, 'tipocontainer', edit ? 'edit' : 'insert');
-      setPermiteEditar(canEdit);
+      checkPermission('tipocontainer', edit ? 'edit' : 'insert', () => {
+        setPermiteEditar(true);
+      });
     }
   }, [isOpen, edit, permissions]);
 
@@ -116,6 +119,8 @@ const ModalCadastroTipoContainer = ({ isOpen, onClose, edit, onSubmit, tipoConta
       </div>
 
       {toast.message && <Toast type={toast.type} message={toast.message} />}
+      {/* Renderização do modal de autorização */}
+      <PermissionModalUI />
     </div>
   );
 };

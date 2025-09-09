@@ -4,7 +4,7 @@ import {
 } from '../services/GrupoSubGrupoProdutos';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission';
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 const ModalCadastroSubgrupo = ({ isOpen, onClose, edit, onSubmit, SubGrupoProduto }) => {
     const [nome, setNome] = useState('');
@@ -15,13 +15,17 @@ const ModalCadastroSubgrupo = ({ isOpen, onClose, edit, onSubmit, SubGrupoProdut
     const [grupoId, setGrupoId] = useState('');
     const [toast, setToast] = useState({ message: '', type: '' });
     const [loading, setLoading] = useState(false);
-    const [permiteEditar, setPermiteEditar] = useState(true);
-    const { permissions } = useAuth();
+    const [permiteEditar, setPermiteEditar] = useState(false);
     const [open, setOpen] = useState(false);
+    //Permissoes
+    const { permissions } = useAuth();
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
+
     useEffect(() => {
         if (isOpen) {
-            const canEdit = hasPermission(permissions, 'grupoproduto', edit ? 'edit' : 'insert');
-            setPermiteEditar(canEdit);
+            checkPermission('grupoproduto', edit ? 'edit' : 'insert', () => {
+                setPermiteEditar(true);
+            })
         }
     }, [isOpen, edit, permissions]);
 
@@ -182,6 +186,8 @@ const ModalCadastroSubgrupo = ({ isOpen, onClose, edit, onSubmit, SubGrupoProdut
             </div >
 
             {toast.message && <Toast type={toast.type} message={toast.message} />}
+            {/* Renderização do modal de autorização */}
+            <PermissionModalUI />
         </div >
     );
 };

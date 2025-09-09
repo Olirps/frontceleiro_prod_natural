@@ -13,33 +13,33 @@ import { converterMoedaParaNumero, formatarData, formatarMoedaBRL, converterData
 const SaleModal = ({
   isOpen,
   onClose,
+  onSuccess,
   totalQuantity,
-  totalPrice = 0,
   saleData,
   tipo,
   selectedProducts,
-  onSuccess
 }) => {
   // Adicionado um if pois quando é via PDV não tem saleData
   if (!saleData) {
     saleData = { totalPrice: totalPrice };
   }
 
-  totalPrice = saleData.totalPrice;
+
   const [cliente, setCliente] = useState(saleData.cliente_nome || saleData.cliente || '');
   const [cliente_id, setClienteID] = useState(saleData.cliente_id || '');
   const [desconto, setDesconto] = useState('0');
-  let [valorPagamento, setValorPagamento] = useState(totalPrice);
+  let [valorPagamento, setValorPagamento] = useState(saleData.totalPrice || 0);
   const [valorTotal, setValorTotal] = useState(0);
 
   const [pagamentos, setPagamentos] = useState([]);
   const [novaForma, setNovaForma] = useState('');
   const [mensagem, setMensagem] = useState('');
   const [formaPgtoNome, setFormaPgtoNome] = useState('');
-  const [valorPagar, setValorPagar] = useState(totalPrice);
-  const [novoValor, setNovoValor] = useState(totalPrice);
+  const [valorPagar, setValorPagar] = useState(saleData.totalPrice || 0);
+  const [novoValor, setNovoValor] = useState(saleData.totalPrice || 0);
+  const [totalPrice, setTotalPrice] = useState(saleData.totalPrice || 0);
   const [trocoDinheiro, settrocoDinheiro] = useState('');
-  const [saldoRestante, setSaldoRestante] = useState(totalPrice);
+  const [saldoRestante, setSaldoRestante] = useState(saleData.totalPrice || 0);
   const [descontoInput, setDescontoInput] = useState('0'); // valor digitado no input
   const [descontoTipo, setDescontoTipo] = useState(); // 'value' = R$, 'percent' = %
   const [descontoReal, setDescontoReal] = useState(true); // 'value' = R$, 'percent' = %
@@ -84,8 +84,21 @@ const SaleModal = ({
 
   useEffect(() => {
     if (tipo === 'liquidacao') {
-      const total = saleData.reduce((acc, curr) => acc + parseFloat(curr.valor_parcela || 0), 0);
+
+      let total = 0;
+
+      if (Array.isArray(saleData)) {
+        // Se for array, soma valor_parcela de cada item
+        total = saleData.reduce((acc, curr) => acc + parseFloat(curr.valor_parcela ?? 0), 0);
+
+      } else if (saleData && typeof saleData === 'object') {
+        // Se não for array, assume que é um objeto único
+        total = parseFloat(saleData.totalPrice ?? 0);
+      }
+      setTotalPrice(total);
+      setSaldoRestante(total);
       setValorTotal(total);
+      setValorPagar(total);
       setValorPagamento(total);
       setNovoValor(total)
     } else {
@@ -368,16 +381,17 @@ const SaleModal = ({
       const username = localStorage.getItem('username');
       const empresa = await getEmpresaById(1);
 
-      const saleData = {
+      const registra_venda = {
         totalQuantity: totalQuantity,
         totalPrice: clearDesconto > 0 ? (totalPrice - clearDesconto) : totalPrice,
-        products: selectedProducts,
+        products: selectedProducts ? selectedProducts : saleData.produtos,
         cliente: cliente,
         cliente_id: cliente_id,
         desconto: clearDesconto,
         pagamentos: pagamentos,
         status: 0,
         status_id: 2,
+        preVenda: saleData.venda_id ? saleData.venda_id : null,
         dataVenda: dataAjustada,
         tipoVenda: 'Venda',
         login: username,
@@ -385,7 +399,7 @@ const SaleModal = ({
         transacoesTef: transacoesTef
       };
 
-      await registravenda(saleData);
+      await registravenda(registra_venda);
       setToast({ message: "Venda cadastrada com sucesso!", type: "success" });
       onClose();
       onSuccess();

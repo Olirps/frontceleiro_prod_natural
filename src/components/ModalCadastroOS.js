@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getClientes, getProdutosVenda, iniciarVenda, getAllOSStatus, getVeiculos, getFuncionarios, removerProdutoOS, consultaItensVenda } from '../services/api';
+import { getProdutosVenda, iniciarVenda, getAllOSStatus, getVeiculos, getFuncionarios, removerProdutoOS, consultaItensVenda } from '../services/api';
+import { getClientes } from '../services/ApiClientes/ApiClientes';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission';
+import { usePermissionModal } from "../hooks/usePermissionModal";
 import Select from 'react-select';
 import { formatarMoedaBRL, converterMoedaParaNumero, converterData } from '../utils/functions'; // Funções para formatar valores
 import '../styles/ModalCadastroOS.css';
@@ -34,7 +35,7 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
     const [produtosSelecionados, setProdutosSelecionados] = useState([]);
     const [toast, setToast] = useState({ message: '', type: '' });
     const [loading, setLoading] = useState(true);
-    const [permiteEditar, setPermiteEditar] = useState(true);
+    const [permiteEditar, setPermiteEditar] = useState(false);
     const [showNovoClienteModal, setShowNovoClienteModal] = useState(false);
     const [showNovoVeiculoModal, setShowNovoVeiculoModal] = useState(false);
     const [showMaoObraModal, setShowMaoObraModal] = useState(false);
@@ -56,27 +57,26 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
     const [paginaAtual, setPaginaAtual] = useState(1);
     const [temMaisProdutos, setTemMaisProdutos] = useState(true);
     const [preVenda, setPreVenda] = useState('');
+    //Permissoes
+    const { permissions } = useAuth();
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
     useEffect(() => {
         // Desabilita visualização se status_id = 3 ou status = 0
         setPermiteVisualizar(!(os?.status_id === 3 || os?.status === 0));
     }, [os]);
 
-
-
     const [paymentData, setPaymentData] = useState({
         formasPagamento: [],
         valorTotal: 0
     });
 
-
-    const { permissions } = useAuth();
-
     // Verifica permissões
     useEffect(() => {
-        if (isOpen && edit) {
-            const canEdit = hasPermission(permissions, 'os', edit ? 'edit' : 'insert');
-            setPermiteEditar(canEdit);
+        if (isOpen) {
+            checkPermission('os', edit ? 'edit' : 'insert', () => {
+                setPermiteEditar(true);
+            })
         }
     }, [isOpen, edit, permissions]);
 
@@ -163,7 +163,7 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
     const handleGetCliente = async () => {
         try {
             setLoadingClientes(true);
-            const clientesData = await getClientes()
+            const clientesData = await getClientes({ page: 1, limit: 100 })
             setClientes(clientesData.data);
         } catch (error) {
             setToast({ message: "Erro ao Buscar Clientes", type: "error" });
@@ -845,6 +845,8 @@ const ModalCadastroOS = ({ isOpen, onClose, edit, onSubmit, ordemServico, os, ti
                     onClose={() => setIsSaleModalOpen(false)}
                 />
             )}
+            {/* Renderização do modal de autorização */}
+            <PermissionModalUI />
         </div >
     );
 };

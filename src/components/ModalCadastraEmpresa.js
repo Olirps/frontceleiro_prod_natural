@@ -4,7 +4,7 @@ import { getUfs, getMunicipiosUfId } from '../services/api';
 import Toast from '../components/Toast';
 import { formatarCelular } from '../utils/functions';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 
 
@@ -23,14 +23,17 @@ const ModalCadastraEmpresa = ({ isOpen, onClose, onSubmit, empresa, edit }) => {
     const [ufs, setUfs] = useState([]); // Estado para armazenar os UFs
     const [municipios, setMunicipios] = useState([]); // Estado para armazenar os municípios
     const [toast, setToast] = useState({ message: '', type: '' });
+    //Permissoes
     const { permissions } = useAuth();
-    const [hasAccess, setHasAccess] = useState(true);
-
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
     useEffect(() => {
         if (isOpen && edit) {
-            const canEdit = hasPermission(permissions, 'empresa', edit ? 'edit' : 'insert');
-            setPermiteEditar(canEdit)
+            checkPermission('empresas', edit ? 'edit' : 'insert', () => {
+                setPermiteEditar(true);
+            });
+        } else {
+            setPermiteEditar(true);
         }
     }, [isOpen, edit, permissions]);
 
@@ -300,6 +303,8 @@ const ModalCadastraEmpresa = ({ isOpen, onClose, onSubmit, empresa, edit }) => {
                         onClose={() => setToast({ message: '', type: '' })}
                     />
                 )}
+                {/* Renderização do modal de autorização */}
+                <PermissionModalUI />
             </div>
         </div>
     );

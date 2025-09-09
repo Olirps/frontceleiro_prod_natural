@@ -2,11 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, Link } from 'react-router-dom';
 import AlteraSenhaUsuario from '../components/AlteraSenhaUsuario';
+import PermissionModal from '../components/PermissionModal';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '../utils/hasPermission';
-import { menuData } from '../config/MenuItem'
+//import { menuData } from '../config/MenuItem'
+import { getMenus } from '../services/ApiMenus'
 
 function Layout() {
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [actionRequest, setActionRequest] = useState(null);
+  const [pendingAction, setPendingAction] = useState(null);
   const { permissions } = useAuth();
   const [open, setOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -14,6 +19,7 @@ function Layout() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [openSubmenus, setOpenSubmenus] = useState({});
   const [hoverTimeout, setHoverTimeout] = useState(null);
+  const [menuData, setMenuData] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,6 +28,20 @@ function Layout() {
       setUser(loggedInUser);
     }
   }, []);
+
+  useEffect(() => {
+    const fetchMenus = async () => {
+      try {
+        const menus = await getMenus();
+        setMenuData(menus);
+      } catch (error) {
+        console.error('Erro ao buscar menus:', error);
+      }
+    };
+
+    fetchMenus();
+  }, []); // Não esqueça do array de dependências!
+
 
   const handleLogout = () => {
     localStorage.removeItem('username');
@@ -70,69 +90,70 @@ function Layout() {
 
 
   // Componente recursivo para renderizar menus
-  const renderMenuItems = (items, level = 0) => {
-    return items.map(item => {
-      // Verifica se o usuário tem permissão para ver este item
-      const hasPermission = Array.isArray(item.permission)
-        ? item.permission.some(p => canViewMenuItem(p))
-        : canViewMenuItem(item.permission);
+  const renderMenuItems = (items, parentId = null, level = 0) => {
+    return items
+      .filter(item => item.parent_id === parentId && item.visible) // <-- aqui
+      .map(item => {
+        const canView = Array.isArray(item.permissions)
+          ? item.permissions.some(p => canViewMenuItem(p))
+          : canViewMenuItem(item.permissions);
 
-      if (!hasPermission) return null;
+        const children = items.filter(child => child.parent_id === item.id && child.visible); // <-- aqui também
 
-      // Se for um link simples sem submenu
-      if (!item.submenu) {
         return (
-          <Link
+          <div
             key={item.id}
-            to={item.path}
-            className="block px-4 py-2 text-white hover:bg-blue-600 transition-colors duration-200"
-            onClick={() => setMenuOpen(false)}
+            className="relative"
+            onMouseEnter={() => openSubmenu(item.id)}
+            onMouseLeave={() => closeSubmenu(item.id)}
           >
-            {item.label}
-          </Link>
-        );
-      }
-
-      // Se for um item com submenu
-      return (
-        <div
-          key={item.id}
-          className="relative"
-          onMouseEnter={() => openSubmenu(item.id)}
-          onMouseLeave={() => closeSubmenu(item.id)}
-        >
-          <button
-            className="w-full text-left px-4 py-2 text-white hover:bg-blue-600 transition-colors duration-200 flex justify-between items-center"
-          >
-            <span>{item.label}</span>
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+            <button
+              className="w-full text-left px-4 py-2 text-white hover:bg-blue-600 transition-colors duration-200 flex justify-between items-center"
+              onClick={() => {
+                if (!children.length) { // só navega se não tiver submenu
+                  if (canView) {
+                    navigate(item.path);
+                    setMenuOpen(false);
+                  } else {
+                    setActionRequest({ page: item.menu_key, action: "view" });
+                    setPendingAction(() => () => {
+                      navigate(item.path);
+                      setMenuOpen(false);
+                    });
+                    setShowPermissionModal(true);
+                  }
+                }
+              }}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
+              <span>{item.label}</span>
+              {children.length > 0 && (
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
+            </button>
 
-          {openSubmenus[item.id] && (
-            <div
-              className={`
-      ${level === 0
+            {children.length > 0 && openSubmenus[item.id] && (
+              <div
+                className={`${level === 0
                   ? 'md:absolute md:left-0 md:top-full bg-blue-700 md:shadow-lg md:rounded-md z-10 md:min-w-[200px] border border-blue-600'
-                  : 'md:absolute md:left-full md:top-0 bg-blue-700 md:shadow-lg md:rounded-md z-10 md:min-w-[200px] border border-blue-600'}
-      block md:block
-    `}
-            >
-              {renderMenuItems(item.submenu, level + 1)}
-            </div>
-          )}
-
-        </div>
-      );
-    });
+                  : 'md:absolute md:left-full md:top-0 bg-blue-700 md:shadow-lg md:rounded-md z-10 md:min-w-[200px] border border-blue-600'
+                  }`}
+              >
+                {renderMenuItems(items, item.id, level + 1)}
+              </div>
+            )}
+          </div>
+        );
+      });
   };
+
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16 md:pt-20">
@@ -219,6 +240,13 @@ function Layout() {
           setModalOpen(false);
         }}
       />
+      {showPermissionModal && (
+        <PermissionModal
+          actionRequest={actionRequest}
+          pendingAction={pendingAction}   // passa a função guardada
+          onClose={() => setShowPermissionModal(false)}
+        />
+      )}
     </div>
   );
 }

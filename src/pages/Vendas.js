@@ -9,7 +9,7 @@ import Toast from '../components/Toast';
 import 'jspdf-autotable';
 import ModalCancelaVenda from '../components/ModalCancelaVenda';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { usePermissionModal } from "../hooks/usePermissionModal";
 import { converterData, formatarMoedaBRL } from '../utils/functions'; // Certifique-se de importar corretamente a função
 import vendaRealizadas from '../relatorios/vendaRealizadas'; // Importe a função de geração de PDF
 import imprimeVenda from '../utils/impressaovenda';
@@ -48,13 +48,18 @@ function Vendas() {
   const [isComunicacaoSefazOpen, setIsComunicacaoSEFAZOpen] = useState(false);
   const [isVendaFinalizada, setIsVendaFinalizada] = useState(false);
   const [somarLancamentosManuais, setSomarLancamentosManuais] = useState(false);
-  const { permissions } = useAuth();
   const [isEdit, setIsEdit] = useState(false);
   const [status, setStatus] = useState('');
   const [statusVenda, setStatusVenda] = useState('');
   const [formaPagamento, setFormaPagamento] = useState([]);
   const [executarBusca, setExecutarBusca] = useState(true);
+  //Permissoes
+  const { permissions } = useAuth();
+  const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
+  useEffect(() => {
+    checkPermission("vendas", "view")
+  }, [])
 
   useEffect(() => {
     setExecutarBusca(true);
@@ -109,14 +114,12 @@ function Vendas() {
 
 
   const handleCadastrarModal = () => {
-    if (!hasPermission(permissions, 'vendas', 'insert')) {
-      setToast({ message: "Você não tem permissão para lançar Vendas.", type: "error" });
-      return;
-    }
-    setStatusVenda('');
-    setIsModalOpen(true);
-    setIsEdit(false);
-    setSelectedVenda(null);
+    checkPermission('vendas', 'insert', () => {
+      setStatusVenda('');
+      setIsModalOpen(true);
+      setIsEdit(false);
+      setSelectedVenda(null);
+    })
   };
 
 
@@ -175,14 +178,12 @@ function Vendas() {
   // Calcula as somas de desconto e totalPrice
 
   const handleOpenModalCancelaVenda = async (venda) => {
-    if (!hasPermission(permissions, 'vendas', 'delete')) {
-      setToast({ message: "Você não tem permissão para cancelar vendas.", type: "error" });
-      return; // Impede a abertura do modal
-    } else {
+    checkPermission('vendas', 'delete', async () => {
+      const status = await statusNfe(venda)
       setIdVenda(venda);
-      setStatus(await statusNfe(venda));
+      setStatus(status);
       setIsModalCancelaVendaOpen(true);
-    }
+    })
   };
 
 
@@ -264,13 +265,10 @@ function Vendas() {
   };
 
   const handleConfirmacaoEmitirNFe = (venda_id) => {
-    if (!hasPermission(permissions, 'emitir-nf', 'insert')) {
-      setToast({ message: "Você não tem permissão para Emitir Nota Fiscal.", type: "error" });
-      return; // Impede a abertura do modal
-    } else {
+    checkPermission('emitir-nf', 'insert', () => {
       setIdVenda(venda_id);
       setIsConfirmationModalOpen(true);
-    }
+    })
   }
   const handleCancel = () => {
     setIsConfirmationModalOpen(false); // Fechar o modal sem realizar nada
@@ -490,6 +488,8 @@ function Vendas() {
       />
 
       {toast.message && <Toast type={toast.type} message={toast.message} />}
+      {/* Renderização do modal de autorização */}
+      <PermissionModalUI />
     </div>
 
   );

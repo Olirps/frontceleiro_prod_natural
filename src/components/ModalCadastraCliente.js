@@ -4,7 +4,7 @@ import { formatarCEP, formatarCelular } from '../utils/functions';
 import { getUfs, getMunicipiosUfId } from '../services/api';
 import { addCliente, updateCliente } from '../services/ApiClientes/ApiClientes';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission';
+import { usePermissionModal } from "../hooks/usePermissionModal";
 import Toast from './Toast';
 
 const TABS = ['Dados Básicos', 'Dados Jurídicos', 'Contato', 'Endereço'];
@@ -30,12 +30,18 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
     const [municipios, setMunicipios] = useState([]);
     const [toast, setToast] = useState({ message: '', type: '' });
     const [loading, setLoading] = useState(false);
-    const [permiteEditar, setPermiteEditar] = useState(true);
+    const [permiteEditar, setPermiteEditar] = useState(false);
+    //Permissoes
     const { permissions } = useAuth();
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
     useEffect(() => {
         if (isOpen && edit) {
-            setPermiteEditar(hasPermission(permissions, 'clientes', edit ? 'edit' : 'insert'));
+            checkPermission('clientes', edit ? 'edit' : 'insert', () => {
+                setPermiteEditar(true);
+            });
+        } else {
+            setPermiteEditar(true);
         }
     }, [isOpen, edit, permissions]);
 
@@ -348,7 +354,8 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
                         </div>
                     )}
                 </form>
-
+                {/* Renderização do modal de autorização */}
+                <PermissionModalUI />
                 {toast.message && (
                     <Toast
                         type={toast.type}

@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { addPermissoes, getPermissoes, addGrupoAcesso, getAllGrupoAcesso, updatePermissoes } from '../services/api';
 import '../styles/Permissions.css';
+import { useAuth } from '../context/AuthContext';
+import { usePermissionModal } from "../hooks/usePermissionModal";
 import Toast from '../components/Toast';
+
 
 export default function PermissionsPage() {
     const [groups, setGroups] = useState([]);
@@ -23,6 +26,15 @@ export default function PermissionsPage() {
     const [toastMessage, setToastMessage] = useState('');
     const [editMode, setEditMode] = useState(false); // Novo estado para controlar o modo de edição
     const [currentPermissionId, setCurrentPermissionId] = useState(null); // Para armazenar o id da permissão sendo editada
+    //Permissoes
+    const { permissions } = useAuth();
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
+
+
+
+    useEffect(() => {
+        checkPermission("permissoes", "view")
+    }, [])
 
     useEffect(() => {
         fetchPermissions();
@@ -81,7 +93,7 @@ export default function PermissionsPage() {
             permissoes: [{
                 pagename: formData.get('pagename'),
                 view: formData.get('view') === 'on', // FormData retorna 'on' para checkbox
-                viewcadastro: formData.get('viewcadastro') === 'on', 
+                viewcadastro: formData.get('viewcadastro') === 'on',
                 edit: formData.get('edit') === 'on',
                 delete: formData.get('delete') === 'on',
                 insert: formData.get('insert') === 'on',
@@ -96,7 +108,7 @@ export default function PermissionsPage() {
                 setToastMessage({ type: "success", text: "Permissão atualizada com sucesso!" });
             } catch (error) {
                 console.error("Erro ao atualizar permissão", error);
-                setToastMessage({ type: "error", text: 'Erro ao atualizar permissão: '+ error });
+                setToastMessage({ type: "error", text: 'Erro ao atualizar permissão: ' + error });
             }
         } else {
             try {
@@ -279,6 +291,9 @@ export default function PermissionsPage() {
                     onClose={() => setToastMessage('')}
                 />
             )}
+            {/* Renderização do modal de autorização */}
+            <PermissionModalUI />
+
         </div>
     );
 }

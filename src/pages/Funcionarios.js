@@ -6,7 +6,7 @@ import { cpfCnpjMask, removeMaks } from '../components/utils';
 import { formatarCelular, formatarMoedaBRL, converterMoedaParaNumero } from '../utils/functions';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 
 function Funcionarios() {
@@ -23,8 +23,13 @@ function Funcionarios() {
   const [executarBusca, setExecutarBusca] = useState(true);
   const [selectedFuncionario, setSelectedFuncionario] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
+  //Permissoes
   const { permissions } = useAuth();
+  const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
+  useEffect(() => {
+    checkPermission("funcionarios", "view")
+  }, [])
 
   useEffect(() => {
     const fetchFuncionarios = async () => {
@@ -68,25 +73,22 @@ function Funcionarios() {
   };
 
   const handleOpenModal = () => {
-    if (!hasPermission(permissions, 'funcionarios', 'insert')) {
-      setToast({ message: "Você não tem permissão para cadastrar funcionarios.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    setIsNew(true);
-    setIsModalOpen(true);
-    setIsEdit(false);
+    checkPermission('funcionarios', 'insert', () => {
+      setIsNew(true);
+      setIsModalOpen(true);
+      setIsEdit(false);
+    })
+
   };
 
   const handleEditClick = async (funcionario) => {
     try {
-      if (!hasPermission(permissions, 'funcionarios', 'viewcadastro')) {
-        setToast({ message: "Você não tem permissão para visualizar o cadastro de funcionarios.", type: "error" });
-        return; // Impede a abertura do modal
-      }
-      const response = await getFuncionarioById(funcionario.id);
-      setSelectedFuncionario(response.data);
-      setIsEdit(true);
-      setIsModalOpen(true);
+      checkPermission('funcionarios', 'viewcadastro', async () => {
+        const response = await getFuncionarioById(funcionario.id);
+        setSelectedFuncionario(response.data);
+        setIsEdit(true);
+        setIsModalOpen(true);
+      })
     } catch (err) {
       setToast({ message: "Erro ao buscar detalhes do funcionário.", type: "error" });
     }
@@ -170,6 +172,8 @@ function Funcionarios() {
           }
         />
       )}
+      {/* Renderização do modal de autorização */}
+      <PermissionModalUI />
     </div>
   );
 }

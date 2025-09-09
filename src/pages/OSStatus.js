@@ -3,7 +3,7 @@ import { addOSStatus, getAllOSStatus, updateOSStatus } from '../services/api'; /
 import ModalCadastroOSStatus from '../components/ModalCadastroOSStatus'; // Importe o componente de modal
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission';
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 const OSStatus = () => {
     const [statuses, setStatuses] = useState([]);
@@ -16,9 +16,15 @@ const OSStatus = () => {
     const [toast, setToast] = useState({ message: '', type: '' });
     const [isEdit, setIsEdit] = useState(false);
     const [ativo, setAtivo] = useState(''); // Estado para o filtro ativo/inativo
-    const { permissions } = useAuth();
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
+    //Permissoes
+    const { permissions } = useAuth();
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
+
+    useEffect(() => {
+        checkPermission("osstatus", "view")
+    }, [])
 
     useEffect(() => {
         if (toast.message) {
@@ -63,13 +69,11 @@ const OSStatus = () => {
     };
 
     const handleCadastrarModal = () => {
-        if (!hasPermission(permissions, 'osstatus', 'insert')) {
-            setToast({ message: "Você não tem permissão para cadastrar status.", type: "error" });
-            return;
-        }
-        setIsModalOpen(true);
-        setIsEdit(false);
-        setSelectedStatus(null);
+        checkPermission('osstatus', 'insert', () => {
+            setIsModalOpen(true);
+            setIsEdit(false);
+            setSelectedStatus(null);
+        })
     };
 
     const handleAddOSStatus = async (e) => {
@@ -212,6 +216,8 @@ const OSStatus = () => {
                     edit={isEdit}
                 />
             )}
+            {/* Renderização do modal de autorização */}
+            <PermissionModalUI />
         </div>
     );
 };

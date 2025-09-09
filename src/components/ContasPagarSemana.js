@@ -6,15 +6,18 @@ import { getParcelaByID, pagamentoParcela, getContaPagarSemana } from '../servic
 import ModalPagarLancamentos from '../components/ModalPagarLancamentos'; // Importe o novo modal
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { usePermissionModal } from "../hooks/usePermissionModal";
+import PermissionModal from '../components/PermissionModal';
 import { converterMoedaParaNumero } from '../utils/functions';
 
 
 const ContasPagarSemana = ({ contas }) => {
   const [selectedParcela, setSelectedParcela] = useState(null);
   const [isModalPagarLancamentosOpen, setIsModalPagarLancamentosOpen] = useState(false);
-  const { permissions } = useAuth();
   const [toast, setToast] = useState({ message: '', type: '' });
+  //Permissoes
+  const { permissions } = useAuth();
+  const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
   useEffect(() => {
     if (toast.message) {
@@ -24,13 +27,11 @@ const ContasPagarSemana = ({ contas }) => {
   }, [toast]);
 
   const handlePagarParcelas = async (parcela) => {
-    if (!hasPermission(permissions, 'pagamentosparcelas', 'insert')) {
-      setToast({ message: "Você não tem permissão para realizar pagamentos.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    const response = await getParcelaByID(parcela.id);
-    setSelectedParcela(response.data);
-    setIsModalPagarLancamentosOpen(true);
+    checkPermission('pagamentosparcelas', 'insert', async () => {
+      const response = await getParcelaByID(parcela.id);
+      setSelectedParcela(response.data);
+      setIsModalPagarLancamentosOpen(true);
+    });
   };
 
   const handleSavePagamento = async (e) => {
@@ -101,6 +102,8 @@ const ContasPagarSemana = ({ contas }) => {
           parcela={selectedParcela}
         />
       )}
+      {/* Renderização do modal de autorização */}
+      <PermissionModalUI />
     </div>
   );
 };

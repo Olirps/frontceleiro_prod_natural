@@ -3,7 +3,7 @@ import { addContabancaria, getAllContas, getAllBancos, getContasBancariaById, up
 import ModalCadastroContasBancarias from '../components/ModalCadastroContasBancarias';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { usePermissionModal } from "../hooks/usePermissionModal";
 
 
 const ContasBancarias = () => {
@@ -20,11 +20,15 @@ const ContasBancarias = () => {
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState({ message: '', type: '' });
     const [isEdit, setIsEdit] = useState(false);
-    const { permissions } = useAuth();
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
+    //Permissoes
+    const { permissions } = useAuth();
+    const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
-
+    useEffect(() => {
+        checkPermission("contasbancarias", "view")
+    }, [])
 
     useEffect(() => {
         if (toast.message) {
@@ -86,13 +90,11 @@ const ContasBancarias = () => {
     };
 
     const handleCadastrarModal = () => {
-        if (!hasPermission(permissions, 'contasbancarias', 'insert')) {
-            setToast({ message: "Você não tem permissão para cadastrar clientes.", type: "error" });
-            return; // Impede a abertura do modal
-        }
-        setIsModalOpen(true);
-        setIsEdit(false);
-        setSelectedConta('')
+        checkPermission('contasbancarias', 'insert', () => {
+            setIsModalOpen(true);
+            setIsEdit(false);
+            setSelectedConta('')
+        })
     };
 
 
@@ -147,14 +149,12 @@ const ContasBancarias = () => {
 
     const handleEditClick = async (cliente) => {
         try {
-            if (!hasPermission(permissions, 'contasbancarias', 'viewcadastro')) {
-                setToast({ message: "Você não tem permissão para visualizar o cadastro de contas bancárias.", type: "error" });
-                return; // Impede a abertura do modal
-            }
-            const response = await getContasBancariaById(cliente.id);
-            setSelectedConta(response.data);
-            setIsEdit(true);
-            setIsModalOpen(true);
+            checkPermission('contasbancarias', 'viewcadastro', async () => {
+                const response = await getContasBancariaById(cliente.id);
+                setSelectedConta(response.data);
+                setIsEdit(true);
+                setIsModalOpen(true);
+            })
         } catch (err) {
             console.error('Erro ao buscar detalhes da conta bancária.', err);
             setToast({ message: "Erro ao buscar detalhes da conta bancária.", type: "error" });
@@ -302,6 +302,8 @@ const ContasBancarias = () => {
                     edit={isEdit}
                 />
             )}
+            {/* Renderização do modal de autorização */}
+            <PermissionModalUI />
         </div>
     );
 };

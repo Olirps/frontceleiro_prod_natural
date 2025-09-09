@@ -17,7 +17,7 @@ import ModalLancamentoParcelas from '../components/ModalLancamentoParcelas'; // 
 import ModalPagarLancamentos from '../components/ModalPagarLancamentos'; // Importe o novo modal
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { hasPermission } from '../utils/hasPermission'; // Certifique-se de importar corretamente a função
+import { usePermissionModal } from "../hooks/usePermissionModal";
 import Pagination from '../utils/Pagination';
 
 
@@ -40,9 +40,11 @@ function MovimentacaoFinanceiraReceitas() {
   const [selectedLancamentoCompleto, setSelectedLancamentoCompleto] = useState(null);
   const [selectedParcela, setSelectedParcela] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
-  const { permissions } = useAuth();
   const [executarBusca, setExecutarBusca] = useState(true);
 
+  //Permissoes
+  const { permissions } = useAuth();
+  const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
   ////handleSearch
   const [descricao, setDescricao] = useState('');
@@ -127,29 +129,24 @@ function MovimentacaoFinanceiraReceitas() {
   };
 
   const handleCadastrarModal = () => {
-    if (!hasPermission(permissions, 'movimentacaofinanceiradespesas', 'insert')) {
-      setToast({ message: "Você não tem permissão para cadastrar despesas.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    setIsModalOpen(true);
-    setIsEdit(false);
-    setSelectedMovimentacao(null);
+    checkPermission('movimentacaofinanceiradespesas', 'insert', () => {
+      setIsModalOpen(true);
+      setIsEdit(false);
+      setSelectedMovimentacao(null);
+    })
+
   };
 
   const handleUnificarModal = () => {
-    if (!hasPermission(permissions, 'unificar-lancamentos', 'insert')) {
-      setToast({ message: "Você não tem permissão para unificar despesas.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    setIsModalUnificaLancamentosOpen(true);
+    checkPermission('unificar-lancamentos', 'insert', () => {
+      setIsModalUnificaLancamentosOpen(true);
+    })
   };
 
   const handlePagamentoUnificado = () => {
-    if (!hasPermission(permissions, 'unificar-pagamentos', 'insert')) {
-      setToast({ message: "Você não tem permissão para pagamento unificado.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    setIsModalPagamentoUnificadoOpen(true);
+    checkPermission('unificar-pagamentos', 'insert', () => {
+      setIsModalPagamentoUnificadoOpen(true);
+    })
   };
 
   const handleAddPagamentoUnificado = async (e) => {
@@ -292,14 +289,12 @@ function MovimentacaoFinanceiraReceitas() {
 
 
   const handleLancaParcelas = async (movimentacao) => {
-    if (!hasPermission(permissions, 'lancarparcelas', 'insert')) {
-      setToast({ message: "Você não tem permissão para lançar parcelas.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    const response = await getLancamentoReceitaById(movimentacao.id);
-    setSelectedMovimentacao(response);
-    setValor(response.valor);
-    setIsModalLancaParcelasOpen(true);
+    checkPermission('lancarparcelas', 'insert', async () => {
+      const response = await getLancamentoReceitaById(movimentacao.id);
+      setSelectedMovimentacao(response);
+      setValor(response.valor);
+      setIsModalLancaParcelasOpen(true);
+    });
   };
 
   const handleSaveParcelas = async (e) => {
@@ -382,13 +377,11 @@ function MovimentacaoFinanceiraReceitas() {
     }
   };
   const handlePagarParcelas = async (parcela) => {
-    if (!hasPermission(permissions, 'pagamentosparcelas', 'insert')) {
-      setToast({ message: "Você não tem permissão para realizar pagamentos.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    const response = await getParcelaByID(parcela.id);
-    setSelectedParcela(response.data);
-    setIsModalPagarLancamentosOpen(true);
+    checkPermission('pagamentosparcelas', 'insert', async () => {
+      const response = await getParcelaByID(parcela.id);
+      setSelectedParcela(response.data);
+      setIsModalPagarLancamentosOpen(true);
+    });
   };
 
 
@@ -422,14 +415,13 @@ function MovimentacaoFinanceiraReceitas() {
   };
 
   const handleGetDespesaCompleta = async (lancto) => {
-    if (!hasPermission(permissions, 'lancamento-completo', 'view')) {
-      setToast({ message: "Você não tem permissão visualizar o lançamento.", type: "error" });
-      return; // Impede a abertura do modal
-    }
-    const lancamentoCompleto = await getLancamentoCompletoById(lancto.id);
-    setSelectedLancamentoCompleto(lancamentoCompleto)
-    setIsModalLancamentoCompletoOpen(true)
+    checkPermission('lancamento-completo', 'view', async () => {
+      const lancamentoCompleto = await getLancamentoCompletoById(lancto.id);
+      setSelectedLancamentoCompleto(lancamentoCompleto);
+      setIsModalLancamentoCompletoOpen(true);
+    });
   }
+
   const handleConfirmacaoParcelas = async (dadosRecebidos) => {
 
     try {
@@ -698,6 +690,8 @@ function MovimentacaoFinanceiraReceitas() {
           />
         )
       }
+      {/* Renderização do modal de autorização */}
+      <PermissionModalUI /> 
     </div>
   );
 }
