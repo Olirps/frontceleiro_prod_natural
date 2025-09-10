@@ -37,6 +37,7 @@ import RelatorioSaldoEstoquePage from './pages/RelatorioSaldoEstoquePage';
 import FluxoCaixaPage from './pages/FluxoCaixaPage';
 import TefTransacoesPage from './pages/TefTransacoesPage';
 import UsuariosPage from './pages/UsuariosPage';
+import MenusPage from './pages/MenusPage';
 
 function App() {
   const { isAuthenticated, permissions } = useAuth(); // Pega o estado de autenticação e as permissões do usuário
@@ -178,6 +179,10 @@ function App() {
           <Route
             path="/usuarios"
             element={isAuthenticated ? <UsuariosPage /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/menus"
+            element={isAuthenticated ? <MenusPage /> : null} // Condicionalmente não renderiza
           />
         </Route>
       </Routes>

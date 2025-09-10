@@ -45,22 +45,29 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error?.response?.status;
-    if (status === 401 || status === 403) {
+
+    if (status === 401) {
+      // Usuário não autenticado → limpa token e redireciona para login
       try {
         localStorage.removeItem('authToken');
       } catch (_) {
         // ignore
       }
-      // Redireciona para login sem quebrar execução
       if (typeof window !== 'undefined' && window.location?.pathname !== '/login') {
         setTimeout(() => {
           window.location.href = '/login';
         }, 0);
       }
+    } else if (status === 403) {
+      // Usuário autenticado, mas sem permissão → mantém na página atual
+      console.warn('Usuário não possui permissão para acessar este recurso.');
+      // opcional: você pode mostrar um toast ou modal de "Acesso negado"
     }
+
     return Promise.reject(error);
   }
 );
+
 
 export default api;
 
