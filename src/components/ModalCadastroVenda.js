@@ -95,6 +95,10 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
     };
 
     const adicionarProduto = (produto) => {
+        if (produto.tem_promocao) {
+            produto.vlrVenda = produto.valor_atual;
+        }
+
         const total = (produto.vlrVenda * qtd).toFixed(2);
         setProdutosSelecionados(prev => [
             ...prev,
@@ -267,8 +271,17 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
                     {produtoSelecionado ? (
                         <div className="flex items-center gap-2 mt-2 p-3 bg-gray-50 rounded">
                             <div className="flex-1">
-                                <p className="font-medium">{produtoSelecionado.xProd}</p>
-                                <p className="text-sm text-gray-600">{formatarMoedaBRL(produtoSelecionado.vlrVenda)}</p>
+                                <div className="flex-1">
+                                    {produtoSelecionado.tem_promocao ? (
+                                        <div className="flex items-baseline gap-4">
+                                            <span>{produtoSelecionado.xProd}</span>
+                                            <span className="font-medium text-red-600 line-through">{formatarMoedaBRL(produtoSelecionado.vlrVenda)}</span>
+                                            <span className="font-medium">{formatarMoedaBRL(produtoSelecionado.valor_atual)}</span>
+                                        </div>
+                                    ) :
+                                        <span className="font-medium">{formatarMoedaBRL(produtoSelecionado.vlrVenda)}</span>
+                                    }
+                                </div>
                             </div>
                             <input
                                 type="number"
@@ -320,8 +333,19 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
                                             }}
                                             className="p-2 hover:bg-gray-100 cursor-pointer flex justify-between"
                                         >
-                                            <span>{prod.xProd}</span>
-                                            <span className="font-medium">{formatarMoedaBRL(prod.vlrVenda)}</span>
+                                            {prod.tem_promocao ? (
+                                                <>
+                                                    <span>{prod.xProd}</span>
+                                                    <span className="font-medium text-red-600 line-through">{formatarMoedaBRL(prod.vlrVenda)}</span>
+                                                    <span className="font-medium">{formatarMoedaBRL(prod.valor_atual)}</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span>{prod.xProd}</span>
+                                                    <span className="font-medium">{formatarMoedaBRL(prod.vlrVenda)}</span>
+                                                </>
+                                            )}
+
                                         </li>
                                     ))}
                                 </ul>

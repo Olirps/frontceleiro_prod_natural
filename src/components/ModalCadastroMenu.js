@@ -7,6 +7,7 @@ const ModalCadastroMenu = ({ isOpen, onClose, onSubmit, menu, edit, allMenus = [
     const [formData, setFormData] = useState({
         label: '',
         path: '',
+    menu_key: '',
         permission: '',
         visible: true,
         parentId: '',
@@ -48,6 +49,7 @@ const ModalCadastroMenu = ({ isOpen, onClose, onSubmit, menu, edit, allMenus = [
                 setFormData({
                     label: menu.label || '',
                     path: menu.path || '',
+                    menu_key: menu.menu_key || '',
                     permission: Array.isArray(menu.permissions)
                         ? menu.permissions.join(', ')
                         : menu.permissions || '',
@@ -61,6 +63,7 @@ const ModalCadastroMenu = ({ isOpen, onClose, onSubmit, menu, edit, allMenus = [
                 setFormData({
                     label: '',
                     path: '',
+                    menu_key: '',
                     permission: '',
                     visible: true,
                     parentId: '',
@@ -150,6 +153,7 @@ const ModalCadastroMenu = ({ isOpen, onClose, onSubmit, menu, edit, allMenus = [
         setFormData({
             label: '',
             path: '',
+            menu_key: '',
             permission: '',
             visible: true,
             parentId: '',
@@ -217,7 +221,7 @@ const ModalCadastroMenu = ({ isOpen, onClose, onSubmit, menu, edit, allMenus = [
                     </div>
 
                     {/* Row 2 */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label htmlFor="permission" className="block text-gray-700 font-medium mb-1">Permissões</label>
                             <input
@@ -235,6 +239,22 @@ const ModalCadastroMenu = ({ isOpen, onClose, onSubmit, menu, edit, allMenus = [
                             <p className="text-gray-500 text-sm mt-1">
                                 Separe múltiplas permissões com vírgula (view, edit, delete, insert)
                             </p>
+                        </div>
+                        <div>
+                            <label htmlFor="menu_key" className="block text-gray-700 font-medium mb-1">Chave (menu_key)</label>
+                            <input
+                                type="text"
+                                id="menu_key"
+                                name="menu_key"
+                                value={formData.menu_key}
+                                onChange={handleChange}
+                                disabled={!permiteEditar}
+                                placeholder="ex: users.view"
+                                maxLength={100}
+                                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.menu_key ? 'border-red-500' : 'border-gray-300'}`}
+                            />
+                            {errors.menu_key && <p className="text-red-500 text-sm mt-1">{errors.menu_key}</p>}
+                            <p className="text-gray-500 text-sm mt-1">Usada para referência de permissão ou rotas</p>
                         </div>
 
                         <div>

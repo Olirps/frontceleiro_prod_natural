@@ -2,9 +2,9 @@ import api from '../services/api';
 
 // ─── Grupo de Produtos ──────────────────────────────
 
-export const getGrupoProdutos = async (filters) => {
+export const getGrupoProdutos = async (filters = {}) => {
   try {
-    const { nome, status, currentPage, rowsPerPage } = filters;
+    const { nome = "", status = "", currentPage = 1, rowsPerPage = 10 } = filters;
     const response = await api.get('/grupoprodutos/', {
       params: {
         nome,

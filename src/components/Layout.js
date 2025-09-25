@@ -92,13 +92,31 @@ function Layout() {
   // Componente recursivo para renderizar menus
   const renderMenuItems = (items, parentId = null, level = 0) => {
     return items
-      .filter(item => item.parent_id === parentId && item.visible) // <-- aqui
+      .filter(item => {
+        // precisa estar marcado como visível
+        if (!item.visible) return false;
+
+        // precisa ter permissão
+        const canView = Array.isArray(item.permissions)
+          ? item.permissions.some(p => canViewMenuItem(p))
+          : canViewMenuItem(item.permissions);
+
+        return canView && item.parent_id === parentId;
+      })
       .map(item => {
         const canView = Array.isArray(item.permissions)
           ? item.permissions.some(p => canViewMenuItem(p))
           : canViewMenuItem(item.permissions);
 
-        const children = items.filter(child => child.parent_id === item.id && child.visible); // <-- aqui também
+        const children = items.filter(child => {
+          if (!child.visible) return false;
+
+          const childCanView = Array.isArray(child.permissions)
+            ? child.permissions.some(p => canViewMenuItem(p))
+            : canViewMenuItem(child.permissions);
+
+          return childCanView && child.parent_id === item.id;
+        });
 
         return (
           <div

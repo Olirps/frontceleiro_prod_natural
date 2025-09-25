@@ -271,6 +271,11 @@ function formatarCEP(cep) {
 
 
 }
+function converterDataISO(dataISO) {
+  if (!dataISO) return '';
+  return dataISO.split('T')[0]; // pega só '2025-09-15'
+}
+
 
 function converterData(dataString) {
   const partes = dataString.split(/[\/ :]/); // Divide a string em dia, mês, ano, hora, minuto e segundo
@@ -320,5 +325,6 @@ module.exports = {
   formatarPercentual,
   formatarCEP,
   formatarDataBR,
-  formatarDataNew
+  formatarDataNew,
+  converterDataISO
 };

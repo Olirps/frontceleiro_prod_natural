@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { addProdutos, getProdutos, getProdutoById, updateProduto, inativarProduto } from '../services/api';
-import '../styles/Produtos.css';
-import '../styles/Fornecedores.css';
+// import '../styles/Produtos.css';
+// import '../styles/Fornecedores.css';
 import ModalCadastraProduto from '../components/ModalCadastraProduto';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
@@ -155,7 +155,9 @@ function Produtos() {
             vUnCom: Number(e.vUnCom),
             vlrVenda: Number(e.vlrVenda),
             vlrVendaAtacado: Number(e.vlrVendaAtacado),
-            pct_servico: Number(e.percentual)
+            pct_servico: Number(e.percentual),
+            fracionado: e.fracionado,
+            atacado: e.atacado,
         };
 
         try {
@@ -202,6 +204,8 @@ function Produtos() {
                 CEST: e.cest,
                 vlrVenda: Number(e.vlrVenda),
                 vlrVendaAtacado: Number(e.vlrVendaAtacado),
+                fracionado: e.fracionado,
+                atacado: e.atacado,
                 pct_servico: Number(e.percentual)
             };
             await updateProduto(selectedProduto.id, updatedProduto);
@@ -210,9 +214,6 @@ function Produtos() {
             closeCadastraProdutoModal();
             setCadastroSuccess(prev => !prev);
         })
-
-
-
         try {
 
         } catch (err) {
@@ -240,25 +241,27 @@ function Produtos() {
     };
 
     return (
-        <div id="produtos-container">
-            <h1 className="title-page">Consulta de Produtos</h1>
+        <div className="min-h-screen bg-gray-50 p-4">
+            <h1 className="text-2xl font-bold mb-6 text-gray-800">Consulta de Produtos</h1>
 
             {toast.message && <Toast type={toast.type} message={toast.message} />}
 
             {loading ? (
-                <div className="spinner-container">
-                    <div className="spinner"></div>
+                <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-solid"></div>
                 </div>
             ) : (
                 <>
-                    <div id="search-container">
-                        <div id="search-fields">
+                    {/* Filtros de busca */}
+                    <div className="bg-white rounded-lg shadow p-4 mb-6 flex flex-col md:flex-row md:items-end gap-4">
+                        <div className="flex flex-col md:flex-row gap-4 flex-1">
                             <div>
-                                <label htmlFor="tipo">Tipo</label>
+                                <label htmlFor="tipo" className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
                                 <select
                                     id="tipo"
                                     value={searchParams.tipo}
                                     onChange={(e) => setSearchParams({ ...searchParams, tipo: e.target.value })}
+                                    className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="">Todos</option>
                                     <option value="servico">Serviço</option>
@@ -266,60 +269,57 @@ function Produtos() {
                                 </select>
                             </div>
                             <div>
-                                <label htmlFor="xProd">Nome</label>
+                                <label htmlFor="xProd" className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
                                 <input
-                                    className="input-geral"
                                     type="text"
                                     id="xProd"
                                     value={searchParams.nome}
                                     onChange={(e) => setSearchParams({ ...searchParams, nome: e.target.value })}
                                     maxLength="150"
+                                    className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>
                             <div>
-                                <label htmlFor="cEAN">Código de Barras</label>
+                                <label htmlFor="cEAN" className="block text-sm font-medium text-gray-700 mb-1">Código de Barras</label>
                                 <input
-                                    className="input-geral"
                                     type="text"
                                     id="cEAN"
                                     value={searchParams.cEAN}
                                     onChange={(e) => setSearchParams({ ...searchParams, cEAN: e.target.value })}
                                     maxLength="14"
+                                    className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>
                         </div>
-                        <div>
-                            <div id="button-group">
-                                <button onClick={handleSearch} className="button">Pesquisar</button>
-                                <button onClick={handleClear} className="button">Limpar</button>
-                                <button onClick={handleCadastrarModal} className="button">Cadastrar</button>
-                            </div>
+                        <div className="flex gap-2 mt-4 md:mt-0">
+                            <button onClick={handleSearch} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Pesquisar</button>
+                            <button onClick={handleClear} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Limpar</button>
+                            <button onClick={handleCadastrarModal} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Cadastrar</button>
                         </div>
                     </div>
 
-                    <div id="separator-bar"></div>
-
-                    <div id="results-container">
-                        <div id="produtos-grid-container">
-                            <table id="produtos-grid">
-                                <thead>
+                    {/* Resultados */}
+                    <div className="bg-white rounded-lg shadow p-4">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-100">
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Nome</th>
-                                        <th>Cód. Barras</th>
-                                        <th>Ações</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cód. Barras</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="bg-white divide-y divide-gray-100">
                                     {filteredProdutos.map((produto) => (
-                                        <tr key={produto.id}>
-                                            <td>{produto.id}</td>
-                                            <td>{produto.xProd}</td>
-                                            <td>{produto.cEAN}</td>
-                                            <td>
+                                        <tr key={produto.id} className="hover:bg-blue-50 transition">
+                                            <td className="px-4 py-2 text-sm text-gray-700">{produto.id}</td>
+                                            <td className="px-4 py-2 text-sm text-gray-700">{produto.xProd}</td>
+                                            <td className="px-4 py-2 text-sm text-gray-700">{produto.cEAN}</td>
+                                            <td className="px-4 py-2">
                                                 <button
                                                     onClick={() => handleEditClick(produto)}
-                                                    className="edit-button"
+                                                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
                                                 >
                                                     Visualizar
                                                 </button>
@@ -330,36 +330,41 @@ function Produtos() {
                             </table>
                         </div>
 
-                        <div id="pagination-container">
-                            <button
-                                onClick={() => handlePageChange(pagination.currentPage - 1)}
-                                disabled={pagination.currentPage === 1}
-                            >
-                                Anterior
-                            </button>
-                            <span>
-                                Página {pagination.currentPage} de {pagination.totalPages}
-                            </span>
-                            <button
-                                onClick={() => handlePageChange(pagination.currentPage + 1)}
-                                disabled={pagination.currentPage === pagination.totalPages}
-                            >
-                                Próxima
-                            </button>
-                        </div>
-
-                        <div id="show-more-container">
-                            <label htmlFor="rows-select">Mostrar</label>
-                            <select
-                                id="rows-select"
-                                value={pagination.itemsPerPage}
-                                onChange={handleRowsChange}
-                            >
-                                <option value={10}>10</option>
-                                <option value={25}>25</option>
-                                <option value={50}>50</option>
-                            </select>
-                            <label htmlFor="rows-select">por página</label>
+                        {/* Paginação */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between mt-4 gap-2">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => handlePageChange(pagination.currentPage - 1)}
+                                    disabled={pagination.currentPage === 1}
+                                    className="px-3 py-1 bg-gray-200 text-gray-700 rounded disabled:opacity-50"
+                                >
+                                    Anterior
+                                </button>
+                                <span className="text-sm text-gray-600">
+                                    Página {pagination.currentPage} de {pagination.totalPages}
+                                </span>
+                                <button
+                                    onClick={() => handlePageChange(pagination.currentPage + 1)}
+                                    disabled={pagination.currentPage === pagination.totalPages}
+                                    className="px-3 py-1 bg-gray-200 text-gray-700 rounded disabled:opacity-50"
+                                >
+                                    Próxima
+                                </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <label htmlFor="rows-select" className="text-sm text-gray-600">Mostrar</label>
+                                <select
+                                    id="rows-select"
+                                    value={pagination.itemsPerPage}
+                                    onChange={handleRowsChange}
+                                    className="border border-gray-300 rounded p-1"
+                                >
+                                    <option value={10}>10</option>
+                                    <option value={25}>25</option>
+                                    <option value={50}>50</option>
+                                </select>
+                                <span className="text-sm text-gray-600">por página</span>
+                            </div>
                         </div>
                     </div>
                 </>

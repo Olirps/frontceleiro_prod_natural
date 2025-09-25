@@ -38,6 +38,8 @@ import FluxoCaixaPage from './pages/FluxoCaixaPage';
 import TefTransacoesPage from './pages/TefTransacoesPage';
 import UsuariosPage from './pages/UsuariosPage';
 import MenusPage from './pages/MenusPage';
+import PromocaoPage from './pages/PromocaoPage';
+import AtualizacaoPrecoPage from './pages/AtualizacaoPrecoPage';
 
 function App() {
   const { isAuthenticated, permissions } = useAuth(); // Pega o estado de autenticação e as permissões do usuário
@@ -183,6 +185,14 @@ function App() {
           <Route
             path="/menus"
             element={isAuthenticated ? <MenusPage /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/promocoes"
+            element={isAuthenticated ? <PromocaoPage /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/atualiza-preco"
+            element={isAuthenticated ? <AtualizacaoPrecoPage /> : null} // Condicionalmente não renderiza
           />
         </Route>
       </Routes>
