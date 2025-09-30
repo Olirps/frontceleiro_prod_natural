@@ -175,86 +175,131 @@ const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSu
     };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <button className="modal-close" onClick={onClose}>X</button>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+            <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-4xl p-6">
+                {/* Botão de fechar */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                >
+                    ✕
+                </button>
+
                 {loading ? (
-                    <div className="spinner"></div>
+                    <div className="flex justify-center items-center py-10">
+                        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
                 ) : (
                     <>
                         <div>
-                            <h2>Tratar Produto: {product.descricao}</h2>
-                            <button className="button-geral" onClick={openPesquisaGNModal}>Pesquisar Produto</button>
-                            <div id='produto-vinculado'>
-                                <div id='cadastro-padrao'>
+                            <h2 className="text-xl font-semibold mb-4">
+                                Tratar Produto:{" "}
+                                <span className="text-blue-600">{product.descricao}</span>
+                            </h2>
+
+                            <button
+                                onClick={openPesquisaGNModal}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mb-6"
+                            >
+                                Pesquisar Produto
+                            </button>
+
+                            <div>
+                                {/* Cadastro padrão */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label htmlFor="novoNome">Nome Nota:</label>
+                                        <label
+                                            htmlFor="novoNome"
+                                            className="block text-sm font-medium text-gray-700 mb-1"
+                                        >
+                                            Nome Nota:
+                                        </label>
                                         <input
-                                            className="input-geral"
-                                            type="text"
                                             id="novoNome"
+                                            type="text"
                                             value={novoNome}
-                                            onChange={e => setNovoNome(e.target.value)}
+                                            onChange={(e) => setNovoNome(e.target.value)}
                                             placeholder="Digite o novo nome do produto"
+                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         />
                                     </div>
-                                    <div >
-                                        <label htmlFor="produtoId">ID: {produtoId}</label>
+
+                                    <div>
+                                        <label
+                                            htmlFor="produtoId"
+                                            className="block text-sm font-medium text-gray-700 mb-1"
+                                        >
+                                            ID: {produtoId}
+                                        </label>
                                         <input
-                                            className='input-geral'
                                             type="text"
                                             value={produto}
                                             onChange={handleSearchChange}
                                             readOnly
                                             required
+                                            className="w-full rounded-lg border-gray-300 shadow-sm bg-gray-100 text-gray-600 cursor-not-allowed"
                                         />
                                     </div>
                                 </div>
-                                <div id="separator-bar"></div>
-                                <div id="results-container">
-                                    <div id="grid-padrao-container">
-                                        <table id="grid-padrao">
-                                            <thead>
-                                                <tr>
-                                                    <th>ID</th>
-                                                    <th>Nome</th>
-                                                    <th>EAN</th>
-                                                    <th>Ação</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {similares && similares.length > 0 ? (
-                                                    similares.map((sim, idx) => (
-                                                        <tr key={sim.produto.id || idx}>
-                                                            <td>{sim.produto.id}</td>
-                                                            <td>{sim.produto.xProd}</td>
-                                                            <td>{sim.cEAN || 'SEM GTIN'}</td>
-                                                            <td>
-                                                                <button
-                                                                    className="button-geral"
-                                                                    type="button"
-                                                                    onClick={() => handleSelectProduto(sim.produto)}
-                                                                >
-                                                                    Vincular
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    ))
-                                                ) : (
-                                                    <tr>
-                                                        <td colSpan="4" style={{ textAlign: 'center' }}>Nenhum produto similar encontrado.</td>
+
+                                {/* Separador */}
+                                <div className="my-6 border-t border-gray-300"></div>
+
+                                {/* Resultados */}
+                                <div className="overflow-x-auto">
+                                    <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
+                                        <thead className="bg-gray-100 text-gray-700">
+                                            <tr>
+                                                <th className="px-4 py-2 text-left">ID</th>
+                                                <th className="px-4 py-2 text-left">Nome</th>
+                                                <th className="px-4 py-2 text-left">EAN</th>
+                                                <th className="px-4 py-2 text-center">Ação</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {similares && similares.length > 0 ? (
+                                                similares.map((sim, idx) => (
+                                                    <tr
+                                                        key={sim.produto.id || idx}
+                                                        className="border-t border-gray-200"
+                                                    >
+                                                        <td className="px-4 py-2">{sim.produto.id}</td>
+                                                        <td className="px-4 py-2">{sim.produto.xProd}</td>
+                                                        <td className="px-4 py-2">
+                                                            {sim.cEAN || "SEM GTIN"}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-center">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleSelectProduto(sim.produto)}
+                                                                className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700"
+                                                            >
+                                                                Vincular
+                                                            </button>
+                                                        </td>
                                                     </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td
+                                                        colSpan="4"
+                                                        className="px-4 py-6 text-center text-gray-500"
+                                                    >
+                                                        Nenhum produto similar encontrado.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
-                                {/* Botões de ação */}
-                                <div id='button-group'>
+
+                                {/* Botões */}
+                                <div className="flex justify-end mt-6">
                                     <button
-                                        className="button-geral"
                                         onClick={handleSave}
-                                        disabled={isSaving}>
+                                        disabled={isSaving}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+                                    >
                                         Salvar
                                     </button>
                                 </div>
@@ -264,7 +309,7 @@ const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSu
                 )}
             </div>
 
-            {/* Modal de pesquisa de produtos */}
+            {/* Outros Modais */}
             <ModalPesquisaGN
                 isOpen={isPesquisaGNModalOpen}
                 onClose={closePesquisaGNModal}
@@ -284,9 +329,10 @@ const ModalTratarProdutosNF = ({ isOpen, onClose, products, product, onVinculoSu
                 cfop={0}
             />
 
-            {/* Exibir Toast */}
+            {/* Toast */}
             <Toast message={toast.message} type={toast.type} />
         </div>
+
     );
 };
 

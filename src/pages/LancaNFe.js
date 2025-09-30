@@ -155,7 +155,7 @@ function LancaNFe() {
     const formData = new FormData(e.target);
     formData.forEach((value, key) => {
     });*/
-    const vlrNf = converterMoedaParaNumero(e.vNF);
+    const vlrNf = (e.vNF);
 
     const newNf = {
       codFornecedor: e.fornecedorId,
@@ -316,179 +316,151 @@ function LancaNFe() {
   };
 
   return (
-    <div id="notas-fiscais-container">
-      <h1 className='title-page'>Consulta de Notas Fiscais</h1>
+    <div className="p-6">
+      {/* Título da página */}
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">Consulta de Notas Fiscais</h1>
+
+      {/* Spinner */}
       {loading ? (
-        <div className="spinner-container">
-          <div className="spinner"></div>
+        <div className="flex justify-center items-center py-20">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
       ) : (
         <>
-          {/* Conteúdo da página quando o carregamento estiver completo */}
-          <div id="search-container">
-            <div id="search-fields">
+          {/* Área de filtros */}
+          <div className="bg-white rounded-xl shadow p-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label htmlFor="nNF">Nota Fiscal</label>
+                <label className="block text-sm font-medium mb-1" htmlFor="nNF">Nota Fiscal</label>
                 <input
-                  className="input-geral"
                   type="text"
                   id="nNF"
                   value={nNF}
                   onChange={(e) => setNNF(e.target.value)}
-                  maxLength="10"
+                  maxLength={10}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label htmlFor="codFornecedor">Código do Fornecedor</label>
+                <label className="block text-sm font-medium mb-1" htmlFor="codFornecedor">Código do Fornecedor</label>
                 <input
-                  className="input-geral"
                   type="text"
                   id="codFornecedor"
                   value={codFornecedor}
                   onChange={(e) => setCodFornecedor(e.target.value)}
-                  maxLength="10"
+                  maxLength={10}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label htmlFor="cnpjFornecedor">CNPJ do Fornecedor</label>
+                <label className="block text-sm font-medium mb-1" htmlFor="cnpjFornecedor">CNPJ do Fornecedor</label>
                 <input
-                  className="input-geral"
                   type="text"
                   id="cnpjFornecedor"
                   value={cpfCnpjMask(cnpjFornecedor)}
                   onChange={(e) => setCnpjFornecedor(e.target.value)}
-                  maxLength="18" // CNPJ geralmente tem 14 dígitos
+                  maxLength={18}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label htmlFor="nomeFornecedor">Nome do Fornecedor</label>
+                <label className="block text-sm font-medium mb-1" htmlFor="nomeFornecedor">Nome do Fornecedor</label>
                 <input
-                  className="input-geral"
                   type="text"
                   id="nomeFornecedor"
                   value={nomeFornecedor}
                   onChange={(e) => setNomeFornecedor(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
-            <div>
-              <div id="button-group">
-                <button onClick={handleSearch} className="button">Pesquisar</button>
-                <button onClick={handleClear} className="button">Limpar</button>
-                <button onClick={openNotaFiscalModal} className="button">Cadastrar</button>
-                <button onClick={openImportModal} className="button">Importar XML</button>
-              </div>
+
+            {/* Botões */}
+            <div className="flex flex-wrap gap-3 mt-4">
+              <button onClick={handleSearch} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Pesquisar</button>
+              <button onClick={handleClear} className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">Limpar</button>
+              <button onClick={openNotaFiscalModal} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Cadastrar</button>
+              <button onClick={openImportModal} className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">Importar XML</button>
             </div>
           </div>
 
-          <div id="separator-bar"></div>
-
-          <div id="results-container">
-            <div id="grid-padrao-container">
-              <table id="grid-padrao">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Nota Fiscal</th>
-                    <th>Fornecedor</th>
-                    <th>CNPJ</th>
-                    <th>Emissão</th>
-                    <th>Valor NF</th>
-                    <th>Ações</th>
+          {/* Tabela de resultados */}
+          <div className="overflow-x-auto bg-white rounded-xl shadow p-4">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-700">ID</th>
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-700">Nota Fiscal</th>
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-700">Fornecedor</th>
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-700">CNPJ</th>
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-700">Emissão</th>
+                  <th className="px-3 py-2 text-right text-sm font-medium text-gray-700">Valor NF</th>
+                  <th className="px-3 py-2 text-center text-sm font-medium text-gray-700">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentNotasFiscais.map(nota => (
+                  <tr key={nota.id} className="hover:bg-gray-50">
+                    <td className="px-3 py-2 text-sm">{nota.id}</td>
+                    <td className="px-3 py-2 text-sm">{nota.nNF}</td>
+                    <td className="px-3 py-2 text-sm">{nota.nomeFornecedor || 'Não disponível'}</td>
+                    <td className="px-3 py-2 text-sm">{cpfCnpjMask(nota.cpfCnpj || '')}</td>
+                    <td className="px-3 py-2 text-sm">{new Date(nota.dhEmi).toLocaleDateString('pt-BR')}</td>
+                    <td className="px-3 py-2 text-sm text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(nota.vNF)}</td>
+                    <td className="px-3 py-2 text-center flex justify-center gap-2 flex-wrap">
+                      {nota.status === 'fechada' && <button onClick={() => handleDetalhes(nota)} className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs">Detalhes</button>}
+                      {nota.status === 'andamento' && <button onClick={() => handleEditar(nota)} className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs">Editar</button>}
+                      {nota.lancto === 'manual' && (nota.status === 'aberta' || nota.status === 'andamento') && (
+                        <button onClick={() => handleProductClick(nota)} className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-xs">Lancto Prod</button>
+                      )}
+                      {nota.status === 'fechada' && (
+                        <button onClick={() => handleProductClick(nota)} className="px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs">Produtos</button>
+                      )}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {currentNotasFiscais.map((notaFiscal) => {
-                    const tipoLancto = notaFiscal.lancto;
-                    const status = notaFiscal.status;
+                ))}
+              </tbody>
+            </table>
 
-                    return (
-                      <tr key={notaFiscal.id}>
-                        <td>{notaFiscal.id}</td>
-                        <td>{notaFiscal.nNF}</td>
-                        <td>{notaFiscal.nomeFornecedor || 'Nome do Fornecedor não disponível'}</td>
-                        <td>{cpfCnpjMask(notaFiscal.cpfCnpj || 'CNPJ não disponível')}</td>
-                        <td>{new Date(notaFiscal.dhEmi).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
-                        <td>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(notaFiscal.vNF)}</td>
-                        <td id="button-action">
-                          {status === 'fechada' && (
-                            <button className="detalhes-button"
-                              onClick={() => handleDetalhes(notaFiscal)}
-                            >Detalhes</button>
-                          )}
-                          {status !== 'fechada' && status === 'andamento' && (
-                            <button className="detalhes-button"
-                              onClick={() => handleEditar(notaFiscal)}
-                            >Editar</button>
-                          )}
-                          {tipoLancto === 'manual' && (status === 'aberta' || status === 'andamento') && (
-                            <button onClick={() => handleProductClick(notaFiscal)} className="lancto-prod-button">Lancto Prod</button>
-                          )}
-                          {status === 'fechada' && (
-                            <button onClick={() => handleProductClick(notaFiscal)} className="edit-button">Produtos</button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            <div id="pagination-container">
-              <button onClick={handlePreviousPage} disabled={currentPage === 1}>
-                Anterior
-              </button>
-              <span>Página {currentPage} de {totalPages}</span>
-              <button onClick={handleNextPage} disabled={currentPage === totalPages}>
-                Próxima
-              </button>
-            </div>
-
-            <div id="show-more-container">
-              <label htmlFor="rows-select">Mostrar</label>
-              <select id="rows-select" value={rowsPerPage} onChange={handleRowsChange}>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
-              <label htmlFor="rows-select">por página</label>
+            {/* Paginação */}
+            <div className="flex flex-col md:flex-row justify-between items-center mt-4 gap-3">
+              <div className="flex gap-2">
+                <button onClick={handlePreviousPage} disabled={currentPage === 1} className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50">Anterior</button>
+                <span className="text-sm">Página {currentPage} de {totalPages}</span>
+                <button onClick={handleNextPage} disabled={currentPage === totalPages} className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50">Próxima</button>
+              </div>
+              <div className="flex items-center gap-2">
+                <label htmlFor="rows-select" className="text-sm">Mostrar</label>
+                <select id="rows-select" value={rowsPerPage} onChange={handleRowsChange} className="border rounded px-2 py-1 text-sm">
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+                <span className="text-sm">por página</span>
+              </div>
             </div>
           </div>
         </>
       )}
-      {toast.message && <Toast type={toast.type} message={toast.message} />}
 
-      {isImportModalOpen && (
-        <ModalImportacaoXML
-          isOpen={isImportModalOpen}
-          onClose={closeImportModal}
-          onSubmit={handleImportSubmit}
-        />
-      )}
-      {isProductModalOpen && (
-        <ModalProdutosNF
-          isOpen={isProductModalOpen}
-          onClose={closeProductModal}
-          onNFOpen={false}
-          prod={selectedNFe} // Certifique-se de passar o dado correto
-        />
-      )}
+      {/* Toasts e modais */}
+      {toast.message && <Toast type={toast.type} message={toast.message} />}
+      {isImportModalOpen && <ModalImportacaoXML isOpen={isImportModalOpen} onClose={closeImportModal} onSubmit={handleImportSubmit} />}
+      {isProductModalOpen && <ModalProdutosNF isOpen={isProductModalOpen} onClose={closeProductModal} onNFOpen={false} prod={selectedNFe} />}
       {isNotaFicalModalOpen && (
         <ModalCadastroNFe
           isOpen={isNotaFicalModalOpen}
           onClose={() => setIsNotaFicalModalOpen(false)}
           onSubmit={isEdit ? handleEditSubmit : handleNotaFiscalClick}
-          onUfChange={handleUfChange} // Adicione a função para atualizar a UF
+          onUfChange={handleUfChange}
           notaFiscal={selectedNFe}
-          isReadOnly={isReadOnly}  // Passa o estado isReadOnly para o modal
-          isEdit={isEdit}  // Passa o estado isReadOnly para o modal
+          isReadOnly={isReadOnly}
+          isEdit={isEdit}
         />
       )}
-      {/* Renderização do modal de autorização */}
       <PermissionModalUI />
-
     </div>
+
   );
 }
 

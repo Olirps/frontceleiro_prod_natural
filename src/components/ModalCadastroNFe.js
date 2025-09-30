@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import '../styles/ModalCadastroNFe.css';
 import ModalPesquisaFornecedor from './ModalPesquisaFornecedor';
 import { getUfs, getMunicipios, getUFIBGE } from '../services/api';
-import { formatarMoedaBRL } from '../utils/functions';
+import { converterMoedaParaNumero, formatarMoedaBRL } from '../utils/functions';
 import { useAuth } from '../context/AuthContext';
 import { usePermissionModal } from "../hooks/usePermissionModal";
 
@@ -33,7 +33,7 @@ const ModalCadastroNFe = ({ isOpen, onClose, onSubmit, notaFiscal, isEdit, onUfC
     const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
     useEffect(() => {
-        if (isOpen && isEdit) {
+        if (isOpen) {
             checkPermission('notafiscal', isEdit ? 'edit' : 'insert', () => {
                 setPermiteEditar(true);
             });
@@ -174,27 +174,21 @@ const ModalCadastroNFe = ({ isOpen, onClose, onSubmit, notaFiscal, isEdit, onUfC
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-
-        const valorNF = formData.get('vNF');
-        const today = new Date(); // Data atual
-        const dataEmissaoDate = new Date(dataEmissao); // Converter string para objeto Date
+    const handleSubmit = () => {
+        const today = new Date();
+        const dataEmissaoDate = new Date(dataEmissao);
         const dataSaidaDate = new Date(dataSaida);
 
-        // Validação 1: Verificar se a data de emissão não é maior que a data atual
         if (dataEmissaoDate > today) {
             alert("A data de emissão não pode ser maior que a data atual.");
-            return; // Parar a submissão se a validação falhar
+            return;
         }
 
-        // Validação 2: Verificar se a data de saída não é menor que a data de emissão
         if (dataSaidaDate < dataEmissaoDate) {
             alert("A data de saída não pode ser menor que a data de emissão.");
-            return; // Parar a submissão se a validação falhar
+            return;
         }
-        // Se as validações passarem, continue com a submissão
+
         onSubmit({
             fornecedorId,
             nNF,
@@ -202,11 +196,22 @@ const ModalCadastroNFe = ({ isOpen, onClose, onSubmit, notaFiscal, isEdit, onUfC
             selectedUfCodIBGE,
             selectedMunicipioCodIBGE,
             municipio,
-            vNF: valorNF,
+            vNF,
             dataEmissao,
             dataSaida
         });
     };
+
+    // Função utilitária para remover máscara e salvar número puro
+    const handleChangeVNF = (e) => {
+        let somenteNumeros = e.target.value; // remove tudo que não for dígito
+        if (somenteNumeros.startsWith('R$')) {
+            somenteNumeros = converterMoedaParaNumero(somenteNumeros);
+        }
+        const valorNumerico = somenteNumeros ? parseFloat(somenteNumeros) / 100 : 0; // divide por 100 para ter 2 casas decimais
+        setvNF(valorNumerico);
+    };
+
 
     const formatDate = (isoString) => {
         const date = new Date(isoString);
@@ -217,132 +222,189 @@ const ModalCadastroNFe = ({ isOpen, onClose, onSubmit, notaFiscal, isEdit, onUfC
     };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <button className="modal-close" onClick={onClose}>X</button>
-                <>{!isEdit ? <h2>Cadastro de Nota Fiscal</h2> : <h2>Cadastro de Nota Fiscal - Edição</h2>}
-                </>
-                <form onSubmit={handleSubmit}>
-                    <div id='cadastro-padrão'>
-                        <input type="hidden" name="fornecedorId" value={fornecedorId} />
-                        <input type="hidden" name="ufId" value={ufId} />
-                        <div className="input-group">
-                            <div id='pesquisa_fornecedor'>
-                                <label htmlFor="fornecedor">Fornecedor</label>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
+
+                {/* Cabeçalho */}
+                <div className="flex justify-between items-center border-b px-6 py-4">
+                    <h2 className="text-lg md:text-xl font-semibold">
+                        {!isEdit ? "Cadastro de Nota Fiscal" : "Cadastro de Nota Fiscal - Edição"}
+                    </h2>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-500 hover:text-red-500 text-xl font-bold"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                {/* Conteúdo com scroll */}
+                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+
+                    {/* Dados principais */}
+                    <div className="bg-gray-50 p-4 rounded-xl space-y-4">
+                        <h3 className="text-sm font-medium text-gray-600">Dados principais</h3>
+
+                        {/* Fornecedor */}
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium mb-1">Fornecedor</label>
                                 <input
-                                    className='input-geral'
                                     type="text"
-                                    id="fornecedor"
-                                    name="fornecedor"
                                     value={fornecedor}
                                     readOnly
-                                    required
                                     disabled={isReadOnly || !permiteEditar}
+                                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                                 />
-                                <div id='button-group'>
-                                    <button className="button" type="button" onClick={openPesquisaModal} disabled={isReadOnly || !permiteEditar}>
-                                        Pesquisar Fornecedor
-                                    </button>
-                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={openPesquisaModal}
+                                disabled={isReadOnly || !permiteEditar}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+                            >
+                                Pesquisar
+                            </button>
+                        </div>
+
+                        {/* Número, Série, Valor */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {/* Número */}
+                            <div>
+                                <label htmlFor="nNF" className="block text-sm font-medium mb-1">
+                                    Número
+                                </label>
+                                <input
+                                    type="text"
+                                    id="nNF"
+                                    value={nNF}
+                                    onChange={(e) => setNNF(e.target.value)}
+                                    disabled={isReadOnly || !permiteEditar}
+                                    required
+                                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                                />
+                            </div>
+
+                            {/* Série */}
+                            <div>
+                                <label htmlFor="serie" className="block text-sm font-medium mb-1">
+                                    Série
+                                </label>
+                                <input
+                                    type="text"
+                                    id="serie"
+                                    value={serie}
+                                    onChange={(e) => setSerie(e.target.value)}
+                                    disabled={isReadOnly || !permiteEditar}
+                                    required
+                                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                                />
+                            </div>
+
+                            {/* Valor Nota Fiscal */}
+                            <div>
+                                <label htmlFor="vNF" className="block text-sm font-medium mb-1">
+                                    Valor Nota Fiscal
+                                </label>
+                                <input
+                                    type="text"
+                                    id="vNF"
+                                    value={formatarMoedaBRL(vNF)} // sempre exibe formatado
+                                    onChange={(e) => {
+                                        const valorNumerico = e.target.value.replace(/\D/g, "");
+                                        setvNF(Number(valorNumerico) / 100);
+                                    }}
+                                    disabled={isReadOnly || !permiteEditar}
+                                    required
+                                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                                />
 
                             </div>
                         </div>
-                        <div >
-                            {[
-                                { label: 'Número', id: 'nNF', value: nNF, setter: setNNF },
-                                { label: 'Série', id: 'serie', value: serie, setter: setSerie },
-                                { label: 'Valor Nota Fiscal', id: 'vNF', value: formatarMoedaBRL(vNF), setter: setvNF },
-                            ].map(({ label, id, value, setter }) => (
-                                <div key={id}>
-                                    <label htmlFor={id}>{label}</label>
-                                    <input
-                                        className='input-geral'
-                                        type="text"
-                                        id={id}
-                                        name={id}
-                                        value={value}
-                                        onChange={(e) => setter(e.target.value)}
-                                        required
-                                        disabled={isReadOnly || !permiteEditar}
-                                    />
-                                </div>
-                            ))}
+
+                    </div>
+
+                    {/* Localização */}
+                    <div className="bg-gray-50 p-4 rounded-xl space-y-4">
+                        <h3 className="text-sm font-medium text-gray-600">Localização</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label htmlFor="uf">Estado/UF</label>
+                                <label className="block text-sm font-medium mb-1">Estado/UF</label>
                                 <select
-                                    className='input-geral'
-                                    id="uf"
-                                    name="uf"
                                     value={uf}
                                     onChange={handleUfChange}
-                                    required
                                     disabled={isReadOnly || !permiteEditar}
+                                    required
+                                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                                 >
-                                    <option value="">Selecione uma UF</option>
-                                    {ufs.length > '0' && (
-                                        ufs.map((uf) => (
-                                            <option key={uf.codIBGE} value={uf.sigla}>
-                                                {uf.nome}
-                                            </option>
-                                        ))
-                                    )}
+                                    <option value="">Selecione</option>
+                                    {ufs.map((uf) => (
+                                        <option key={uf.codIBGE} value={uf.sigla}>
+                                            {uf.nome}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                             <div>
-                                <label htmlFor="municipio">Município</label>
+                                <label className="block text-sm font-medium mb-1">Município</label>
                                 <select
-                                    className='input-geral'
-                                    id="municipio"
-                                    name="municipio"
                                     value={municipio}
                                     onChange={handleMunicipioChange}
-                                    required
                                     disabled={!municipios.length || isReadOnly || !permiteEditar}
+                                    required
+                                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                                 >
-                                    <option key="default-municipio" value="">Selecione um município</option>
+                                    <option value="">Selecione</option>
                                     {municipios.map((mun) => (
                                         <option key={mun.codMunIBGE} value={mun.nome}>
                                             {mun.nome}
                                         </option>
                                     ))}
                                 </select>
-
                             </div>
-                            {[
-                                { label: 'Data de Emissão', id: 'dataEmissao', value: dataEmissao, setter: setDataEmissao, type: 'date' },
-                                { label: 'Data de Saída', id: 'dataSaida', value: dataSaida, setter: setDataSaida, type: 'date' }
+                        </div>
+                    </div>
 
-                            ].map(({ label, id, value, setter, type }) => (
+                    {/* Datas */}
+                    <div className="bg-gray-50 p-4 rounded-xl space-y-4">
+                        <h3 className="text-sm font-medium text-gray-600">Datas</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {[
+                                { label: "Data de Emissão", id: "dataEmissao", value: dataEmissao, setter: setDataEmissao },
+                                { label: "Data de Saída", id: "dataSaida", value: dataSaida, setter: setDataSaida },
+                            ].map(({ label, id, value, setter }) => (
                                 <div key={id}>
-                                    <label htmlFor={id}>{label}</label>
+                                    <label className="block text-sm font-medium mb-1">{label}</label>
                                     <input
-                                        className='input-geral'
-                                        type={type}
+                                        type="date"
                                         id={id}
-                                        name={id}
                                         value={value}
                                         onChange={(e) => setter(e.target.value)}
-                                        required
                                         disabled={isReadOnly || !permiteEditar}
+                                        required
+                                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                                     />
                                 </div>
                             ))}
                         </div>
-                        <div id='botao-salva'>
-                            {permiteEditar && !isReadOnly ? (
-                                <button
-                                    type="submit"
-                                    id="btnsalvar"
-                                    className="button"
-                                >
-                                    Salvar
-                                </button>
-                            ) : ''}
-                        </div>
-
                     </div>
-                </form>
+                </div>
+
+                {/* Rodapé com botão */}
+                {permiteEditar && !isReadOnly && (
+                    <div className="border-t px-6 py-4 flex justify-end">
+                        <button
+                            type="button" // importante! não submit, senão ele tenta enviar form
+                            onClick={handleSubmit}
+                            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 text-sm"
+                        >
+                            Salvar
+                        </button>
+                    </div>
+                )}
             </div>
+
+            {/* Modais extras */}
             {isPesquisaModalOpen && (
                 <ModalPesquisaFornecedor
                     isOpen={isPesquisaModalOpen}
@@ -350,9 +412,9 @@ const ModalCadastroNFe = ({ isOpen, onClose, onSubmit, notaFiscal, isEdit, onUfC
                     onSelectFornecedor={handleSelectFornecedor}
                 />
             )}
-            {/* Renderização do modal de autorização */}
             <PermissionModalUI />
         </div>
+
     );
 };
 

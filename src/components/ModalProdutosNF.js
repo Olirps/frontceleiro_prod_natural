@@ -285,6 +285,8 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen, onVinculoSuccess }) 
   const handleEfetivarProduto = async () => {
     setLoading(true);
     try {
+      const usuario = localStorage.getItem('username');
+      selectedProduct.usuario = usuario;
       await efetivarProduto(selectedProduct);
       setToast({ message: 'Produto efetivado com sucesso!', type: 'success' });
       fetchProdutosNF(selectedProduct.nota_id)
@@ -345,16 +347,8 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen, onVinculoSuccess }) 
       await updateNFe(prod.id, { status: 'andamento' });
 
     } catch (err) {
-      if (!quantidade == false) {
-        let errorMessage = err.response.data;
-        errorMessage = errorMessage.toString() + ': quantidade vazia'
-        setToast({ message: errorMessage, type: "error" });
-
-      } else {
-        const errorMessage = err.response.data;
-        setToast({ message: errorMessage, type: "error" });
-
-      }
+      console.error('Erro ao vincular produto à nota fiscal', err.response.data.error);
+      setToast({ message: `Error: ${err.response.data.error}`, type: "error" });
     }
   };
 
@@ -378,245 +372,236 @@ const ModalProdutosNF = ({ isOpen, onClose, prod, onNFOpen, onVinculoSuccess }) 
   const hasProdutos = produtos.length > 0;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <button className="modal-close" onClick={onClose}>X</button>
-        <h2>Produtos da Nota Fiscal {prod?.nNF ? ` - Nº ${prod.nNF}` : ''}</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex flex-col max-h-[90vh]">
 
-        {loading ? (
-          <div className="spinner-container">
-            <div className="spinner"></div>
-          </div>
-        ) : (
-          <>
-            {canCadastrarProdutos && !isNFClosed && (
-              <div id='cadastro-padrão'>
-                <div id='button-group'>
-                  <label>Não achou o produto?</label>
-                  <button className='button' onClick={() => handleCadastraProdClick(prod)}>Cadastrar Produtos</button>
+        {/* Cabeçalho */}
+        <div className="flex justify-between items-center border-b px-6 py-4">
+          <h2 className="text-lg md:text-xl font-semibold">
+            Produtos da Nota Fiscal {prod?.nNF ? `- Nº ${prod.nNF}` : ''}
+          </h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-red-500 text-2xl font-bold">×</button>
+        </div>
+
+        {/* Conteúdo do modal */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+
+          {/* Spinner */}
+          {loading && (
+            <div className="flex justify-center items-center py-10">
+              <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
+
+          {!loading && (
+            <>
+              {/* Ações iniciais */}
+              {canCadastrarProdutos && !isNFClosed && (
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                  <div className="flex flex-col md:flex-row items-center gap-2">
+                    <label className="text-sm font-medium">Não achou o produto?</label>
+                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      onClick={() => handleCadastraProdClick(prod)}>
+                      Cadastrar Produtos
+                    </button>
+                  </div>
                   {hasProdutos && !isNFClosed && (
-                    <button className='button-excluir' onClick={() => handleFecharNF(prod)} disabled={isNFClosed}>
+                    <button
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                      onClick={() => handleFecharNF(prod)}
+                      disabled={isNFClosed}>
                       Fechar NF
                     </button>
                   )}
                 </div>
-                <div>
-                  <label htmlFor="produto">Produto</label>
-                  <input
-                    className='input-geral'
-                    id='produto'
-                    type="text"
-                    value={produto ? produto : 'Produto a Ser Adicionado'} // Substitui vírgula por ponto
-                    required
-                    disabled
-                  />
-                </div>
-                <div>
-                  <label htmlFor="quantidade">Quantidade</label>
-                  <input
-                    className='input-geral'
-                    id='quantidade'
-                    type="text"
-                    value={quantidade.replace(',', '.')} // Substitui vírgula por ponto
-                    onChange={handleQuantidadeChange}
-                    placeholder='Quantidade'
-                    required
-                    aria-required="true" // Para acessibilidade
-                  />
-                </div>
-                <div>
-                  <label htmlFor="valor_unit">Valor Unitário</label>
-                  <input
-                    className='input-geral'
-                    id='valor_unit'
-                    type="text"
-                    value={valor_unit}
-                    onChange={handleValorUnitChange}
-                    placeholder='Valor Unitário'
-                    required
-                    aria-required="true" // Para acessibilidade
-                  />
-                </div>
+              )}
 
-                {formError && <div className='error-message'>O campo quantidade é obrigatório.</div>}
+              {/* Formulário de inclusão */}
+              {canCadastrarProdutos && !isNFClosed && (
+                <div className="bg-gray-50 p-4 rounded-xl space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Produto</label>
+                      <input type="text"
+                        value={produto || 'Produto a Ser Adicionado'}
+                        disabled
+                        className="w-full border rounded-lg px-3 py-2 text-sm bg-gray-100" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Quantidade</label>
+                      <input type="text"
+                        value={quantidade.replace(',', '.')}
+                        onChange={handleQuantidadeChange}
+                        placeholder="Quantidade"
+                        required
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Valor Unitário</label>
+                      <input type="text"
+                        value={valor_unit}
+                        onChange={handleValorUnitChange}
+                        placeholder="Valor Unitário"
+                        required
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  </div>
 
-                <div id='button-group'>
-                  <button className="button" onClick={openPesquisaGNModal}>Pesquisar Produto</button>
-                  <button className="button" onClick={handleVincular}>Inserir</button>
-                </div>
-              </div>
-            )}
+                  {formError && <div className="text-red-500 text-sm">O campo quantidade é obrigatório.</div>}
 
-            {!hasProdutos && (
-              <p className="no-products-message">Não existem produtos lançados para esta nota fiscal.</p>
-            )}
-
-            {hasProdutos && (
-              <>
-                <div id="results-container">
-                  <div id="grid-padrao-container">
-                    <table id='grid-padrao'>
-                      <thead>
-                        <tr>
-                          <th>ID</th>
-                          <th>Descrição</th>
-                          <th>Quantidade</th>
-                          <th>Valor Unitário</th>
-                          <th>Sugestão Valor Venda</th>
-                          <th>Ação</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {produtos
-                          .slice(indexOfLastProduct - itemsPerPage, indexOfLastProduct)
-                          .map((produto, index) => (
-                            <tr
-                              key={`${produto.id}-${index}`}
-                              className={produto.efetivado ? 'linha-efetivada' : produto.identificador == 0 ? 'highlight-red' : produto.status == 1 ? 'disabled-row' : ''}
-                            >
-                              <td>{produto.id}</td>
-                              <td className="descricao-col">{produto.descricao}</td>
-                              <td>{parseFloat(produto.quantidade).toFixed(3)}</td>
-                              <td>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.valor_unit)}</td>
-                              <td>
-                                <input
-                                  type="text"
-                                  value={
-                                    sugestaoValorVenda[`${produto.id}-${index}`] ||
-                                    (produto.efetivado ?
-                                      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.vlrVenda) :
-                                      produto.vlrVenda ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.vlrVenda) : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.sugestao_valor_venda))
-                                  }
-                                  onChange={(e) => handleSugestaoValorChange(produto.id, index, e.target.value)}
-                                  onBlur={(e) => {
-                                    const valorNumerico = converterMoedaParaNumero(e.target.value);
-                                    if (!isNaN(valorNumerico)) {
-                                      handleSugestaoValorChange(
-                                        produto.id,
-                                        index,
-                                        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorNumerico)
-                                      );
-                                    }
-                                  }}
-                                  className="input-geral-table"
-                                  disabled={produto.efetivado === true}
-                                />
-
-                              </td>
-                              <td>
-                                <div id="button-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <button
-                                    className="button-geral"
-                                    onClick={() => handleActionClick(produto)}
-                                    disabled={produto.status == 1} // Desabilitar botão se o produto estiver inativo
-                                  >
-                                    {produto.identificador == 0 ? 'Tratar' : 'Efetivar'}
-                                  </button>
-                                  {produto.identificador == 1 && produto.status !== 1 && prod.lancto !== 'automatico' && !isNFClosed && (
-                                    <img
-                                      src={lixeiraIcon}
-                                      alt="Excluir"
-                                      className="lixeira-icon"
-                                      onClick={() => handleExcluirProdNf(produto)}
-                                      style={{ cursor: 'pointer', width: '20px', height: '20px' }}
-                                    />
-                                  )}
-                                </div>
-                              </td>
-
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
+                  <div className="flex gap-2 mt-2">
+                    <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                      onClick={openPesquisaGNModal}>
+                      Pesquisar Produto
+                    </button>
+                    <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      onClick={handleVincular}>
+                      Inserir
+                    </button>
                   </div>
                 </div>
-                <div className="pagination">
-                  {pageNumbers.map((number) => (
-                    <button
-                      key={number}
+              )}
+
+              {/* Tabela de produtos */}
+              {hasProdutos && (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 border">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-sm font-medium text-gray-700">ID</th>
+                        <th className="px-3 py-2 text-left text-sm font-medium text-gray-700">Descrição</th>
+                        <th className="px-3 py-2 text-right text-sm font-medium text-gray-700">Qtd</th>
+                        <th className="px-3 py-2 text-right text-sm font-medium text-gray-700">Valor Unit.</th>
+                        <th className="px-3 py-2 text-right text-sm font-medium text-gray-700">Sugestão Valor</th>
+                        <th className="px-3 py-2 text-center text-sm font-medium text-gray-700">Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {produtos
+                        .slice(indexOfLastProduct - itemsPerPage, indexOfLastProduct)
+                        .map((produto, index) => (
+                          <tr key={`${produto.id}-${index}`}
+                            className={`${produto.efetivado ? 'bg-green-50' : produto.identificador == 0 ? 'bg-red-50' : ''}`}>
+                            <td className="px-3 py-2 text-sm">{produto.id}</td>
+                            <td className="px-3 py-2 text-sm">{produto.descricao}</td>
+                            <td className="px-3 py-2 text-sm text-right">{parseFloat(produto.quantidade).toFixed(3)}</td>
+                            <td className="px-3 py-2 text-sm text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.valor_unit)}</td>
+                            <td className="px-3 py-2 text-sm text-right">
+                              <input type="text"
+                                value={
+                                  sugestaoValorVenda[`${produto.id}-${index}`] ||
+                                  (produto.efetivado ?
+                                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.vlrVenda) :
+                                    produto.vlrVenda ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.vlrVenda) : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.sugestao_valor_venda))
+                                } onChange={(e) => handleSugestaoValorChange(produto.id, index, e.target.value)}
+                                className="w-full border rounded-lg px-2 py-1 text-sm"
+                                disabled={produto.efetivado} />
+                            </td>
+                            <td className="px-3 py-2 flex justify-center gap-2">
+                              {!produto.efetivado && (<button
+                                className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                                onClick={() => handleActionClick(produto)}
+                                disabled={produto.status == 1}>
+                                {(produto.identificador == 0 ? 'Tratar' : 'Efetivar')}
+                              </button>)}
+                              {produto.identificador == 1 && !isNFClosed && (
+                                <img src={lixeiraIcon} alt="Excluir" className="w-5 h-5 cursor-pointer" onClick={() => handleExcluirProdNf(produto)} />
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Paginação */}
+              {hasProdutos && (
+                <div className="flex justify-center mt-4 gap-2">
+                  {pageNumbers.map(number => (
+                    <button key={number}
                       onClick={() => handlePageChange(number)}
-                      className={number === currentPage ? 'active' : ''}
-                    >
+                      className={`px-3 py-1 rounded ${number === currentPage ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
                       {number}
                     </button>
                   ))}
                 </div>
-              </>
-            )}
-          </>
-        )}
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Toasts e outros modais continuam normalmente */}
+        {toast.message && <Toast type={toast.type} message={toast.message} />}
+
+        {
+          isTratarModalOpen && (
+            <ModalTratarProdutosNF
+              key={modalKey}
+              isOpen={isTratarModalOpen}
+              onClose={() => setIsTratarModalOpen(false)}
+              product={selectedProduct}
+              similares={produtosSimilaresFound}
+              onVinculoSuccess={handleVinculoSuccess}
+              onProdutoVinculado={handleProdutoVinculado}
+            />
+          )
+        }
+
+        {
+          isDetalhesModalOpen && (
+            <ModalDetalhesProdutosNF
+              isOpen={isDetalhesModalOpen}
+              onClose={() => setIsDetalhesModalOpen(false)}
+              product={selectedProduct}
+            />
+          )
+        }
+
+        {
+          isCadastraProdutoModalOpen && (
+            <ModalCadastraProduto
+              isOpen={isCadastraProdutoModalOpen}
+              onClose={() => setIsCadastraProdutoModalOpen(false)}
+              onSubmit={() => handleVinculoSuccess('Produto cadastrado com sucesso!')}
+              prod={selectedNFe}
+              additionalFields={additionalFields}
+            />
+          )
+        }
+        {/* Modal de confirmação */}
+        {
+          isConfirmDialogOpen && (
+            <ConfirmDialog
+              isOpen={isConfirmDialogOpen}
+              message={mensagem}
+              onConfirm={handleConfirmDialog}
+              onCancel={cancelDelete}
+            />
+          )
+        }
+        {/* Modal de pesquisa de produtos */}
+        <ModalPesquisaGN
+          isOpen={isPesquisaGNModalOpen}
+          onClose={closePesquisaGNModal}
+          onSelectProduto={handleSelectProduto}
+        />
+        {/* Modal de Vinculação de Veículos */}
+        {
+          isVinculaVeiculoModalOpen && (
+            <ModalVinculaProdVeiculo
+              isOpen={isVinculaVeiculoModalOpen}
+              onClose={closeVinculaVeiculoModal}
+              onNFOpen={true}
+              produto={produtoParaVincular}
+              quantidadeRestante={quantidadeVinculada}
+              onVinculoSuccess={handleVinculoSuccess} // Atualiza lista de produtos ao sucesso
+            />
+          )
+        }
       </div>
+    </div>
 
-      {/* Exibir Toast */}
-      {toast.message && <Toast type={toast.type} message={toast.message} />}
-
-
-      {
-        isTratarModalOpen && (
-          <ModalTratarProdutosNF
-            key={modalKey}
-            isOpen={isTratarModalOpen}
-            onClose={() => setIsTratarModalOpen(false)}
-            product={selectedProduct}
-            similares={produtosSimilaresFound}
-            onVinculoSuccess={handleVinculoSuccess}
-            onProdutoVinculado={handleProdutoVinculado}
-          />
-        )
-      }
-
-      {
-        isDetalhesModalOpen && (
-          <ModalDetalhesProdutosNF
-            isOpen={isDetalhesModalOpen}
-            onClose={() => setIsDetalhesModalOpen(false)}
-            product={selectedProduct}
-          />
-        )
-      }
-
-      {
-        isCadastraProdutoModalOpen && (
-          <ModalCadastraProduto
-            isOpen={isCadastraProdutoModalOpen}
-            onClose={() => setIsCadastraProdutoModalOpen(false)}
-            onSubmit={() => handleVinculoSuccess('Produto cadastrado com sucesso!')}
-            prod={selectedNFe}
-            additionalFields={additionalFields}
-          />
-        )
-      }
-      {/* Modal de confirmação */}
-      {
-        isConfirmDialogOpen && (
-          <ConfirmDialog
-            isOpen={isConfirmDialogOpen}
-            message={mensagem}
-            onConfirm={handleConfirmDialog}
-            onCancel={cancelDelete}
-          />
-        )
-      }
-      {/* Modal de pesquisa de produtos */}
-      <ModalPesquisaGN
-        isOpen={isPesquisaGNModalOpen}
-        onClose={closePesquisaGNModal}
-        onSelectProduto={handleSelectProduto}
-      />
-      {/* Modal de Vinculação de Veículos */}
-      {
-        isVinculaVeiculoModalOpen && (
-          <ModalVinculaProdVeiculo
-            isOpen={isVinculaVeiculoModalOpen}
-            onClose={closeVinculaVeiculoModal}
-            onNFOpen={true}
-            produto={produtoParaVincular}
-            quantidadeRestante={quantidadeVinculada}
-            onVinculoSuccess={handleVinculoSuccess} // Atualiza lista de produtos ao sucesso
-          />
-        )
-      }
-    </div >
   );
 
 };
