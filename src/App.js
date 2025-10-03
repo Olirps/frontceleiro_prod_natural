@@ -10,6 +10,7 @@ import ContratosLayout from './pages/ContratosLayout';
 import Produtos from './pages/Produtos';
 import LancaNFe from './pages/LancaNFe';
 import RelatorioVendasClientePage from './pages/RelatorioVendasClientePage';
+import RelatorioVendasFuncionariosPage from './pages/RelatorioVendasFuncionariosPage';
 import MovimentacaoProdutos from './pages/MovimentacaoProdutos';
 import Layout from './components/Layout';
 import { useAuth } from './context/AuthContext';
@@ -169,6 +170,10 @@ function App() {
           <Route
             path="/clientes_periodo"
             element={isAuthenticated ? <RelatorioVendasClientePage /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/vendas-funcionarios"
+            element={isAuthenticated ? <RelatorioVendasFuncionariosPage /> : null} // Condicionalmente não renderiza
           />
           <Route
             path="/fluxo-caixa"
