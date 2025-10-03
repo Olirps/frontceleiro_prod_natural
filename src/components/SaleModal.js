@@ -9,37 +9,38 @@ import CadClienteSimpl from '../components/CadClienteSimpl';
 import TefModal from '../components/TefModal';
 import TefTransactionModal from '../components/TefTransactionModal';
 import { converterMoedaParaNumero, formatarData, formatarMoedaBRL, converterData } from '../utils/functions';
+import { use } from 'react';
 
 const SaleModal = ({
   isOpen,
   onClose,
-  onSuccess,
   totalQuantity,
+  totalPrice = 0,
   saleData,
   tipo,
   selectedProducts,
+  onSuccess
 }) => {
   // Adicionado um if pois quando é via PDV não tem saleData
   if (!saleData) {
     saleData = { totalPrice: totalPrice };
   }
 
-
+  totalPrice = saleData.totalPrice;
   const [cliente, setCliente] = useState(saleData.cliente_nome || saleData.cliente || '');
   const [cliente_id, setClienteID] = useState(saleData.cliente_id || '');
   const [desconto, setDesconto] = useState('0');
-  let [valorPagamento, setValorPagamento] = useState(saleData.totalPrice || 0);
+  let [valorPagamento, setValorPagamento] = useState(totalPrice);
   const [valorTotal, setValorTotal] = useState(0);
-
+  const [venda_id, setVendaId] = useState(null);
   const [pagamentos, setPagamentos] = useState([]);
   const [novaForma, setNovaForma] = useState('');
   const [mensagem, setMensagem] = useState('');
   const [formaPgtoNome, setFormaPgtoNome] = useState('');
-  const [valorPagar, setValorPagar] = useState(saleData.totalPrice || 0);
-  const [novoValor, setNovoValor] = useState(saleData.totalPrice || 0);
-  const [totalPrice, setTotalPrice] = useState(saleData.totalPrice || 0);
+  const [valorPagar, setValorPagar] = useState(totalPrice);
+  const [novoValor, setNovoValor] = useState(totalPrice);
   const [trocoDinheiro, settrocoDinheiro] = useState('');
-  const [saldoRestante, setSaldoRestante] = useState(saleData.totalPrice || 0);
+  const [saldoRestante, setSaldoRestante] = useState(totalPrice);
   const [descontoInput, setDescontoInput] = useState('0'); // valor digitado no input
   const [descontoTipo, setDescontoTipo] = useState(); // 'value' = R$, 'percent' = %
   const [descontoReal, setDescontoReal] = useState(true); // 'value' = R$, 'percent' = %
@@ -47,6 +48,11 @@ const SaleModal = ({
   const [formasPagamento, setFormasPagamento] = useState([]);
   const [filteredClientes, setFilteredClientes] = useState([]);
   const [isConsultaClienteOpen, setIsConsultaClienteOpen] = useState(false);
+  const [isParcelado, setIsParcelado] = useState(false);
+  const [quantidadeParcelas, setQuantidadeParcelas] = useState(1);
+  const [qtdParcelas, setQtdParcelas] = useState(1);
+  const [jurosloja, setJurosloja] = useState(false);
+  const [valorParcela, setValorParcela] = useState(null);
   const [toast, setToast] = useState({ message: '', type: '' });
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -66,6 +72,26 @@ const SaleModal = ({
     }
   }, [toast]);
 
+  const fetchGetEmpresa = async () => {
+    const emp = await getEmpresaById(1);
+    setJurosloja(emp.data.juros_loja || false);
+    setQuantidadeParcelas(emp.data.quantidade_parcela || 1);
+  };
+
+  useEffect(() => {
+    if (isParcelado) {
+      fetchGetEmpresa();
+    }
+    const parcela = valorPagar / qtdParcelas;
+    setValorParcela(parcela.toFixed(2));
+    if (novaForma !== '13') {
+      setIsParcelado(false);
+      setQtdParcelas(1);
+    }
+  }, [isParcelado, valorPagar, novaForma, quantidadeParcelas, qtdParcelas]);
+
+
+
   useEffect(() => {
     const fetchFormasPagamento = async () => {
       try {
@@ -84,23 +110,17 @@ const SaleModal = ({
 
   useEffect(() => {
     if (tipo === 'liquidacao') {
-
       let total = 0;
-
-      if (Array.isArray(saleData)) {
-        // Se for array, soma valor_parcela de cada item
-        total = saleData.reduce((acc, curr) => acc + parseFloat(curr.valor_parcela ?? 0), 0);
-
-      } else if (saleData && typeof saleData === 'object') {
-        // Se não for array, assume que é um objeto único
-        total = parseFloat(saleData.totalPrice ?? 0);
+      if (saleData.length > 0) {
+        total = saleData.reduce((acc, curr) => acc + parseFloat(curr.valor_parcela || 0), 0);
+      } else {
+        total = parseFloat(saleData.totalPrice || 0);
+        setVendaId(saleData.venda_id || null);
       }
-      setTotalPrice(total);
-      setSaldoRestante(total);
+
       setValorTotal(total);
-      setValorPagar(total);
       setValorPagamento(total);
-      setNovoValor(total)
+      setNovoValor(total);
     } else {
       setValorTotal(parseFloat(saleData.totalPrice || 0));
       setValorPagamento(parseFloat(saleData.totalPrice || 0));
@@ -153,9 +173,9 @@ const SaleModal = ({
 
   /*const saldoRestanteSemFormat =
     parseFloat(valorTotal) - (pagamentos.reduce((sum, p) => sum + parseFloat(p.valor || 0), 0) + parseFloat(converterMoedaParaNumero(desconto) || 0));
-
+  
   let saldoRestante = saldoRestanteSemFormat.toFixed(2);
-
+  
   if (saldoRestante < 0) {
     saldoRestante = 0;
   }*/
@@ -212,6 +232,10 @@ const SaleModal = ({
     try {
       setTefProcessing(true);
       setMensagem('Pagamento');
+      if (isParcelado && qtdParcelas > 1) {
+        paymentData.qtdParcelas = qtdParcelas;
+        paymentData.valorParcela = valorParcela;
+      }
       const response = await processTefPayment(paymentData);
 
       if (response.success) {
@@ -381,17 +405,17 @@ const SaleModal = ({
       const username = localStorage.getItem('username');
       const empresa = await getEmpresaById(1);
 
-      const registra_venda = {
+      const saleData = {
         totalQuantity: totalQuantity,
         totalPrice: clearDesconto > 0 ? (totalPrice - clearDesconto) : totalPrice,
-        products: selectedProducts ? selectedProducts : saleData.produtos,
+        products: selectedProducts,
         cliente: cliente,
         cliente_id: cliente_id,
         desconto: clearDesconto,
         pagamentos: pagamentos,
         status: 0,
         status_id: 2,
-        preVenda: saleData.venda_id ? saleData.venda_id : null,
+        preVenda: venda_id || null,
         dataVenda: dataAjustada,
         tipoVenda: 'Venda',
         login: username,
@@ -399,7 +423,7 @@ const SaleModal = ({
         transacoesTef: transacoesTef
       };
 
-      await registravenda(registra_venda);
+      await registravenda(saleData);
       setToast({ message: "Venda cadastrada com sucesso!", type: "success" });
       onClose();
       onSuccess();
@@ -626,22 +650,71 @@ const SaleModal = ({
 
                 {/* Forma de Pagamento */}
                 <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Forma de Pagamento
+                  </label>
                   <select
                     value={novaForma}
                     onChange={(e) => {
-                      setNovaForma(e.target.value);
-                      setFormaPgtoNome(e.target.options[e.target.selectedIndex].text);
+                      const selectedId = e.target.value;
+                      const selectedText = e.target.options[e.target.selectedIndex].text;
+
+                      setNovaForma(selectedId);
+                      setFormaPgtoNome(selectedText);
+
+                      // Se o nome for exatamente "TEF - Credito Parcelado"
+                      if (selectedText === "TEF - Crédito Parcelado") {
+                        setIsParcelado(true);
+                      } else {
+                        setIsParcelado(false);
+                      }
                     }}
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Selecione</option>
                     {formasPagamento.map((forma) => (
-                      <option key={forma.id} value={forma.id}>{forma.nome}</option>
+                      <option key={forma.id} value={forma.id}>
+                        {forma.nome}
+                      </option>
                     ))}
                   </select>
-                </div>
 
+                  {isParcelado && (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mt-2 mb-1">
+                        Quantidade de Parcelas
+                      </label>
+                      <select
+                        value={qtdParcelas}
+                        onChange={(e) => setQtdParcelas(Number(e.target.value))}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Selecione</option>
+                        {Array.from({ length: quantidadeParcelas - 1 }, (_, i) => i + 2).map(
+                          (num) => (
+                            <option key={num} value={num}>
+                              {num}x
+                            </option>
+                          )
+                        )}
+                      </select>
+
+                      <label className="block text-sm font-medium text-gray-700 mt-2 mb-1">
+                        Valor das Parcelas
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={valorParcela}
+                        onChange={(e) => setValorParcela(e.target.value)}
+                        disabled={true}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </>
+                  )}
+
+                </div>
                 {/* Botão Adicionar */}
                 <button
                   type="button"

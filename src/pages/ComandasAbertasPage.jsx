@@ -126,7 +126,7 @@ export default function ComandasAbertasPage() {
             {/* Cabeçalho */}
             <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-4">
                 <h1 className="text-2xl font-semibold text-gray-800">Vendas / OS em Aberto</h1>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
                     <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
                         {estatisticas.total} {estatisticas.total === 1 ? "comanda" : "comandas"}
                     </span>
@@ -154,32 +154,34 @@ export default function ComandasAbertasPage() {
                         className="border rounded-lg px-3 py-2 w-full focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Data inicial</label>
-                    <input
-                        type="date"
-                        name="dataInicio"
-                        value={filtros.dataInicio}
-                        onChange={handleFiltroChange}
-                        className="border rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    />
+                <div className="flex gap-2 flex-wrap md:flex-nowrap">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Data inicial</label>
+                        <input
+                            type="date"
+                            name="dataInicio"
+                            value={filtros.dataInicio}
+                            onChange={handleFiltroChange}
+                            className="border rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Data final</label>
+                        <input
+                            type="date"
+                            name="dataFim"
+                            value={filtros.dataFim}
+                            onChange={handleFiltroChange}
+                            className="border rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                    <button
+                        onClick={handleDataFilter}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors mt-2 md:mt-6"
+                    >
+                        Filtrar
+                    </button>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Data final</label>
-                    <input
-                        type="date"
-                        name="dataFim"
-                        value={filtros.dataFim}
-                        onChange={handleFiltroChange}
-                        className="border rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                </div>
-                <button
-                    onClick={handleDataFilter}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                    Filtrar por Data
-                </button>
             </div>
 
             {/* Loading */}
@@ -192,7 +194,12 @@ export default function ComandasAbertasPage() {
             {/* Lista de vendas */}
             {!loading && paginatedComandas.length === 0 ? (
                 <div className="text-center py-12 bg-white rounded-lg shadow">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg
+                        className="mx-auto h-12 w-12 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
                         <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -202,87 +209,79 @@ export default function ComandasAbertasPage() {
                     </svg>
                     <h3 className="mt-2 text-lg font-medium text-gray-900">Nenhuma comanda encontrada</h3>
                     <p className="mt-1 text-gray-500">
-                        {comandas.length === 0 ? "Não há comandas abertas no momento." : "Tente ajustar os filtros para ver mais resultados."}
+                        {comandas.length === 0
+                            ? "Não há comandas abertas no momento."
+                            : "Tente ajustar os filtros para ver mais resultados."}
                     </p>
                 </div>
             ) : (
-                <div className="p-6 bg-white rounded-lg shadow">
-                    <h2 className="text-xl font-bold mb-4">Lista de Vendas</h2>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 border">
-                            <thead className="bg-gray-100">
-                                <tr>
-                                    {["Nº Venda", "Cliente", "CPF/CNPJ", "Data", "Total", "Pago", "Ações"].map((title) => (
-                                        <th
-                                            key={title}
-                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-                                        >
-                                            {title}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {paginatedComandas.map((venda) => (
-                                    <tr key={venda.venda_id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4">{venda.venda_id}</td>
-                                        <td className="px-6 py-4">{venda.cliente}</td>
-                                        <td className="px-6 py-4">{venda.cliente?.cpfCnpj}</td>
-                                        <td className="px-6 py-4">{formatarData(venda.dataVenda)} {formatarHora(venda.dataVenda)}</td>
-                                        <td className="px-6 py-4">{formatarMoeda(venda.totalPrice)}</td>
-                                        <td className="px-6 py-4">{formatarMoeda(venda.pagamentos)}</td>
-                                        <td className="px-6 py-4 flex gap-2">
-                                            <button
-                                                onClick={() => abrirConferencia(venda.venda_id, venda)}
-                                                className="text-gray-700 hover:text-black"
-                                            >
-                                                👁️
-                                            </button>
-                                            <button
-                                                onClick={() => console.log("Cancelar", venda.venda_id)}
-                                                className="text-red-600 hover:text-red-800"
-                                            >
-                                                🚫
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Paginação */}
-                    {totalPages > 1 && (
-                        <div className="flex justify-center items-center gap-2 mt-4">
-                            <button
-                                disabled={page === 1}
-                                onClick={() => setPage(page - 1)}
-                                className="px-3 py-1 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 disabled:opacity-50"
-                            >
-                                ←
-                            </button>
-                            {Array.from({ length: totalPages }, (_, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => setPage(i + 1)}
-                                    className={`px-3 py-1 rounded-full ${page === i + 1 ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                                        }`}
-                                >
-                                    {i + 1}
-                                </button>
-                            ))}
-                            <button
-                                disabled={page === totalPages}
-                                onClick={() => setPage(page + 1)}
-                                className="px-3 py-1 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 disabled:opacity-50"
-                            >
-                                →
-                            </button>
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                    {paginatedComandas.map((venda) => (
+                        <div
+                            key={venda.venda_id}
+                            className="bg-white shadow rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:shadow-md transition"
+                        >
+                            <div className="flex-1 space-y-1">
+                                <p className="font-semibold text-gray-700">Venda #{venda.venda_id}</p>
+                                <p className="text-gray-500 text-sm">{venda.cliente}</p>
+                                <p className="text-gray-400 text-sm">{venda.cliente?.cpfCnpj}</p>
+                                <p className="text-gray-500 text-sm">
+                                    {formatarData(venda.dataVenda)} {formatarHora(venda.dataVenda)}
+                                </p>
+                            </div>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-2 sm:mt-0">
+                                <span className="font-semibold text-gray-700">{formatarMoeda(venda.totalPrice)}</span>
+                                <span className="text-green-600 font-medium">{formatarMoeda(venda.pagamentos)}</span>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => abrirConferencia(venda.venda_id, venda)}
+                                        className="text-gray-700 hover:text-black"
+                                    >
+                                        👁️
+                                    </button>
+                                    <button
+                                        onClick={() => console.log("Cancelar", venda.venda_id)}
+                                        className="text-red-600 hover:text-red-800"
+                                    >
+                                        🚫
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    )}
+                    ))}
                 </div>
             )}
 
+            {/* Paginação */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-4">
+                    <button
+                        disabled={page === 1}
+                        onClick={() => setPage(page - 1)}
+                        className="px-3 py-1 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 disabled:opacity-50"
+                    >
+                        ←
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => (
+                        <button
+                            key={i}
+                            onClick={() => setPage(i + 1)}
+                            className={`px-3 py-1 rounded-full ${page === i + 1 ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                }`}
+                        >
+                            {i + 1}
+                        </button>
+                    ))}
+                    <button
+                        disabled={page === totalPages}
+                        onClick={() => setPage(page + 1)}
+                        className="px-3 py-1 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 disabled:opacity-50"
+                    >
+                        →
+                    </button>
+                </div>
+
+            )}
             {/* Modal de conferência */}
             {modalVendaId && vendaSelecionada && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -337,6 +336,7 @@ export default function ComandasAbertasPage() {
             )}
             {toast.message && <Toast type={toast.type} message={toast.message} />}
         </div>
+
 
     );
 }

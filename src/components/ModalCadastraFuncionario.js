@@ -323,7 +323,7 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
                 </div>
                 <div>
                   <label>Tipo</label>
-                  <select className="input" value={tipoFuncionario} onChange={e => settipoFuncionario(e.target.value)} disabled={!permiteEditar} >
+                  <select className="input" value={tipoFuncionario} onChange={e => settipoFuncionario(e.target.value)} disabled={!permiteEditar} required >
                     <option value="">Selecione</option>
                     <option value="administrativo">Administrativo</option>
                     <option value="servico">Serviço</option>
@@ -351,15 +351,15 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
                 </div>
                 <div>
                   <label>Número</label>
-                  <input type="text" className="input" value={numero} onChange={e => setNumero(e.target.value)} disabled={!permiteEditar} required />
+                  <input type="text" className="input" value={numero} onChange={e => setNumero(e.target.value)} disabled={!permiteEditar} />
                 </div>
                 <div>
                   <label>Bairro</label>
-                  <input type="text" className="input" value={bairro.toUpperCase()} onChange={e => setBairro(e.target.value)} disabled={!permiteEditar} required />
+                  <input type="text" className="input" value={bairro.toUpperCase()} onChange={e => setBairro(e.target.value)} disabled={!permiteEditar}/>
                 </div>
                 <div>
                   <label>CEP</label>
-                  <input type="text" className="input" value={cep} onChange={e => setCep(formatarCEP(e.target.value))} disabled={!permiteEditar} required />
+                  <input type="text" className="input" value={cep} onChange={e => setCep(formatarCEP(e.target.value))} disabled={!permiteEditar}  />
                 </div>
                 <div>
                   <label>UF</label>

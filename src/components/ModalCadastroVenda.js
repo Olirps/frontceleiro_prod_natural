@@ -48,7 +48,8 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
                     quantidade: item.quantity,
                     valor_unitario: item.valor_unitario,
                     venda_id: item.venda_id,
-                    vlrUnitario: item.vlrUnitario,
+                    valor_unitario: item.vlrUnitario,
+                    vlrVenda: item.vlrUnitario,
                     valorTotal: item.vlrVenda,
                     xProd: item.xProd
                 }));
@@ -58,8 +59,8 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
 
             setClienteNome(os.cliente || '');
             setClienteBusca(os.cliente || '');
-            setClienteId(os.cliente_id || '');
-            setFuncionarioId(os.funcionario_id || '');
+            setClienteId(os.cliente_id || null);
+            setFuncionarioId(os.funcionario_id || null);
         }
     }, [edit, os]);
 

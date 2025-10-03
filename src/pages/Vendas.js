@@ -408,9 +408,9 @@ function Vendas() {
               {vendas.map((venda, index) => (
                 <tr key={`${venda.id}-${index}`} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-2">{venda.venda_id}</td>
-                  <td className="px-4 py-2">{venda.cliente_id === 176 ? 'Não Informado' : venda.cliente}</td>
+                  <td className="px-4 py-2">{venda.cliente_id === null ? 'Não Informado' : venda.cliente}</td>
                   <td className="px-4 py-2">{venda.totalPrice === null ? 'R$ 0,00' : formatarMoedaBRL(venda.totalPrice)}</td>
-                  <td className="px-4 py-2">{venda.desconto === 0 ? 'R$ 0,00' : formatarMoedaBRL(venda.desconto)}</td>
+                  <td className="px-4 py-2">{venda.desconto === 0 || venda.desconto === null ? 'R$ 0,00' : formatarMoedaBRL(venda.desconto)}</td>
                   <td className="px-4 py-2">{new Date(venda.dataVenda).toLocaleString().replace(",", "")}</td>
                   <td className="px-4 py-2 flex gap-2">
                     <>
