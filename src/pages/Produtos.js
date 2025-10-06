@@ -14,6 +14,7 @@ function Produtos() {
     const [selectedProduto, setSelectedProduto] = useState(null);
     const [isCadastraProdutoModalOpen, setIsCadastraProdutoModalOpen] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
+    const [status, setStatus] = useState('ativo');
     const [isInativar, setIsInativar] = useState(false);
     const [importSuccess, setCadastroSuccess] = useState(false);
     const [searchParams, setSearchParams] = useState({
@@ -25,13 +26,6 @@ function Produtos() {
     const [appliedFilters, setAppliedFilters] = useState({});
     const [needsRefresh, setNeedsRefresh] = useState(false);
 
-    // Estados para filtros
-    const [filters, setFilters] = useState({
-        nome: '',
-        cEAN: '',
-        tipo: ''
-    });
-
     // Estados para paginação
     const [pagination, setPagination] = useState({
         currentPage: 1,
@@ -39,6 +33,8 @@ function Produtos() {
         totalItems: 0,
         totalPages: 1
     });
+
+
     //Permissoes
     const { permissions } = useAuth();
     const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
@@ -89,7 +85,8 @@ function Produtos() {
         setAppliedFilters({
             nome: searchParams.nome.trim(),
             cEAN: searchParams.cEAN.trim(),
-            tipo: searchParams.tipo.trim()
+            tipo: searchParams.tipo.trim(),
+            status: searchParams.status
         });
         setPagination(prev => ({ ...prev, currentPage: 1 }));
     };
@@ -98,12 +95,14 @@ function Produtos() {
         setSearchParams({
             nome: '',
             cEAN: '',
-            tipo: ''
+            tipo: '',
+            status: ''
         });
         setAppliedFilters({
             nome: '',
             cEAN: '',
-            tipo: ''
+            tipo: '',
+            status: ''
         });
         setPagination(prev => ({ ...prev, currentPage: 1 }));
     };
@@ -137,41 +136,6 @@ function Produtos() {
 
     };
 
-    const handleaddProdutos = async (e) => {
-        const tipo = e.isService === true ? 'servico' : 'produto';
-        const newProduto = {
-            xProd: e.xProd,
-            tipo: tipo,
-            cod_interno: e.cod_interno,
-            cEAN: e.cEAN,
-            qtdMinima: e.qtdMinima,
-            uCom: e.uCom,
-            qCom: e.qCom,
-            NCM: e.ncm,
-            gpid: e.grupoId,
-            subgpid: e.subGrupoId,
-            CFOP: e.cfop,
-            CEST: e.cest,
-            vUnCom: Number(e.vUnCom),
-            vlrVenda: Number(e.vlrVenda),
-            vlrVendaAtacado: Number(e.vlrVendaAtacado),
-            pct_servico: Number(e.percentual),
-            fracionado: e.fracionado,
-            atacado: e.atacado,
-        };
-
-        try {
-            const newProd = await addProdutos(newProduto);
-            setToast({ message: `Produto: ${newProd.data.id} - ${newProd.data.xProd}`, type: "success" });
-            handleClear();
-            setCadastroSuccess(prev => !prev);
-            closeCadastraProdutoModal();
-        } catch (err) {
-            const errorMessage = err.response?.data?.erro || 'Erro ao cadastrar produto';
-            setToast({ message: errorMessage, type: "error" });
-        }
-    };
-
     const handleEditClick = async (produto) => {
         try {
             checkPermission('produtos', 'viewcadastro', async () => {
@@ -186,41 +150,6 @@ function Produtos() {
         }
     };
 
-    const handleEditSubmit = async (e) => {
-        checkPermission('produtos', 'edit', async () => {
-            const updatedProduto = {
-                xProd: e.xProd,
-                cod_interno: e.cod_interno,
-                tipo: e.productType,
-                cEAN: e.cEAN,
-                qtdMinima: e.qtdMinima,
-                uCom: e.uCom,
-                qCom: e.qCom,
-                vUnCom: Number(e.vUnCom),
-                NCM: e.ncm,
-                CFOP: e.cfop,
-                gpid: e.grupoId,
-                subgpid: e.subGrupoId,
-                CEST: e.cest,
-                vlrVenda: Number(e.vlrVenda),
-                vlrVendaAtacado: Number(e.vlrVendaAtacado),
-                fracionado: e.fracionado,
-                atacado: e.atacado,
-                pct_servico: Number(e.percentual)
-            };
-            await updateProduto(selectedProduto.id, updatedProduto);
-            setToast({ message: "Produto atualizado com sucesso!", type: "success" });
-            setIsEdit(false);
-            closeCadastraProdutoModal();
-            setCadastroSuccess(prev => !prev);
-        })
-        try {
-
-        } catch (err) {
-            const errorMessage = err.response?.data?.erro || 'Erro ao atualizar produto';
-            setToast({ message: errorMessage, type: "error" });
-        }
-    };
 
     const handleInativarProduto = async (produtoId, novoStatus) => {
         try {
@@ -266,6 +195,19 @@ function Produtos() {
                                     <option value="">Todos</option>
                                     <option value="servico">Serviço</option>
                                     <option value="produto">Produto</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select
+                                    id="status"
+                                    value={searchParams.status}
+                                    onChange={(e) => setSearchParams({ ...searchParams, status: e.target.value })}
+                                    className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="">Todos</option>
+                                    <option value="ativo">Ativo</option>
+                                    <option value="inativo">Inativo</option>
                                 </select>
                             </div>
                             <div>
@@ -374,7 +316,6 @@ function Produtos() {
                 <ModalCadastraProduto
                     isOpen={isCadastraProdutoModalOpen}
                     onClose={closeCadastraProdutoModal}
-                    onSubmit={isEdit ? handleEditSubmit : handleaddProdutos}
                     edit={isEdit}
                     produto={selectedProduto}
                     inativar={isInativar}

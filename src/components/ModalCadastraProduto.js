@@ -49,7 +49,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
         onClose();
       }, 1200);
     } catch (error) {
-      setToast({ message: 'Erro ao inativar produto.', type: 'error' });
+      setToast({ message: `Erro ao inativar produto: ${error.response.data.erro}`, type: 'error' });
     }
   };
   const [formData, setFormData] = useState({});
@@ -69,8 +69,8 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
   const [uCom, setuCom] = useState('');
   const [qCom, setqCom] = useState('');
   const [vUnCom, setvUnCom] = useState('');
-  const [ncm, setNcm] = useState('');
-  const [cfop, setCfop] = useState('');
+  const [NCM, setNcm] = useState('');
+  const [CFOP, setCfop] = useState('');
   const [cest, setCest] = useState('');
   const [vlrVenda, setVlrVenda] = useState('');
   const [valorFracionado, setValorFracionado] = useState(null);
@@ -87,6 +87,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
   const [atacado, setAtacado] = useState(false);
   const [fracionado, setFracionado] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [statusProduto, setStatusProduto] = useState(produto?.status || 'ativo');
 
   //Permissoes
   const { permissions } = useAuth();
@@ -286,8 +287,8 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
       subgpid: subGrupoId !== '' ? subGrupoId : 0,
       vlrVenda,
       margemSobreVlrCusto,
-      ncm,
-      cfop,
+      NCM,
+      CFOP,
       cest,
       vlrVendaAtacado,
       margemSobreVlrCustoAtacado,
@@ -560,7 +561,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
                   <label className="block text-sm font-medium text-gray-700">NCM</label>
                   <input
                     type="text"
-                    value={ncm}
+                    value={NCM}
                     onChange={(e) => setNcm(e.target.value)}
                     disabled={!permiteEditar}
                     className="w-full border border-gray-300 rounded-md p-2 mt-1 focus:ring-2 focus:ring-blue-500"
@@ -570,7 +571,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
                   <label className="block text-sm font-medium text-gray-700">CFOP</label>
                   <input
                     type="text"
-                    value={cfop}
+                    value={CFOP}
                     onChange={(e) => setCfop(e.target.value)}
                     disabled={!permiteEditar}
                     className="w-full border border-gray-300 rounded-md p-2 mt-1 focus:ring-2 focus:ring-blue-500"
