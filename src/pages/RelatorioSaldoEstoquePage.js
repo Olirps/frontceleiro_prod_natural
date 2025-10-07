@@ -242,7 +242,7 @@ const RelatorioSaldoEstoquePage = () => {
                                                 <>
                                                     <td className="p-2 border">{item.nome_produto}</td>
                                                     <td className="p-2 border">{item.unidade}</td>
-                                                    <td className="p-2 border">{item.estoque_atual}</td>
+                                                    <td className="p-2 border">{item.saldo_movimentado}</td>
                                                 </>
                                             )}
                                         </tr>

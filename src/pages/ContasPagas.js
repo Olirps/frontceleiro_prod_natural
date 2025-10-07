@@ -94,7 +94,7 @@ function ContasPagas() {
         // Cabeçalho com os dados do cliente
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
-        doc.text("Celeiro Produtos Naturais", 14, 20);
+        doc.text("Verduraria Primavera", 14, 20);
 
         // Informações de contato
         doc.setFontSize(10);
