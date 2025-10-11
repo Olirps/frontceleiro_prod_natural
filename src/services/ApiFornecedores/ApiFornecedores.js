@@ -10,6 +10,16 @@ export const getFornecedores = async (filters = {}) => {
     }
 };
 
+export const getFornecedoresFiltro = async (filters = {}) => {
+    try {
+        const response = await api.get('/fornecedores/filtro/credor', { params: filters });
+        return response;
+    } catch (error) {
+        console.error('Erro ao buscar fornecedores:', error);
+        throw error; // Repassa o erro para tratamento
+    }
+};
+
 export const addFornecedor = async (pessoa) => {
     try {
         const response = await api.post('/fornecedores', pessoa);

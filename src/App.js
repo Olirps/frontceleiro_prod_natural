@@ -41,6 +41,8 @@ import UsuariosPage from './pages/UsuariosPage';
 import MenusPage from './pages/MenusPage';
 import PromocaoPage from './pages/PromocaoPage';
 import AtualizacaoPrecoPage from './pages/AtualizacaoPrecoPage';
+import AtualizaEstoquePage from './pages/AtualizaEstoquePage';
+import EstoquePage from './pages/EstoquePage';
 
 function App() {
   const { isAuthenticated, permissions } = useAuth(); // Pega o estado de autenticação e as permissões do usuário
@@ -198,6 +200,14 @@ function App() {
           <Route
             path="/atualiza-preco"
             element={isAuthenticated ? <AtualizacaoPrecoPage /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/atualiza-estoque"
+            element={isAuthenticated ? <AtualizaEstoquePage /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/relatorio-estoque"
+            element={isAuthenticated ? <EstoquePage /> : null} // Condicionalmente não renderiza
           />
         </Route>
       </Routes>

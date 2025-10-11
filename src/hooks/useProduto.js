@@ -3,10 +3,11 @@ import {
   addProdutos,
   updateProduto,
   inativarProduto,
-  getProdutoById
+  getProdutoById,
+  getProdutos
 } from '../services/api';
 
-export const useProduto = () => {
+export const useProduto = (nome = {}) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -66,6 +67,25 @@ export const useProduto = () => {
     }
   };
 
+  // NOVO: buscar produtos por nome
+  const searchProdutos = async (nome) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = nome ? { nome } : {};
+      await getProdutos(params); // Chama a função para registrar a busca
+      const response = await getProdutos(params);
+      if (!response) throw new Error('Erro ao buscar produtos');
+      const data = response.data;
+      return data; // espera um array de produtos
+    } catch (err) {
+      setError(err.message || 'Erro ao buscar produtos');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     error,
@@ -73,5 +93,6 @@ export const useProduto = () => {
     updateProdutoData,
     toggleProdutoStatus,
     fetchProduto,
+    searchProdutos, // retorna a nova função
   };
 };

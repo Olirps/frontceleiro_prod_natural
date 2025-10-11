@@ -4,6 +4,7 @@ import { getVendas, getVendaById } from '../services/ApiVendas/ApiVendas';
 import '../styles/Vendas.css';
 import ModalCadastroVenda from '../components/ModalCadastroVenda';
 import ComunicacaoSEFAZ from '../components/ComunicacaoSEFAZ';
+import EmissaoNF_NFC from '../components/EmissaoNF_NFC';
 import { cpfCnpjMask } from '../components/utils';
 import Toast from '../components/Toast';
 import 'jspdf-autotable';
@@ -43,6 +44,7 @@ function Vendas() {
   const [tiposPagamento, setTiposPagamento] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+  const [isEmissaoModalOpen, setIsEmissaoModalOpen] = useState(false);
 
   const [isModalModalCancelaVendaOpen, setIsModalCancelaVendaOpen] = useState(false);
   const [isComunicacaoSefazOpen, setIsComunicacaoSEFAZOpen] = useState(false);
@@ -267,16 +269,19 @@ function Vendas() {
   const handleConfirmacaoEmitirNFe = (venda_id) => {
     checkPermission('emitir-nf', 'insert', () => {
       setIdVenda(venda_id);
-      setIsConfirmationModalOpen(true);
+      setIsEmissaoModalOpen(true);
     })
   }
   const handleCancel = () => {
     setIsConfirmationModalOpen(false); // Fechar o modal sem realizar nada
   };
 
-  const handleEmitirNFe = async () => {
+  const handleCloseEmissaoModal = () => {
+    setIsEmissaoModalOpen(false);
+  };
 
-    setIsConfirmationModalOpen(false);
+  const handleEmitirNFe = async () => {
+    setIsEmissaoModalOpen(false);
     setIsComunicacaoSEFAZOpen(true);
 
     try {
@@ -306,6 +311,41 @@ function Vendas() {
       });
     } finally {
       setIsComunicacaoSEFAZOpen(false);
+      fetchVendas(); // Atualiza a lista após emissão
+    }
+  };
+
+  const handleEmitirNFCe = async () => {
+    setIsEmissaoModalOpen(false);
+    setIsComunicacaoSEFAZOpen(true);
+
+    try {
+      const response = await geraNFC(idVenda);
+      if (response.status === 200) {
+        setToast({
+          message: "NFC-e autorizada com sucesso!",
+          type: "success",
+        });
+      } else if (response.status === 412) {
+        const data = await response.data;
+        setToast({
+          message: `NFC-e rejeitada: ${data.motivo || data.erro || "Motivo não informado"}`,
+          type: "error",
+        });
+      } else {
+        setToast({
+          message: `Error: ${response.data.erro || "Erro inesperado na emissão da NFC-e."}  `,
+          type: "error",
+        });
+      }
+    } catch (error) {
+      setToast({
+        message: `Erro na comunicação: ${error.message}`,
+        type: "error",
+      });
+    } finally {
+      setIsComunicacaoSEFAZOpen(false);
+      fetchVendas(); // Atualiza a lista após emissão
     }
   };
 
@@ -393,53 +433,149 @@ function Vendas() {
         </div>
       ) : (
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          <table className="min-w-full text-sm text-left">
-            <thead className="bg-gray-100 text-gray-700">
-              <tr>
-                <th className="px-4 py-2">ID</th>
-                <th className="px-4 py-2">Cliente</th>
-                <th className="px-4 py-2">Valor Venda</th>
-                <th className="px-4 py-2">Desconto</th>
-                <th className="px-4 py-2">Data</th>
-                <th className="px-4 py-2">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vendas.map((venda, index) => (
-                <tr key={`${venda.id}-${index}`} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-2">{venda.venda_id}</td>
-                  <td className="px-4 py-2">{venda.cliente}</td>
-                  <td className="px-4 py-2">{venda.totalPrice === null ? 'R$ 0,00' : formatarMoedaBRL(venda.totalPrice)}</td>
-                  <td className="px-4 py-2">{venda.desconto === 0 || venda.desconto === null ? 'R$ 0,00' : formatarMoedaBRL(venda.desconto)}</td>
-                  <td className="px-4 py-2">{new Date(venda.dataVenda).toLocaleString().replace(",", "")}</td>
-                  <td className="px-4 py-2 flex gap-2">
-                    <>
-                      <button onClick={() => handleOpenModalCancelaVenda(venda.venda_id)} className="text-red-600 hover:text-red-800">🚫</button>
-                      <button onClick={() => handleSearchClick(venda.venda_id, venda.status_id, venda.pagamentos)} className="text-blue-600 hover:text-blue-800">🔍</button>
-                    </>
-                    <button onClick={() => handlePrintClick(venda)} className="text-gray-700 hover:text-black">🖨️</button>
-                    <button onClick={() => handleConfirmacaoEmitirNFe(venda.venda_id)} className="text-green-600 hover:text-green-800">📤</button>
-                    <ComunicacaoSEFAZ isOpen={isComunicacaoSefazOpen} onClose={handleCloseModal} />
-
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-
-            {currentPage === totalPages && (
-              <tfoot className="bg-gray-50 font-semibold">
+          {/* --- DESKTOP TABLE --- */}
+          <div className="hidden sm:block">
+            <table className="min-w-full text-sm text-left">
+              <thead className="bg-gray-100 text-gray-700">
                 <tr>
-                  <td colSpan="2" className="px-4 py-2">Total</td>
-                  <td className="px-4 py-2">{formatarMoedaBRL(totalPreco)}</td>
-                  <td className="px-4 py-2">{formatarMoedaBRL(totalDescontos)}</td>
-                  <td colSpan="2"></td>
+                  <th className="px-4 py-2">ID</th>
+                  <th className="px-4 py-2">Cliente</th>
+                  <th className="px-4 py-2">Valor Venda</th>
+                  <th className="px-4 py-2">Desconto</th>
+                  <th className="px-4 py-2">Data</th>
+                  <th className="px-4 py-2 text-center">Ações</th>
                 </tr>
-              </tfoot>
-            )}
-          </table>
+              </thead>
+              <tbody>
+                {vendas.map((venda, index) => (
+                  <tr key={`${venda.id}-${index}`} className="border-t hover:bg-gray-50">
+                    <td className="px-4 py-2">{venda.venda_id}</td>
+                    <td className="px-4 py-2">{venda.cliente}</td>
+                    <td className="px-4 py-2">
+                      {venda.totalPrice === null
+                        ? 'R$ 0,00'
+                        : formatarMoedaBRL(venda.totalPrice)}
+                    </td>
+                    <td className="px-4 py-2">
+                      {venda.desconto === 0 || venda.desconto === null
+                        ? 'R$ 0,00'
+                        : formatarMoedaBRL(venda.desconto)}
+                    </td>
+                    <td className="px-4 py-2">
+                      {new Date(venda.dataVenda).toLocaleString().replace(',', '')}
+                    </td>
+                    <td className="px-4 py-2 flex gap-3 justify-center text-lg">
+                      <button
+                        onClick={() => handleOpenModalCancelaVenda(venda.venda_id)}
+                        className="text-red-600 hover:text-red-800"
+                        title="Cancelar venda"
+                      >
+                        🚫
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleSearchClick(venda.venda_id, venda.status_id, venda.pagamentos)
+                        }
+                        className="text-blue-600 hover:text-blue-800"
+                        title="Visualizar detalhes"
+                      >
+                        🔍
+                      </button>
+                      <button
+                        onClick={() => handlePrintClick(venda)}
+                        className="text-gray-700 hover:text-black"
+                        title="Imprimir"
+                      >
+                        🖨️
+                      </button>
+                      <button
+                        onClick={() => handleConfirmacaoEmitirNFe(venda.venda_id)}
+                        className="text-green-600 hover:text-green-800"
+                        title="Emitir NF-e"
+                      >
+                        📤
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+
+              {currentPage === totalPages && (
+                <tfoot className="bg-gray-50 font-semibold">
+                  <tr>
+                    <td colSpan="2" className="px-4 py-2">
+                      Total
+                    </td>
+                    <td className="px-4 py-2">{formatarMoedaBRL(totalPreco)}</td>
+                    <td className="px-4 py-2">{formatarMoedaBRL(totalDescontos)}</td>
+                    <td colSpan="2"></td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+
+          {/* --- MOBILE CARD VIEW --- */}
+          <div className="sm:hidden">
+            {vendas.map((venda, index) => (
+              <div
+                key={`${venda.id}-${index}`}
+                className="border-b border-gray-200 p-4 flex flex-col gap-2"
+              >
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600 font-medium">
+                    ID: {venda.venda_id}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {new Date(venda.dataVenda).toLocaleDateString()}
+                  </span>
+                </div>
+
+                <div className="text-gray-800 font-semibold">{venda.cliente}</div>
+
+                <div className="flex justify-between text-sm text-gray-700">
+                  <span>Venda: {formatarMoedaBRL(venda.totalPrice || 0)}</span>
+                  <span>Desc: {formatarMoedaBRL(venda.desconto || 0)}</span>
+                </div>
+
+                {/* Ações visíveis no mobile */}
+                <div className="flex justify-between mt-3 text-lg">
+                  <button
+                    onClick={() => handleOpenModalCancelaVenda(venda.venda_id)}
+                    className="text-red-600 hover:text-red-800"
+                    title="Cancelar venda"
+                  >
+                    🚫
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleSearchClick(venda.venda_id, venda.status_id, venda.pagamentos)
+                    }
+                    className="text-blue-600 hover:text-blue-800"
+                    title="Visualizar"
+                  >
+                    🔍
+                  </button>
+                  <button
+                    onClick={() => handlePrintClick(venda)}
+                    className="text-gray-700 hover:text-black"
+                    title="Imprimir"
+                  >
+                    🖨️
+                  </button>
+                  <button
+                    onClick={() => handleConfirmacaoEmitirNFe(venda.venda_id)}
+                    className="text-green-600 hover:text-green-800"
+                    title="Emitir NF-e"
+                  >
+                    📤
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
-
       {/* Paginação */}
       {vendas && vendas.length > 0 && (
         <div className="mt-4">
@@ -479,6 +615,15 @@ function Vendas() {
           status={status}
         />
       )}
+      <EmissaoNF_NFC
+        isOpen={isEmissaoModalOpen}
+        onClose={handleCloseEmissaoModal}
+        onEmitirNFe={handleEmitirNFe}
+        onEmitirNFCe={handleEmitirNFCe}
+      />
+
+      <ComunicacaoSEFAZ isOpen={isComunicacaoSefazOpen} onClose={handleCloseModal} />
+
       <ConfirmDialog
         isOpen={isConfirmationModalOpen}
         onClose={handleCancel}

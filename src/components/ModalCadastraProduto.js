@@ -68,6 +68,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
   const [qtdMinima, setqtdMinima] = useState('');
   const [uCom, setuCom] = useState('');
   const [qCom, setqCom] = useState('');
+  const [estoque_atual, setEstoqueAtual] = useState('');
   const [vUnCom, setvUnCom] = useState('');
   const [NCM, setNcm] = useState('');
   const [CFOP, setCfop] = useState('');
@@ -105,6 +106,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
       setqCom(produto.qCom || '');
       setvUnCom(produto.vUnCom || '');
       setNcm(produto.NCM || '');
+      setEstoqueAtual(produto.estoque_atual || '');
       setCfop(produto.CFOP || '');
       setCest(produto.CEST || '');
       setVlrVenda(produto.Precos.length > 0 ? produto.Precos[0].preco_venda : produto.vlrVenda || null);
@@ -612,10 +614,9 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
                     type="text"
                     id="qCom"
                     name="qCom"
-                    value={qCom}
-                    onChange={(e) => setqCom(e.target.value)}
-                    required={!isService}
-                    disabled={!permiteEditar}
+                    value={estoque_atual}
+                    onChange={(e) => setEstoqueAtual(e.target.value)}
+                    disabled={true}
                     className="w-full border border-gray-300 rounded-md p-2 mt-1 focus:ring-2 focus:ring-blue-500"
                   />
                 </div>

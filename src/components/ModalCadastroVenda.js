@@ -22,6 +22,7 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
     const [cliente_id, setClienteId] = useState(null);
     const [buscaProduto, setBuscaProduto] = useState('');
     const [produtos, setProdutos] = useState([]);
+    const [chaveAcesso, setChaveAcesso] = useState(null);
     const [qtd, setQtd] = useState(1);
     const [sugestoes, setSugestoes] = useState([]);
     const [produtosSelecionados, setProdutosSelecionados] = useState([]);
@@ -56,7 +57,7 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
 
                 setProdutosSelecionados(itensFormatados);
             });
-
+            setChaveAcesso(os.chave_acesso || null);
             setClienteNome(os.cliente || '');
             setClienteBusca(os.cliente || '');
             setClienteId(os.cliente_id || null);
@@ -268,91 +269,95 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
                 {/* Produto - Seção de seleção */}
                 <div className="mb-4">
                     <label className="block text-sm font-medium">Produtos</label>
-
-                    {produtoSelecionado ? (
-                        <div className="flex items-center gap-2 mt-2 p-3 bg-gray-50 rounded">
-                            <div className="flex-1">
-                                <div className="flex-1">
-                                    {produtoSelecionado.tem_promocao ? (
-                                        <div className="flex items-baseline gap-4">
-                                            <span>{produtoSelecionado.xProd}</span>
-                                            <span className="font-medium text-red-600 line-through">{formatarMoedaBRL(produtoSelecionado.vlrVenda)}</span>
-                                            <span className="font-medium">{formatarMoedaBRL(produtoSelecionado.valor_atual)}</span>
-                                        </div>
-                                    ) :
-                                        <span className="font-medium">{formatarMoedaBRL(produtoSelecionado.vlrVenda)}</span>
-                                    }
-                                </div>
-                            </div>
-                            <input
-                                type="number"
-                                min="1"
-                                value={qtd}
-                                onChange={e => setQtd(Number(e.target.value))}
-                                className="w-20 border border-gray-300 rounded px-2 py-1 text-center"
-                            />
-                            <button
-                                onClick={() => adicionarProduto(produtoSelecionado)}
-                                className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-                            >
-                                Adicionar
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setProdutoSelecionado(null);
-                                    setQtd(1);
-                                }}
-                                className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
-                            >
-                                Cancelar
-                            </button>
-                        </div>
-                    ) : (
+                    {os.status_id !== 2 && (
                         <>
-                            {os?.status_id !== 2 && (<div className="flex items-center gap-2 mb-2">
-                                <input
-                                    type="text"
-                                    value={buscaProduto}
-                                    onChange={e => {
-                                        setBuscaProduto(e.target.value);
-                                        buscarProdutos(e.target.value);
-                                    }}
-                                    className="flex-1 border border-gray-300 rounded px-3 py-2"
-                                    placeholder="Buscar produto"
-                                />
-                            </div>)}
-
-                            {sugestoes.length > 0 && (
-                                <ul className="border border-gray-200 rounded max-h-40 overflow-y-auto">
-                                    {sugestoes.map(prod => (
-                                        <li
-                                            key={prod.id}
-                                            onClick={() => {
-                                                setProdutoSelecionado(prod);
-                                                setBuscaProduto('');
-                                                setSugestoes([]);
+                            {produtoSelecionado ? (
+                                <div className="flex items-center gap-2 mt-2 p-3 bg-gray-50 rounded">
+                                    <div className="flex-1">
+                                        <div className="flex-1">
+                                            {produtoSelecionado.tem_promocao ? (
+                                                <div className="flex items-baseline gap-4">
+                                                    <span>{produtoSelecionado.xProd}</span>
+                                                    <span className="font-medium text-red-600 line-through">{formatarMoedaBRL(produtoSelecionado.vlrVenda)}</span>
+                                                    <span className="font-medium">{formatarMoedaBRL(produtoSelecionado.valor_atual)}</span>
+                                                </div>
+                                            ) :
+                                                <span className="font-medium">{formatarMoedaBRL(produtoSelecionado.vlrVenda)}</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={qtd}
+                                        onChange={e => setQtd(Number(e.target.value))}
+                                        className="w-20 border border-gray-300 rounded px-2 py-1 text-center"
+                                    />
+                                    <button
+                                        onClick={() => adicionarProduto(produtoSelecionado)}
+                                        className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                                    >
+                                        Adicionar
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setProdutoSelecionado(null);
+                                            setQtd(1);
+                                        }}
+                                        className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    {os?.status_id !== 2 && (<div className="flex items-center gap-2 mb-2">
+                                        <input
+                                            type="text"
+                                            value={buscaProduto}
+                                            onChange={e => {
+                                                setBuscaProduto(e.target.value);
+                                                buscarProdutos(e.target.value);
                                             }}
-                                            className="p-2 hover:bg-gray-100 cursor-pointer flex justify-between"
-                                        >
-                                            {prod.tem_promocao ? (
-                                                <>
-                                                    <span>{prod.xProd}</span>
-                                                    <span className="font-medium text-red-600 line-through">{formatarMoedaBRL(prod.vlrVenda)}</span>
-                                                    <span className="font-medium">{formatarMoedaBRL(prod.valor_atual)}</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <span>{prod.xProd}</span>
-                                                    <span className="font-medium">{formatarMoedaBRL(prod.vlrVenda)}</span>
-                                                </>
-                                            )}
+                                            className="flex-1 border border-gray-300 rounded px-3 py-2"
+                                            placeholder="Buscar produto"
+                                        />
+                                    </div>)}
 
-                                        </li>
-                                    ))}
-                                </ul>
+                                    {sugestoes.length > 0 && (
+                                        <ul className="border border-gray-200 rounded max-h-40 overflow-y-auto">
+                                            {sugestoes.map(prod => (
+                                                <li
+                                                    key={prod.id}
+                                                    onClick={() => {
+                                                        setProdutoSelecionado(prod);
+                                                        setBuscaProduto('');
+                                                        setSugestoes([]);
+                                                    }}
+                                                    className="p-2 hover:bg-gray-100 cursor-pointer flex justify-between"
+                                                >
+                                                    {prod.tem_promocao ? (
+                                                        <>
+                                                            <span>{prod.xProd}</span>
+                                                            <span className="font-medium text-red-600 line-through">{formatarMoedaBRL(prod.vlrVenda)}</span>
+                                                            <span className="font-medium">{formatarMoedaBRL(prod.valor_atual)}</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span>{prod.xProd}</span>
+                                                            <span className="font-medium">{formatarMoedaBRL(prod.vlrVenda)}</span>
+                                                        </>
+                                                    )}
+
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </>
                             )}
                         </>
                     )}
+
                 </div>
 
                 {/* Tabela de produtos selecionados */}
@@ -413,6 +418,15 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
                                     </li>
                                 ))}
                             </list>
+                        </div>)}
+                </div>
+                <div>
+                    {chaveAcesso && (
+                        <div className="mb-4">
+                            <h3 className="text-lg font-medium mb-2">Chave de Acesso da Nota Fiscal</h3>
+                            <div className="p-2 border rounded bg-gray-50">
+                                <span className="text-sm text-gray-600 break-all">{chaveAcesso}</span>
+                            </div>
                         </div>)}
                 </div>
                 <div className="mt-6 text-right">
