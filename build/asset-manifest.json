@@ -1,15 +1,17 @@
 {
   "files": {
     "main.css": "/static/css/main.06c11647.css",
-    "main.js": "/static/js/main.595b715c.js",
+    "main.js": "/static/js/main.d41e3e02.js",
     "static/js/52.b936343a.chunk.js": "/static/js/52.b936343a.chunk.js",
     "static/js/760.1b589793.chunk.js": "/static/js/760.1b589793.chunk.js",
     "static/js/239.a8e13790.chunk.js": "/static/js/239.a8e13790.chunk.js",
     "static/js/206.6400c014.chunk.js": "/static/js/206.6400c014.chunk.js",
+    "static/media/nfce_logo.png": "/static/media/nfce_logo.0c22b34a57fc36ff9c26.png",
+    "static/media/nfe_logo.png": "/static/media/nfe_logo.801fc5b19afccf7c4875.png",
     "index.html": "/index.html"
   },
   "entrypoints": [
     "static/css/main.06c11647.css",
-    "static/js/main.595b715c.js"
+    "static/js/main.d41e3e02.js"
   ]
 }
