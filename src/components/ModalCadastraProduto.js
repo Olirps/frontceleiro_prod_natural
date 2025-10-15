@@ -67,7 +67,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
   const [cod_interno_fracionado, setCodInternoFracionado] = useState('');
   const [qtdMinima, setqtdMinima] = useState('');
   const [uCom, setuCom] = useState('');
-  const [qCom, setqCom] = useState('');
+  const [qCom, setqCom] = useState(null);
   const [estoque_atual, setEstoqueAtual] = useState('');
   const [vUnCom, setvUnCom] = useState('');
   const [NCM, setNcm] = useState('');
@@ -103,7 +103,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
       setcEAN(produto.cEAN || '');
       setqtdMinima(produto.qtdMinima || '');
       setuCom(produto.uCom || '');
-      setqCom(produto.qCom || '');
+      setqCom(produto.qCom || null);
       setvUnCom(produto.vUnCom || '');
       setNcm(produto.NCM || '');
       setEstoqueAtual(produto.estoque_atual || '');
@@ -258,7 +258,6 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
         { nome: 'Nome do Produto', valor: xProd },
         { nome: 'Unidade de Medida', valor: uCom },
         { nome: 'Quantidade Mínima', valor: qtdMinima },
-        { nome: 'Quantidade', valor: qCom },
         { nome: 'Valor de Custo', valor: vUnCom },
         { nome: 'Valor de Venda', valor: vlrVenda },
       ];
