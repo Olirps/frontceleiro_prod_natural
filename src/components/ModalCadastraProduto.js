@@ -87,6 +87,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
   const [openSubGrupo, setOpenSubGrupo] = useState(false);
   const [atacado, setAtacado] = useState(false);
   const [fracionado, setFracionado] = useState(false);
+  const [feira, setFeira] = useState(false);
   const [loading, setLoading] = useState(false);
   const [statusProduto, setStatusProduto] = useState(produto?.status || 'ativo');
 
@@ -111,6 +112,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
       setCest(produto.CEST || '');
       setVlrVenda(produto.Precos.length > 0 ? produto.Precos[0].preco_venda : produto.vlrVenda || null);
       setFracionado(produto.fracionado || false);
+      setFeira(produto.feira || false);
       setAtacado(produto.atacado || false);
       setValorFracionado(produto.Precos.length > 0 ? produto.Precos[0].preco_venda_fracionado : null);
       setvlrVendaAtacado(produto.vlrVendaAtacado || null);
@@ -297,6 +299,7 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
       valor_fracionado: valorFracionado !== '' ? valorFracionado : null,
       atacado,
       fracionado,
+      feira,
       username
     };
     await handleSave(dados);
@@ -551,6 +554,22 @@ const ModalCadastraProduto = ({ isOpen, onClose, produto, edit, isInativar, addi
                     />
                   </button>
                   <span className="text-sm text-gray-700">{atacado ? "Ativo" : "Inativo"}</span>
+                </div>
+                {/*Feira*/}
+                <div className="mb-4 flex items-center gap-3">
+                  <label className="text-sm font-medium">Feira:</label>
+                  <button
+                    type="button"
+                    onClick={() => setFeira(!feira)} // alterna true/false
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${feira ? "bg-blue-500" : "bg-gray-300"
+                      }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${feira ? "translate-x-6" : "translate-x-1"
+                        }`}
+                    />
+                  </button>
+                  <span className="text-sm text-gray-700">{feira ? "Ativo" : "Inativo"}</span>
                 </div>
               </div>
             )}
