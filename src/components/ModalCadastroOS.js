@@ -1,3 +1,4 @@
+// components/ModalCadastroOS.js
 import React, { useState, useEffect, useRef } from 'react';
 import { getProdutosVenda, iniciarVenda, getAllOSStatus, getVeiculos, getFuncionarios, removerProdutoOS, consultaItensVenda } from '../services/api';
 import { getClientes } from '../services/ApiClientes/ApiClientes';
