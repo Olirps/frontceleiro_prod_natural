@@ -269,7 +269,7 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
                 {/* Produto - Seção de seleção */}
                 <div className="mb-4">
                     <label className="block text-sm font-medium">Produtos</label>
-                    {os.status_id !== 2 && (
+                    {os?.status_id !== 2 && (
                         <>
                             {produtoSelecionado ? (
                                 <div className="flex items-center gap-2 mt-2 p-3 bg-gray-50 rounded">

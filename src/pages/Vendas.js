@@ -3,6 +3,7 @@ import { cancelaVenda, updateVenda, geraNF, geraNFC, getFormasPagamento, statusN
 import { getVendas, getVendaById } from '../services/ApiVendas/ApiVendas';
 import '../styles/Vendas.css';
 import ModalCadastroVenda from '../components/ModalCadastroVenda';
+import ModalLancarVendas from '../components/ModalLancarVendas';
 import ComunicacaoSEFAZ from '../components/ComunicacaoSEFAZ';
 import EmissaoNF_NFC from '../components/EmissaoNF_NFC';
 import { cpfCnpjMask } from '../components/utils';
@@ -592,19 +593,37 @@ function Vendas() {
 
       {/* Modais */}
       {isModalOpen && (
-        <ModalCadastroVenda
-          isOpen={isModalOpen}
-          onSubmit={isEdit ? handleEditSubmit : () => setToast({ message: 'Submit Executado', type: 'info' })}
-          os={selectedVenda}
-          onClose={() => {
-            handleModalClose();
-            setExecutarBusca(true);
-          }}
-          edit={isEdit}
-          statusVenda={statusVenda}
-          formaPagamento={formaPagamento}
-          tipo="venda"
-        />
+        isEdit ? (
+          <ModalCadastroVenda
+            isOpen={isModalOpen}
+            open={true}
+            onSubmit={handleEditSubmit}
+            os={selectedVenda}
+            onClose={() => {
+              handleModalClose();
+              setExecutarBusca(true);
+            }}
+            edit={isEdit}
+            statusVenda={statusVenda}
+            formaPagamento={formaPagamento}
+            tipo="venda"
+          />
+        ) : (
+          <ModalLancarVendas
+            isOpen={isModalOpen}
+            open={true}
+            onSubmit={() => setToast({ message: 'Submit Executado', type: 'info' })}
+            os={selectedVenda}
+            onClose={() => {
+              handleModalClose();
+              setExecutarBusca(true);
+            }}
+            edit={isEdit}
+            statusVenda={statusVenda}
+            formaPagamento={formaPagamento}
+            tipo="venda"
+          />
+        )
       )}
       {isModalModalCancelaVendaOpen && (
         <ModalCancelaVenda

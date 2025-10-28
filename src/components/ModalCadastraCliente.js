@@ -3,14 +3,22 @@ import { cpfCnpjMask } from './utils';
 import { formatarCEP, formatarCelular } from '../utils/functions';
 import { getUfs, getMunicipiosUfId } from '../services/api';
 import { addCliente, updateCliente } from '../services/ApiClientes/ApiClientes';
+import { getEmpresaById } from '../services/api';
+import { getPetByIdTutor, getPetById, deletePet } from '../services/ApiPets/ApiPets.js';
+import PetModal from '../components/PetModal.jsx';
 import { useAuth } from '../context/AuthContext';
 import { usePermissionModal } from "../hooks/usePermissionModal";
+import ConfirmDialog from "../components/ConfirmDialog";
 import Toast from './Toast';
 
 const TABS = ['Dados Básicos', 'Dados Jurídicos', 'Contato', 'Endereço'];
 
 const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
     const [activeTab, setActiveTab] = useState(TABS[0]);
+    const [isPetShop, setIsPetShop] = useState(false);
+    const [confirmDialog, setConfirmDialog] = useState({ open: false, petId: null });
+    const [selectedPet, setSelectedPet] = useState(null);
+    const [pets, setPets] = useState([]);
     const [form, setForm] = useState({
         nome: '',
         nomeFantasia: '',
@@ -30,20 +38,48 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
     const [municipios, setMunicipios] = useState([]);
     const [toast, setToast] = useState({ message: '', type: '' });
     const [loading, setLoading] = useState(false);
+    const [petsModalOpen, setPetsModalOpen] = useState(false);
     const [permiteEditar, setPermiteEditar] = useState(false);
-    //Permissoes
+
+    // Permissões
     const { permissions } = useAuth();
     const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
+    const buscaEmpresa = async () => {
+        const empresa = await getEmpresaById(1);
+        setIsPetShop(empresa.data?.isPetshop || false);
+    };
+
     useEffect(() => {
-        if (isOpen && edit) {
-            checkPermission('clientes', edit ? 'edit' : 'insert', () => {
-                setPermiteEditar(true);
-            });
-        } else {
-            setPermiteEditar(true);
+        const fetchPets = async () => {
+            if (cliente?.id && isPetShop) {
+                const petsData = await getPetByIdTutor(cliente.id);
+                setPets(petsData || []);
+            }
+        };
+
+        // dispara apenas se isPetShop for true
+        if (isPetShop) {
+            fetchPets();
         }
+    }, [cliente?.id, isPetShop]);
+
+
+    useEffect(() => {
+        const fetchOpening = async () => {
+            if (isOpen && edit) {
+                checkPermission('clientes', edit ? 'edit' : 'insert', () => setPermiteEditar(true));
+                buscaEmpresa();
+            } else {
+                setPermiteEditar(true);
+                buscaEmpresa();
+            }
+        };
+        fetchOpening();
     }, [isOpen, edit, permissions]);
+
+    // Aba ativa dependendo se é PetShop
+    const tabsAtivas = isPetShop ? [...TABS, 'Pets'] : TABS;
 
     useEffect(() => {
         const fetchUfs = async () => {
@@ -58,7 +94,6 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
                 setToast({ message: 'Erro ao buscar UFs', type: 'error' });
             }
         };
-
         fetchUfs();
     }, [cliente?.uf_id]);
 
@@ -128,31 +163,105 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
                 type: 'success'
             });
 
-            if (onSubmit) {
-                onSubmit({ cliente: response.data }); // callback para página, se quiser usar
-            }
+            if (onSubmit) onSubmit({ cliente: response.data });
 
             setTimeout(() => {
                 setLoading(false);
-                onClose(); // só fecha depois de salvar e exibir o toast
+                onClose();
             }, 300);
         } catch (error) {
             const mensagemErro = error?.response?.data?.error || 'Erro ao salvar cliente.';
-
-            setToast({
-                message: mensagemErro,
-                type: 'error'
-            });
-
+            setToast({ message: mensagemErro, type: 'error' });
             setLoading(false);
         }
     };
 
+    const handleDeletePet = (petId) => {
+        // Abre o diálogo de confirmação
+        setConfirmDialog({ open: true, petId });
+    };
+
+    // Função que será chamada se o usuário confirmar a exclusão
+    const confirmDeletePet = async () => {
+        try {
+            await deletePet(confirmDialog.petId); // chama a API para deletar
+            setPets(prevPets => prevPets.filter(p => p.id !== confirmDialog.petId)); // atualiza lista
+            setToast({ message: "Pet excluído com sucesso!", type: "success" });
+        } catch (err) {
+            console.error(err);
+            setToast({ message: "Erro ao excluir pet.", type: "error" });
+        } finally {
+            setConfirmDialog({ open: false, petId: null }); // fecha o diálogo
+        }
+    };
 
     if (!isOpen) return null;
 
     const renderTabContent = () => {
         const input = "input input-bordered w-full";
+
+        if (activeTab === 'Pets') {
+            return (
+                <div>
+                    <button
+                        type="button"
+                        onClick={() => setPetsModalOpen(true)}
+                        className="btn btn-secondary mb-4"
+                    >
+                        Cadastrar Pet
+                    </button>
+
+                    <div className="overflow-x-auto max-h-64">
+                        <table className="w-full text-left border border-gray-200">
+                            <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="p-2 border">Nome</th>
+                                    <th className="p-2 border">Tipo</th>
+                                    <th className="p-2 border">Raça</th>
+                                    <th className="p-2 border">Peso</th>
+                                    <th className="p-2 border">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {pets?.length > 0 ? pets.map(p => (
+                                    <tr key={p.id} className="hover:bg-gray-50">
+                                        <td className="p-2 border">{p.nome}</td>
+                                        <td className="p-2 border">{p.tipo}</td>
+                                        <td className="p-2 border">{p.raca}</td>
+                                        <td className="p-2 border">{p.peso} kg</td>
+                                        <td className="p-2 border flex gap-2">
+                                            <button
+                                                type='button'
+                                                onClick={() => {
+                                                    setSelectedPet(p);
+                                                    setPetsModalOpen(true);
+                                                }}
+                                                className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                            >
+                                                Visualizar
+                                            </button>
+                                            <button
+                                                type='button'
+                                                onClick={() => handleDeletePet(p.id)}
+                                                className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                                            >
+                                                Excluir
+                                            </button>
+                                        </td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan={5} className="p-4 text-center text-gray-400">
+                                            Nenhum pet cadastrado
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        }
 
         switch (activeTab) {
             case 'Dados Básicos':
@@ -308,6 +417,8 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
                         </div>
                     </div>
                 );
+
+            default: return null;
         }
     };
 
@@ -321,29 +432,26 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
                     <button className="text-gray-500 hover:text-red-600" onClick={onClose}>✕</button>
                 </div>
 
+                {/* Abas */}
                 <div className="flex border-b mb-6">
-                    {TABS.map(tab => (
+                    {tabsAtivas.map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`py-2 px-4 font-semibold ${activeTab === tab ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'
-                                }`}
+                            className={`py-2 px-4 font-semibold ${activeTab === tab ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
                         >
                             {tab}
                         </button>
                     ))}
                 </div>
 
+                {/* Conteúdo da aba */}
                 <form onSubmit={handleSubmit}>
                     <div className="space-y-4 mb-6">{renderTabContent()}</div>
 
                     {permiteEditar && (
                         <div className="flex justify-end">
-                            <button
-                                type="submit"
-                                className="btn btn-primary"
-                                disabled={loading}
-                            >
+                            <button type="submit" className="btn btn-primary" disabled={loading}>
                                 {loading ? (
                                     <>
                                         <span className="loading loading-spinner"></span>
@@ -354,14 +462,31 @@ const ModalCadastraCliente = ({ isOpen, onClose, onSubmit, cliente, edit }) => {
                         </div>
                     )}
                 </form>
-                {/* Renderização do modal de autorização */}
-                <PermissionModalUI />
-                {toast.message && (
-                    <Toast
-                        type={toast.type}
-                        message={toast.message}
-                        onClose={() => setToast({ message: '', type: '' })}
+
+                {/* Modal de Pet */}
+                {petsModalOpen && (
+                    <PetModal
+                        clienteId={cliente?.id}
+                        onClose={() => setPetsModalOpen(false)}
+                        onSuccess={(novoPet) => {
+                            // Aqui você atualiza a lista de pets no modal pai
+                            setPets((prevPets) => [...prevPets, novoPet]);
+                            setPetsModalOpen(false); // Fecha o modal após sucesso
+                        }}
                     />
+                )}
+
+
+                <PermissionModalUI />
+                <ConfirmDialog
+                    isOpen={confirmDialog.open}
+                    message="Tem certeza que deseja excluir o pet?"
+                    onCancel={() => setConfirmDialog({ open: false, petId: null })}
+                    onConfirm={confirmDeletePet}
+                />
+
+                {toast.message && (
+                    <Toast type={toast.type} message={toast.message} onClose={() => setToast({ message: '', type: '' })} />
                 )}
             </div>
         </div>

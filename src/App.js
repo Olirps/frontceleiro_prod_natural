@@ -43,6 +43,8 @@ import PromocaoPage from './pages/PromocaoPage';
 import AtualizacaoPrecoPage from './pages/AtualizacaoPrecoPage';
 import AtualizaEstoquePage from './pages/AtualizaEstoquePage';
 import EstoquePage from './pages/EstoquePage';
+import PacotesPage from './pages/PacotesPage';
+import PacotesClientesPage from './pages/PacotesClientesPage';
 
 function App() {
   const { isAuthenticated, permissions } = useAuth(); // Pega o estado de autenticação e as permissões do usuário
@@ -208,6 +210,14 @@ function App() {
           <Route
             path="/relatorio-estoque"
             element={isAuthenticated ? <EstoquePage /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/pacotes-petshop"
+            element={isAuthenticated ? <PacotesPage /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/pacotes-clientes"
+            element={isAuthenticated ? <PacotesClientesPage /> : null} // Condicionalmente não renderiza
           />
         </Route>
       </Routes>

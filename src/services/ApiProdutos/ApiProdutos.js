@@ -34,3 +34,19 @@ export const getProdutosUpdate = async ({ page = 1, limit = 10, ...filters } = {
         throw error;
     }
 }
+
+export const getProdutos = async ({ page = 1, limit = 10, ...filters } = {}) => {
+    try {
+        const response = await api.get('/produtosRouter/produtos-lista', {
+            params: {
+                page,
+                limit,
+                ...filters
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Erro ao buscar produtos:', error);
+        throw error;
+    }
+}
