@@ -45,6 +45,7 @@ import AtualizaEstoquePage from './pages/AtualizaEstoquePage';
 import EstoquePage from './pages/EstoquePage';
 import PacotesPage from './pages/PacotesPage';
 import PacotesClientesPage from './pages/PacotesClientesPage';
+import RelatorioItensVendidosPromocaoPage from './pages/RelatorioItensVendidosPromocaoPage';
 
 function App() {
   const { isAuthenticated, permissions } = useAuth(); // Pega o estado de autenticação e as permissões do usuário
@@ -218,6 +219,10 @@ function App() {
           <Route
             path="/pacotes-clientes"
             element={isAuthenticated ? <PacotesClientesPage /> : null} // Condicionalmente não renderiza
+          />
+          <Route
+            path="/relatorio-itens-vendidos-promocao"
+            element={isAuthenticated ? <RelatorioItensVendidosPromocaoPage /> : null} // Condicionalmente não renderiza
           />
         </Route>
       </Routes>

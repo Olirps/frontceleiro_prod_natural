@@ -55,3 +55,26 @@ export const deletePromocao = async (id) => {
 		throw error;
 	}
 };
+
+export const getProdutosVendidosNaPromocao = async (params = {}) => {
+	const { page, limit, data_de, data_ate, promocao_id, produto_id, termo, sintetico } = params;
+	try {
+		const response = await api.get(`/promocaoRouter/promocao/itensvendidos`, {
+			params: {
+				page,
+				limit,
+				data_de,
+				data_ate,
+				promocao_id,
+				produto_id,
+				termo,
+				sintetico
+			}
+		});
+		return response.data;
+	} catch (error) {
+		console.error('Erro ao listar produtos vendidos na promoção:', error);
+		throw error;
+	}
+};
+
