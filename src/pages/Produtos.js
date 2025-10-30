@@ -14,13 +14,13 @@ function Produtos() {
     const [selectedProduto, setSelectedProduto] = useState(null);
     const [isCadastraProdutoModalOpen, setIsCadastraProdutoModalOpen] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
-    const [status, setStatus] = useState('ativo');
     const [isInativar, setIsInativar] = useState(false);
     const [importSuccess, setCadastroSuccess] = useState(false);
     const [searchParams, setSearchParams] = useState({
         nome: '',
         cEAN: '',
-        tipo: ''
+        tipo: '',
+        status: ''
     });
 
     const [appliedFilters, setAppliedFilters] = useState({});
@@ -205,9 +205,9 @@ function Produtos() {
                                     onChange={(e) => setSearchParams({ ...searchParams, status: e.target.value })}
                                     className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option value="">Todos</option>
                                     <option value="ativo">Ativo</option>
                                     <option value="inativo">Inativo</option>
+                                    <option value="todos">Todos</option>
                                 </select>
                             </div>
                             <div>
@@ -254,7 +254,11 @@ function Produtos() {
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-100">
                                     {filteredProdutos.map((produto) => (
-                                        <tr key={produto.id} className="hover:bg-blue-50 transition">
+                                        <tr
+                                            key={produto.id}
+                                            className={`transition hover:bg-blue-100 ${produto.status === 0 ? 'bg-red-100 text-red-600 hover:bg-red-200' : ''
+                                                }`}
+                                        >
                                             <td className="px-4 py-2 text-sm text-gray-700">{produto.id}</td>
                                             <td className="px-4 py-2 text-sm text-gray-700">{produto.xProd}</td>
                                             <td className="px-4 py-2 text-sm text-gray-700">{produto.cEAN}</td>
@@ -269,6 +273,7 @@ function Produtos() {
                                         </tr>
                                     ))}
                                 </tbody>
+
                             </table>
                         </div>
 
@@ -310,21 +315,24 @@ function Produtos() {
                         </div>
                     </div>
                 </>
-            )}
+            )
+            }
 
-            {isCadastraProdutoModalOpen && (
-                <ModalCadastraProduto
-                    isOpen={isCadastraProdutoModalOpen}
-                    onClose={closeCadastraProdutoModal}
-                    edit={isEdit}
-                    produto={selectedProduto}
-                    inativar={isInativar}
-                    onInativar={handleInativarProduto}
-                />
-            )}
+            {
+                isCadastraProdutoModalOpen && (
+                    <ModalCadastraProduto
+                        isOpen={isCadastraProdutoModalOpen}
+                        onClose={closeCadastraProdutoModal}
+                        edit={isEdit}
+                        produto={selectedProduto}
+                        inativar={isInativar}
+                        onInativar={handleInativarProduto}
+                    />
+                )
+            }
             {/* Renderização do modal de autorização */}
             <PermissionModalUI />
-        </div>
+        </div >
     );
 }
 

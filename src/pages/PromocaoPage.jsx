@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getPromocoes, getByIdPromocao } from '../services/ApiPromocao/ApiPromocao';
+import { getPromocoes, getByIdPromocao, getItensPromocao } from '../services/ApiPromocao/ApiPromocao';
 import Pagination from '../utils/Pagination';
 import Toast from '../components/Toast';
 import ModalCadastroPromocao from '../components/ModalCadastroPromocao';
@@ -98,6 +98,16 @@ const PromocaoPage = () => {
     setIsModalOpen(false);
     carregarPromocoes();
   };
+  const handlePrint = async (promocaoId) => {
+
+    try {
+      await getItensPromocao(promocaoId);
+    } catch (error) {
+      console.error('Erro ao gerar relatório:', error);
+      setToast({ message: 'Erro ao gerar relatório', type: 'error' });
+    }
+
+  }
 
   return (
     <div className="p-4">
@@ -170,6 +180,12 @@ const PromocaoPage = () => {
                       onClick={() => handleEditPromocao(p)}
                     >
                       Editar
+                    </button>
+                    <button
+                      className="text-green-600 hover:underline ml-2"
+                      onClick={() => handlePrint(p.id)}
+                    >
+                      Imprimir
                     </button>
                   </td>
                 </tr>
