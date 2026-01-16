@@ -224,3 +224,34 @@ const converterMoedaParaNumero = (valor) => {
     }
 
 };
+
+
+export function gerarParcelas(valorTotal, qtd, primeiraData) {
+    const valorBase = Math.floor((valorTotal / qtd) * 100) / 100;
+    const parcelas = [];
+    let acumulado = 0;
+
+
+    for (let i = 0; i < qtd; i++) {
+        const valor = i === qtd - 1
+            ? Number((valorTotal - acumulado).toFixed(2))
+            : valorBase;
+
+
+        acumulado += valor;
+
+
+        const data = new Date(primeiraData);
+        data.setMonth(data.getMonth() + i);
+
+
+        parcelas.push({
+            numero: i + 1,
+            valor,
+            vencimento: data.toISOString().slice(0, 10)
+        });
+    }
+
+
+    return parcelas;
+}

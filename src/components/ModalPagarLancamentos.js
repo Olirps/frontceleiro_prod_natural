@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import '../styles/ModalLancamentoParcelas.css';
 import Toast from '../components/Toast';
 import { formatarMoedaBRL } from '../utils/functions';
-import { getAllContas } from '../services/api';
+import { getAllContas, getFormasPagamento } from '../services/api';
 
 const ModalPagarLancamentos = ({ isOpen, onSubmit, onClose, parcela }) => {
     const [quantidadeParcelas, setQuantidadeParcelas] = useState(1);
@@ -10,7 +10,9 @@ const ModalPagarLancamentos = ({ isOpen, onSubmit, onClose, parcela }) => {
     const [contabancaria, setContaBancaria] = useState('');
     const [datapagamento, setDataPagamento] = useState(new Date().toISOString().split('T')[0]);
     const [valorPago, setValorPago] = useState(parcela.valor_parcela);
-    const [formaPagamento, setFormaPagamento] = useState('dinheiro');
+    const [formasPagamento, setFormasPagamento] = useState([]);
+    const [novaForma, setNovaForma] = useState('');
+    const [formaPgtoNome, setFormaPgtoNome] = useState('');
     const [toast, setToast] = useState({ message: '', type: '' });
 
     useEffect(() => {
@@ -22,8 +24,18 @@ const ModalPagarLancamentos = ({ isOpen, onSubmit, onClose, parcela }) => {
                 console.error('Erro ao buscar contas bancárias', err);
             }
         };
-        fetchContas();
 
+        const fetchFormasPagamento = async () => {
+            try {
+                const responseFormas = await getFormasPagamento();
+                setFormasPagamento(responseFormas.data);
+            } catch (err) {
+                console.error('Erro ao buscar formas de pagamento', err);
+            }
+
+        }
+        fetchContas();
+        fetchFormasPagamento();
     }, []);
 
 
@@ -74,22 +86,26 @@ const ModalPagarLancamentos = ({ isOpen, onSubmit, onClose, parcela }) => {
                         />
                     </div>
                     <div>
-                        <label>Forma de Pagamento</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Forma de Pagamento
+                        </label>
                         <select
-                            className='input-geral'
-                            value={formaPagamento}
-                            name='formaPagamento'
-                            onChange={(e) => setFormaPagamento(e.target.value)}
-                            required>
-                            <option value="boleto">Boleto</option>
-                            <option value="credito">Cartão de Crédito</option>
-                            <option value="debito">Cartão de Débito</option>
-                            <option value="cheque">Cheque</option>
-                            <option value="DA">Débito Automático</option>
-                            <option value="dinheiro">Dinheiro</option>
-                            <option value="PIX">PIX</option>
-                            <option value="TED">TED</option>
-                            <option value="TRFCC">Transf. Entre CC</option>
+                            value={novaForma}
+                            onChange={(e) => {
+                                const selectedId = e.target.value;
+                                const selectedText = e.target.options[e.target.selectedIndex].text;
+
+                                setNovaForma(selectedId);
+                                setFormaPgtoNome(selectedText);
+                            }}
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">Selecione</option>
+                            {formasPagamento.map((forma) => (
+                                <option key={forma.id} value={forma.id}>
+                                    {forma.nome}
+                                </option>
+                            ))}
                         </select>
                     </div>
                     <button type='submit' className="button-geral">Efetuar Pagamento</button>

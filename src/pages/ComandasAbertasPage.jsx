@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getVendas, getVendaById } from "../services/ApiVendas/ApiVendas";
 import { consultaItensVenda } from "../services/api";
 import SaleModal from "../components/SaleModal";
+import PaymentModal from '../components/PaymentModal';
 import Toast from '../components/Toast';
 
 
@@ -19,6 +20,9 @@ export default function ComandasAbertasPage() {
     const [vendaAberta, setVendaAberta] = useState(null);
     const [vendaSelecionada, setVendaSelecionada] = useState(null);
     const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [paymentTotal, setPaymentTotal] = useState(0);
+
     const [page, setPage] = useState(1);
     const [pageSize] = useState(10);
 
@@ -106,15 +110,21 @@ export default function ComandasAbertasPage() {
         }
     };
 
+    const handleLiquidar = (venda) => {
+        setIsPaymentModalOpen(true);
+        setPaymentTotal(venda.totalPrice);
+        setVendaSelecionada(venda);
+    };
+
     const handlePaymentSubmit = async (dadosPagamento) => {
-        setIsSaleModalOpen(false);
+        setIsPaymentModalOpen(false);
         setModalVendaId(null);
         setVendaSelecionada(null);
         carregarComandas(); // Atualiza lista após pagamento
     };
 
     const handleClose = () => {
-        setIsSaleModalOpen(false);
+        setIsPaymentModalOpen(false);
         setModalVendaId(null);
         setVendaSelecionada(null);
         carregarComandas(); // Atualiza lista após fechamento do modal
@@ -313,12 +323,24 @@ export default function ComandasAbertasPage() {
                         <div className="mt-4">
                             <button
                                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-                                onClick={() => setIsSaleModalOpen(true)}
+                                onClick={() => handleLiquidar(vendaSelecionada)}
                             >
                                 Liquidar Venda
                             </button>
                         </div>
-
+                        {
+                            isPaymentModalOpen && vendaSelecionada && (
+                                <PaymentModal
+                                    isOpen={isPaymentModalOpen}
+                                    total={paymentTotal}
+                                    tipo="liquidacao"
+                                    permitirDesconto={false}
+                                    permitirParcelamento={false}
+                                    onClose={() => setIsPaymentModalOpen(false)}
+                                    onConfirm={handlePaymentSubmit}
+                                />
+                            )
+                        }
                         {isSaleModalOpen && (
                             <SaleModal
                                 isOpen={isSaleModalOpen}

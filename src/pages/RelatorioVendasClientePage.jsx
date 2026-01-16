@@ -23,6 +23,7 @@ const RelatorioVendasClientePage = () => {
     const [clienteBusca, setClienteBusca] = useState('');
     const [clientesFiltrados, setClientesFiltrados] = useState([]);
     const [produtoBusca, setProdutoBusca] = useState('');
+    const [produtoId, setProdutoId] = useState(null);
     const [produtosFiltrados, setProdutosFiltrados] = useState([]);
     const [clienteSelected, setClienteSelected] = useState(false);
     const [produtoSelected, setProdutoSelected] = useState(false);
@@ -67,6 +68,7 @@ const RelatorioVendasClientePage = () => {
                 dataFim: dataFim || undefined,
                 clienteNome: clienteNome || undefined,
                 produtoNome: produtoDescricao || undefined,
+                produtoId: produtoId || undefined,
                 modoExibicao,
                 page: paginaAtual,
                 limit: linhasPorPagina,
@@ -125,6 +127,9 @@ const RelatorioVendasClientePage = () => {
         setProdutosFiltrados([]);
         setProdutoSelected(false);
         setVendas([]);
+        setProdutoId(null);
+        setTotalGeral(0);
+        setPaginaAtual(1);
     };
 
     const buscarClientes = debounce(async (termo) => {
@@ -283,6 +288,7 @@ const RelatorioVendasClientePage = () => {
                             {produtosFiltrados.map(produto => (
                                 <li key={produto.id} onClick={() => {
                                     setProdutoSelected(true);
+                                    setProdutoId(produto.id);
                                     setProdutoDescricao(produto.xProd);
                                     setProdutoBusca(produto.xProd);
                                     setProdutosFiltrados([]);

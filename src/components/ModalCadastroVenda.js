@@ -31,6 +31,7 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
     const [toast, setToast] = useState({ message: '', type: '' });
     const [formDataTemp, setFormDataTemp] = useState(null);
     const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
+    const [disabled, setDisabled] = useState(true);
     const [produtoSelecionado, setProdutoSelecionado] = useState(null);
     const [totalPrice, setTotalPrice] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -62,6 +63,9 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
             setClienteBusca(os.cliente || '');
             setClienteId(os.cliente_id || null);
             setFuncionarioId(os.funcionario_id || null);
+            if (!os.cliente_id) {
+                setDisabled(false);
+            }
         }
     }, [edit, os]);
 
@@ -81,7 +85,7 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
 
         try {
             const nome = termo;
-            if (!edit) {
+            if (!disabled) {
                 const res = await getClientes({ nome });
                 setClientesFiltrados(res.data.clientes || []);
             }
@@ -224,7 +228,7 @@ const ModalCadastroVenda = ({ isOpen, onClose, edit, os, onSubmit, onVendaSucces
                         value={clienteBusca}
                         onChange={e => setClienteBusca(e.target.value)}
                         placeholder="Nome ou CPF/CNPJ"
-                        disabled={edit}
+                        disabled={disabled}
                         className="w-full border border-gray-300 rounded px-3 py-2 mt-1"
                     />
 

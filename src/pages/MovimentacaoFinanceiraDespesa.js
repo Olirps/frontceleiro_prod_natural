@@ -25,6 +25,7 @@ function MovimentacaoFinanceiraDespesa() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDespesa, setIsDespesa] = useState(true);
   const [isModalLancaParcelasOpen, setIsModalLancaParcelasOpen] = useState(false);
   const [isModalUnificaLancamentosOpen, setIsModalUnificaLancamentosOpen] = useState(false);
   const [isModalPagarLancamentosOpen, setIsModalPagarLancamentosOpen] = useState(false);
@@ -714,6 +715,7 @@ function MovimentacaoFinanceiraDespesa() {
       {isModalLancamentoCompletoOpen && (
         <ModalLancamentoCompleto
           isOpen={isModalLancamentoCompletoOpen}
+          isDespesa={isDespesa}
           onClose={() => setIsModalLancamentoCompletoOpen(false)}
           lancamento={selectedLancamentoCompleto}
           onConfirmar={handleConfirmacaoParcelas}

@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import '../styles/ModalMovimentacaoFinanceiraDespesa.css';
 import Toast from '../components/Toast';
 import { formatarMoedaBRL, converterMoedaParaNumero } from '../utils/functions';
-import ConfirmarLancarParcelas from '../components/ConfirmarLancarParcelas'; // Importando o novo modal
-import ModalPesquisaCredor from '../components/ModalPesquisaCredor'; // Importando o modal de pesquisa
-import ModalLancamentoParcelas from '../components/ModalLancamentoParcelas'; // Importe o novo modal
-import { calcularParcelas, atualizarValorParcela, atualizarDataVencimentoParcela } from '../utils/parcelasUtils'; // Importando a função de cálculo de parcelas
+import ConfirmarLancarParcelas from '../components/ConfirmarLancarParcelas';
+import ModalPesquisaCredor from '../components/ModalPesquisaCredor';
+import ModalLancamentoParcelas from '../components/ModalLancamentoParcelas';
+import { calcularParcelas, atualizarValorParcela, atualizarDataVencimentoParcela } from '../utils/parcelasUtils';
 
 const ModalMovimentacaoFinanceiraReceitas = ({ isOpen, onConfirmar, onSubmit, edit, onClose, movimentacao, onSuccess }) => {
     const [descricao, setDescricao] = useState('');
@@ -13,40 +12,35 @@ const ModalMovimentacaoFinanceiraReceitas = ({ isOpen, onConfirmar, onSubmit, ed
     const [tipoCredor, setTipoCredor] = useState('');
     const [credor, setCredor] = useState('');
     const [dataVencimento, setDataVencimento] = useState('');
-    const [tipo, setTipo] = useState('debito');  // Tipo de movimentação (crédito ou débito)
-    const [despesaAdicionada, setDespesaAdicionada] = useState('');  // Tipo de movimentação (crédito ou débito)
+    const [tipo, setTipo] = useState('credito');
+    const [despesaAdicionada, setDespesaAdicionada] = useState('');
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState({ message: '', type: '' });
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
     const [tipoParcelamento, setTipoParcelamento] = useState('mensal');
     const [mensagem, setMensagem] = useState('');
-    const [isModalPesquisaOpen, setIsModalPesquisaOpen] = useState(false);  // Controle do Modal de Pesquisa
-    const [credorSelecionado, setCredorSelecionado] = useState(null);  // Crédito selecionado do Modal de Pesquisa
-    const [lancarParcelas, setLancarParcelas] = useState(''); // Estado para controlar a opção de parcelamento
-    const [isModalParcelasOpen, setIsModalParcelasOpen] = useState(false); // Estado para controlar o modal de parcelas
-    const [disabledSalvar, setDisabledSalvar] = useState(false); // Estado para controlar o modal de parcelas
-    const [cancelarLancto, setCancelarLancto] = useState(false); // Estado para controlar o modal de parcelas
-    const [despesaRecorrente, setDespesaRecorrente] = useState('cotaunica'); // Estado para controlar o modal de parcelas
-    const [valorEntradaDespesa, setValorEntradaDespesa] = useState(0); // Estado para controlar o modal de parcelas
-    const [parcelas, setParcelas] = useState([]); // Estado para armazenar as parcelas
-    const [parcelas_old, setParcelas_old] = useState([]); // Estado para armazenar as parcelas
-    const [boleto, setBoleto] = useState(''); // Estado para controlar o modal de parcelas
-
-
+    const [isModalPesquisaOpen, setIsModalPesquisaOpen] = useState(false);
+    const [credorSelecionado, setCredorSelecionado] = useState(null);
+    const [lancarParcelas, setLancarParcelas] = useState('');
+    const [isModalParcelasOpen, setIsModalParcelasOpen] = useState(false);
+    const [disabledSalvar, setDisabledSalvar] = useState(false);
+    const [cancelarLancto, setCancelarLancto] = useState(false);
+    const [despesaRecorrente, setDespesaRecorrente] = useState('cotaunica');
+    const [valorEntradaDespesa, setValorEntradaDespesa] = useState(0);
+    const [parcelas, setParcelas] = useState([]);
+    const [parcelas_old, setParcelas_old] = useState([]);
+    const [boleto, setBoleto] = useState('');
 
     const handleAlterarParcela = (index, e) => {
         const parcelasOldCopia = JSON.parse(JSON.stringify(parcelas_old));
-
         const novasParcelas = atualizarValorParcela(index, parcelas, e);
 
-        // Função para lidar com a resposta de erro e retorno das parcelas antigas
         const handleError = (message) => {
             setParcelas(parcelasOldCopia);
             setDisabledSalvar(true);
             setToast({ message, type: "error" });
         };
 
-        // Verificações de erro
         if (novasParcelas === 'Valor das Parcelas não pode ser Maior que o Valor do Lançamento.') {
             handleError("A Somatória das Parcelas não pode ser maior que o valor do lançamento");
         } else if (novasParcelas === 'Valor da Parcelas não pode ser Maior/Menor ou Igual ao Valor do Lançamento.') {
@@ -63,11 +57,10 @@ const ModalMovimentacaoFinanceiraReceitas = ({ isOpen, onConfirmar, onSubmit, ed
         }
     };
 
-
     const handleAlterarVencimentoParcela = (index, e) => {
-        const novasParcelas = atualizarDataVencimentoParcela(index, parcelas, e)
-        setParcelas(novasParcelas)
-    }
+        const novasParcelas = atualizarDataVencimentoParcela(index, parcelas, e);
+        setParcelas(novasParcelas);
+    };
 
     const handleAlterarBoletoParcela = (index, value) => {
         setParcelas((prevParcelas) =>
@@ -76,13 +69,12 @@ const ModalMovimentacaoFinanceiraReceitas = ({ isOpen, onConfirmar, onSubmit, ed
             )
         );
     };
-    // Gerar parcelas iniciais quando os dados mudarem
+
     useEffect(() => {
         if (despesaRecorrente === 'parcelada' && lancarParcelas && dataVencimento) {
             const novasParcelas = calcularParcelas(valor, valorEntradaDespesa, lancarParcelas, dataVencimento, tipoParcelamento);
             setParcelas(novasParcelas);
-            setParcelas_old(novasParcelas); // Atualiza o estado das parcelas originais
-
+            setParcelas_old(novasParcelas);
         }
     }, [valor, valorEntradaDespesa, lancarParcelas, dataVencimento, tipoParcelamento, despesaRecorrente]);
 
@@ -95,14 +87,12 @@ const ModalMovimentacaoFinanceiraReceitas = ({ isOpen, onConfirmar, onSubmit, ed
 
     useEffect(() => {
         if (isOpen) {
-            // Reseta os estados quando o modal é aberto
             if (movimentacao?.id && edit) {
                 setDescricao(movimentacao.descricao || '');
-                setValor(String(movimentacao.valor || '')); // Convertendo para string
+                setValor(String(movimentacao.valor || ''));
                 setDataVencimento(movimentacao.data_vencimento || '');
-                setTipo(movimentacao.tipo || 'debito'); // Garante que o tipo esteja correto
+                setTipo(movimentacao.tipo || 'credito');
 
-                // Verifica o tipo de credor e define o estado adequado
                 if (movimentacao.funcionario_id) {
                     setCredorSelecionado(movimentacao.funcionario.cliente);
                 } else if (movimentacao.fornecedor_id) {
@@ -111,349 +101,427 @@ const ModalMovimentacaoFinanceiraReceitas = ({ isOpen, onConfirmar, onSubmit, ed
                     setCredorSelecionado(movimentacao.cliente);
                 }
                 setLoading(false);
-
             } else {
                 setDescricao('');
                 setValor('');
                 setDataVencimento('');
-                setTipo('debito');
-                setCredorSelecionado(null); // Reseta o crédito selecionado
+                setTipo('credito');
+                setCredorSelecionado(null);
                 setLoading(false);
             }
         }
-    }, [isOpen, movimentacao]);
+    }, [isOpen, movimentacao, edit]);
 
     const handleTipoCredor = (tipo) => {
-        setTipoCredor(tipo); // Aqui, o tipo de credor é atualizado no estado do componente pai
+        setTipoCredor(tipo);
     };
 
     const handleLancaParcelas = () => {
-        setIsModalParcelasOpen(true)
-    }
+        setIsModalParcelasOpen(true);
+    };
 
     const handleCancelar = () => {
         if (!movimentacao) return;
-        setCancelarLancto(true)
-        setMensagem('Deseja realmente excluir esta despesa?')
+        setCancelarLancto(true);
+        setMensagem('Deseja realmente excluir esta receita?');
         setIsConfirmDialogOpen(true);
     };
 
     const handleConfirmCancelamento = async () => {
         onConfirmar(movimentacao);
-    }
+    };
 
     const handleSaveParcelas = (parcelas) => {
-        // Aqui você pode enviar as parcelas para o backend ou processá-las conforme necessário
         setToast({ message: "Parcelas salvas com sucesso!", type: "success" });
         onSuccess();
         onClose();
     };
-
 
     const handleOpenPesquisaCredito = () => {
         setIsModalPesquisaOpen(true);
     };
 
     const handleSelectCredor = (credor) => {
-        setCredorSelecionado(credor);  // Atualiza o crédito selecionado
-        setIsModalPesquisaOpen(false);  // Fecha o modal de pesquisa
+        setCredorSelecionado(credor);
+        setIsModalPesquisaOpen(false);
     };
+
     const handleCredor = (e) => {
         const { value } = e.target;
         setCredor(value);
     };
+
     if (!isOpen) return null;
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <button className="modal-close" onClick={onClose}>X</button>
-                <h2>{movimentacao ? "Editar Crédito a Receber" : "Cadastrar Créditos a Receber"}</h2>
-                <div>
-                    <button className='button-geral' onClick={handleOpenPesquisaCredito}>Pesquisar Cliente</button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                {/* Header */}
+                <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center rounded-t-xl">
+                    <h2 className="text-2xl font-semibold text-gray-800">
+                        {movimentacao ? "Editar Crédito a Receber" : "Cadastrar Crédito a Receber"}
+                    </h2>
+                    <button
+                        className="text-gray-500 hover:text-red-500 text-2xl font-bold transition-colors"
+                        onClick={onClose}
+                    >
+                        ✕
+                    </button>
                 </div>
+
                 {loading ? (
-                    <div className="spinner-container">
-                        <div className="spinner"></div>
+                    <div className="flex justify-center items-center py-20">
+                        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                     </div>
                 ) : (
-                    <>
-                        <form onSubmit={onSubmit}>
-                            <div id='cadastro-padrao'>
-                                <div>
-                                    <label>Cliente</label>
-                                    <input type="hidden" name="tipoCredor" value={tipoCredor} />
-                                    <input type="hidden" name="credorSelecionado" value={credorSelecionado?.id || credor} />
-                                    <input
-                                        type="text"
-                                        className="input-geral"
-                                        name='credorSelecionado'
-                                        value={credorSelecionado ? (credorSelecionado.nome || credorSelecionado.cliente?.nome) : credor}
-                                        onChange={handleCredor}
-                                        placeholder="Selecionar ou Informe o Cliente"
-                                        disabled={credorSelecionado} // Desabilita apenas se cliente_id estiver definido
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="descricao">Descrição</label>
-                                    <input
-                                        className='input-geral'
-                                        type="text"
-                                        name='descricao'
-                                        value={descricao.toUpperCase()}
-                                        onChange={(e) => setDescricao(e.target.value.toUpperCase())}
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="boleto">Boleto</label>
-                                    <input
-                                        className='input-geral'
-                                        type="text"
-                                        name='boleto'
-                                        value={boleto}
-                                        onChange={(e) => setBoleto(e.target.value)}
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="valor">Valor</label>
-                                    <input
-                                        className='input-geral'
-                                        type="text"
-                                        value={valor} // Isso funcionará, pois `valor` é uma string
-                                        name='valor' // Isso funcionará, pois `valor` é uma string
-                                        onChange={(e) => { setValor(formatarMoedaBRL(e.target.value)) }} //forma resumida de atualizar o input
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label>Data de Vencimento</label>
-                                    <input
-                                        className='input-geral'
-                                        type="date"
-                                        value={dataVencimento}
-                                        name='dataVencimento'
-                                        onChange={(e) => setDataVencimento(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label>Tipo</label>
-                                    <select
-                                        className='input-geral'
-                                        value={tipo}
-                                        name='tipo'
-                                        onChange={(e) => setTipo(e.target.value)}
-                                        required>
-                                        <option value="credito">Crédito</option>
-                                    </select>
-                                </div>
+                    <form onSubmit={onSubmit} className="p-6">
+                        {/* Botão Pesquisar Cliente */}
+                        <div className="mb-6">
+                            <button
+                                type="button"
+                                onClick={handleOpenPesquisaCredito}
+                                className="w-full md:w-auto px-6 py-2.5 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors font-medium"
+                            >
+                                🔍 Pesquisar Cliente
+                            </button>
+                        </div>
+
+                        {/* Campos Principais */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            {/* Cliente */}
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Cliente *
+                                </label>
+                                <input type="hidden" name="tipoCredor" value={tipoCredor} />
+                                <input type="hidden" name="credorSelecionado" value={credorSelecionado?.id || credor} />
+                                <input
+                                    type="text"
+                                    name="credorSelecionado"
+                                    value={credorSelecionado ? (credorSelecionado.nome || credorSelecionado.cliente?.nome) : credor}
+                                    onChange={handleCredor}
+                                    placeholder="Selecionar ou informe o cliente"
+                                    disabled={credorSelecionado}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                    required
+                                />
                             </div>
+
+                            {/* Descrição */}
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Descrição *
+                                </label>
+                                <input
+                                    type="text"
+                                    name="descricao"
+                                    value={descricao.toUpperCase()}
+                                    onChange={(e) => setDescricao(e.target.value.toUpperCase())}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+
+                            {/* Boleto */}
                             <div>
-                                <div>
-                                    <h2> Tipo de Despesa</h2>
-                                    <div className='radio-group'>
-                                        <label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Boleto
+                                </label>
+                                <input
+                                    type="text"
+                                    name="boleto"
+                                    value={boleto}
+                                    onChange={(e) => setBoleto(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                            </div>
+
+                            {/* Valor */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Valor *
+                                </label>
+                                <input
+                                    type="text"
+                                    name="valor"
+                                    value={valor}
+                                    onChange={(e) => setValor(formatarMoedaBRL(e.target.value))}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+
+                            {/* Data de Vencimento */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Data de Vencimento *
+                                </label>
+                                <input
+                                    type="date"
+                                    name="dataVencimento"
+                                    value={dataVencimento}
+                                    onChange={(e) => setDataVencimento(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+
+                            {/* Tipo */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Tipo *
+                                </label>
+                                <select
+                                    name="tipo"
+                                    value={tipo}
+                                    onChange={(e) => setTipo(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                >
+                                    <option value="credito">Crédito</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Tipo de Despesa */}
+                        <div className="mb-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                                Tipo de Lançamento
+                            </h3>
+                            <div className="flex flex-wrap gap-4">
+                                {[
+                                    { value: 'cotaunica', label: 'Cota Única' },
+                                    { value: 'recorrente', label: 'Recorrente' },
+                                    { value: 'parcelada', label: 'Parcelada' }
+                                ].map((opcao) => (
+                                    <label key={opcao.value} className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            value={opcao.value}
+                                            name="despesaRecorrente"
+                                            checked={despesaRecorrente === opcao.value}
+                                            onChange={() => {
+                                                setDespesaRecorrente(opcao.value);
+                                                if (opcao.value !== 'parcelada') setLancarParcelas('');
+                                            }}
+                                            className="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        <span className="text-sm font-medium text-gray-700">{opcao.label}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Campos de Parcelamento */}
+                        {despesaRecorrente === 'parcelada' && (
+                            <div className="space-y-4 border border-gray-200 rounded-lg p-4 bg-gray-50 mb-6">
+                                <h4 className="text-md font-semibold text-gray-700 mb-3">
+                                    Configuração de Parcelas
+                                </h4>
+
+                                {/* Tipo de Parcelamento */}
+                                <div className="flex gap-6 mb-4">
+                                    {[
+                                        { value: 'mensal', label: 'Mensal' },
+                                        { value: 'anual', label: 'Anual' }
+                                    ].map((tipo) => (
+                                        <label key={tipo.value} className="flex items-center gap-2 cursor-pointer">
                                             <input
                                                 type="radio"
-                                                value="cotaunica"
-                                                name='despesaRecorrente'
-                                                checked={despesaRecorrente === 'cotaunica'}
-                                                onChange={() => setDespesaRecorrente('cotaunica')}
+                                                value={tipo.value}
+                                                name="tipoParcelamento"
+                                                checked={tipoParcelamento === tipo.value}
+                                                onChange={() => setTipoParcelamento(tipo.value)}
+                                                className="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-500"
                                             />
-                                            Cota Única
+                                            <span className="text-sm font-medium text-gray-700">{tipo.label}</span>
                                         </label>
-                                        <label>
-                                            <input
-                                                type="radio"
-                                                value="recorrente"
-                                                name='despesaRecorrente'
-                                                checked={despesaRecorrente === 'recorrente'}
-                                                onChange={() => setDespesaRecorrente('recorrente')}
-                                            />
-                                            Recorrente
-                                        </label>
-                                        <label>
-                                            <input
-                                                type="radio"
-                                                value="parcelada"
-                                                name='despesaRecorrente'
-                                                checked={despesaRecorrente === 'parcelada'}
-                                                onChange={() => {
-                                                    setDespesaRecorrente('parcelada')
-                                                    setLancarParcelas('')
-                                                }
-                                                }
-                                            />
-                                            Parcelada
-                                        </label>
-                                    </div>
+                                    ))}
                                 </div>
 
-                                {/* Exibe campos de despesa parcelada */}
-                                {despesaRecorrente === 'parcelada' && (
-                                    <>
-                                        <div id='form-parcelas'>
-                                            <div className='radio-group'>
-                                                <label>
-                                                    <input
-                                                        type="radio"
-                                                        value="mensal"
-                                                        name='tipoParcelamento'
-                                                        checked={tipoParcelamento === 'mensal'}
-                                                        onChange={() => {
-                                                            setTipoParcelamento('mensal')
-                                                        }
-                                                        }
-                                                    />
-                                                    Mensal
-                                                </label>
-                                                <label>
-                                                    <input
-                                                        type="radio"
-                                                        value="anual"
-                                                        name='tipoParcelamento'
-                                                        checked={tipoParcelamento === 'anual'}
-                                                        onChange={() => {
-                                                            setTipoParcelamento('anual')
-                                                        }
-                                                        }
-                                                    />
-                                                    Anual
-                                                </label>
-                                            </div>
-                                            <div id='cadastro-padrao'>
-                                                <div>
-                                                    <label>Quantidade de Parcelas</label>
-                                                    <input
-                                                        className='input-geral'
-                                                        type="number"
-                                                        name='lancarParcelas'
-                                                        value={lancarParcelas}
-                                                        onChange={(e) => {
-                                                            // Remove qualquer caractere que não seja um número inteiro
-                                                            const value = e.target.value.replace(/[^0-9]/g, '');
-                                                            // Converte o valor para número inteiro
-                                                            const intValue = parseInt(value, 10);
-                                                            // Define o valor mínimo como 1
-                                                            setLancarParcelas(Math.max(1, intValue || 0));
-                                                        }}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label>Vencimento da Primeira Parcela</label>
-                                                    <input
-                                                        className='input-geral'
-                                                        type="date"
-                                                        name='dataVencimento'
-                                                        value={dataVencimento}
-                                                        onChange={(e) => setDataVencimento(e.target.value)}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label>Valor de Entrada</label>
-                                                    <input
-                                                        className='input-geral'
-                                                        type="text"
-                                                        name='valorEntradaDespesa'
-                                                        value={valorEntradaDespesa}
-                                                        onChange={(e) => setValorEntradaDespesa(formatarMoedaBRL(e.target.value))}
-                                                        required
-                                                    />
-                                                </div>
-                                            </div>
-
-                                        </div>
-                                    </>
-                                )}
-                                {/* Exibir parcelas em tela após inserção */}
-                                {despesaRecorrente === 'parcelada' && lancarParcelas && dataVencimento && (
+                                {/* Campos de Configuração */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {/* Quantidade de Parcelas */}
                                     <div>
-                                        <h3>Parcelas</h3>
-                                        <input type="hidden" name="parcelas" value={parcelas} />
-                                        <div className="parcelas-container">
-                                            {parcelas.map((parcela, index) => (
-                                                <div key={index} className="parcela">
-                                                    <span>{`Parcela ${parcela.numeroParcela}`}</span>
-                                                    <span>
-                                                        <label>Vencimento</label>
-                                                        <input
-                                                            type="date"
-                                                            name={`parcelas[${index}].dataVencimento`}  // Aqui estamos usando um nome único para cada parcela
-                                                            value={parcela.dataVencimento}
-                                                            onChange={(e) => handleAlterarVencimentoParcela(index, e.target.value)}
-                                                        />
-                                                    </span>
-                                                    <span>
-                                                        <label>Boleto: </label>
-                                                        <input
-                                                            type="text"
-                                                            name={`parcelas[${index}].boleto`} // Garante que cada parcela tenha seu campo único
-                                                            value={parcela.boleto || ''} // Evita erro caso `boleto` esteja undefined
-                                                            onChange={(e) => handleAlterarBoletoParcela(index, e.target.value)}
-                                                        />
-                                                    </span>
-                                                    <span>
-                                                        <label>Valor</label>
-                                                        <input
-                                                            type="text"
-                                                            name={`parcelas[${index}].valor`}  // Aqui também estamos fazendo a mesma coisa para o valor
-                                                            value={formatarMoedaBRL(parcela.valor)}
-                                                            onChange={(e) => handleAlterarParcela(index, e.target.value)}
-                                                        />
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Quantidade de Parcelas *
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="lancarParcelas"
+                                            value={lancarParcelas}
+                                            onChange={(e) => {
+                                                const value = e.target.value.replace(/[^0-9]/g, '');
+                                                const intValue = parseInt(value, 10);
+                                                setLancarParcelas(Math.max(1, intValue || 0));
+                                            }}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            required
+                                            min="1"
+                                        />
                                     </div>
-                                )}
-                                <div id='button-group'>
-                                    <button type="submit"
-                                        className="button"
-                                        disabled={disabledSalvar}
-                                    >
-                                        Salvar
-                                    </button>
-                                    {movimentacao &&
-                                        <button className="button-excluir" onClick={handleCancelar}>
-                                            Excluir
-                                        </button>}
+
+                                    {/* Vencimento da Primeira Parcela */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Vencimento 1ª Parcela *
+                                        </label>
+                                        <input
+                                            type="date"
+                                            name="dataVencimento"
+                                            value={dataVencimento}
+                                            onChange={(e) => setDataVencimento(e.target.value)}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Valor de Entrada */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Valor de Entrada
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="valorEntradaDespesa"
+                                            value={valorEntradaDespesa}
+                                            onChange={(e) => setValorEntradaDespesa(formatarMoedaBRL(e.target.value))}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                        </form>
-                    </>
+                        )}
+
+                        {/* Exibição das Parcelas */}
+                        {despesaRecorrente === 'parcelada' && lancarParcelas && dataVencimento && parcelas.length > 0 && (
+                            <div className="mb-6">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                                    Parcelas Geradas ({parcelas.length})
+                                </h3>
+                                <input type="hidden" name="parcelas" value={JSON.stringify(parcelas)} />
+                                
+                                <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                                    {parcelas.map((parcela, index) => (
+                                        <div
+                                            key={index}
+                                            className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end border border-gray-200 rounded-lg p-3 bg-white hover:shadow-md transition-shadow"
+                                        >
+                                            {/* Número da Parcela */}
+                                            <div className="md:col-span-2">
+                                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                    Parcela
+                                                </label>
+                                                <div className="px-3 py-2 bg-gray-100 rounded-lg text-center font-semibold text-gray-700">
+                                                    {parcela.numeroParcela}
+                                                </div>
+                                            </div>
+
+                                            {/* Vencimento */}
+                                            <div className="md:col-span-3">
+                                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                    Vencimento
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    name={`parcelas[${index}].dataVencimento`}
+                                                    value={parcela.dataVencimento}
+                                                    onChange={(e) => handleAlterarVencimentoParcela(index, e.target.value)}
+                                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                />
+                                            </div>
+
+                                            {/* Boleto */}
+                                            <div className="md:col-span-3">
+                                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                    Boleto
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name={`parcelas[${index}].boleto`}
+                                                    value={parcela.boleto || ''}
+                                                    onChange={(e) => handleAlterarBoletoParcela(index, e.target.value)}
+                                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    placeholder="Nº do boleto"
+                                                />
+                                            </div>
+
+                                            {/* Valor */}
+                                            <div className="md:col-span-4">
+                                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                    Valor
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name={`parcelas[${index}].valor`}
+                                                    value={formatarMoedaBRL(parcela.valor)}
+                                                    onChange={(e) => handleAlterarParcela(index, e.target.value)}
+                                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Botões de Ação */}
+                        <div className="flex flex-col-reverse md:flex-row gap-3 mt-6 pt-6 border-t">
+                            <button
+                                type="submit"
+                                disabled={disabledSalvar}
+                                className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                💾 Salvar
+                            </button>
+                            
+                            {movimentacao && (
+                                <button
+                                    type="button"
+                                    onClick={handleCancelar}
+                                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition-colors font-medium"
+                                >
+                                    🗑️ Excluir
+                                </button>
+                            )}
+                        </div>
+                    </form>
                 )}
+
+                {toast.message && <Toast message={toast.message} type={toast.type} />}
             </div>
-            {toast.message && <Toast message={toast.message} type={toast.type} />}
+
+            {/* Modais Auxiliares */}
             {isConfirmDialogOpen && (
                 <ConfirmarLancarParcelas
                     isOpen={isConfirmDialogOpen}
                     message={mensagem}
                     cancelarLancto={cancelarLancto}
                     onConfirmar={handleConfirmCancelamento}
-                    onConfirm={cancelarLancto ? handleConfirmCancelamento : handleLancaParcelas}  // Abre o modal de lançamento de parcelas
+                    onConfirm={cancelarLancto ? handleConfirmCancelamento : handleLancaParcelas}
                     onCancel={() => setIsConfirmDialogOpen(false)}
                 />
-            )
-            }
-            <ModalPesquisaCredor
-                isOpen={isModalPesquisaOpen}
-                onClose={() => setIsModalPesquisaOpen(false)}
-                onSelectCredor={handleSelectCredor}
-                onTipoCredor={handleTipoCredor}  // Passando a função para o modal
-                tipoLancto={'credito'}  // Passando o tipo de credor para o modal
-            />
+            )}
 
-            <ModalLancamentoParcelas
-                isOpen={isModalParcelasOpen}
-                onClose={() => setIsModalParcelasOpen(false)}
-                valorTotal={valor}
-                despesa={despesaAdicionada}
-                onSave={handleSaveParcelas}
-            />
+            {isModalPesquisaOpen && (
+                <ModalPesquisaCredor
+                    isOpen={isModalPesquisaOpen}
+                    onClose={() => setIsModalPesquisaOpen(false)}
+                    onSelectCredor={handleSelectCredor}
+                    onTipoCredor={handleTipoCredor}
+                    tipoLancto={'credito'}
+                />
+            )}
+
+            {isModalParcelasOpen && (
+                <ModalLancamentoParcelas
+                    isOpen={isModalParcelasOpen}
+                    onClose={() => setIsModalParcelasOpen(false)}
+                    valorTotal={valor}
+                    despesa={despesaAdicionada}
+                    onSave={handleSaveParcelas}
+                />
+            )}
         </div>
     );
 };

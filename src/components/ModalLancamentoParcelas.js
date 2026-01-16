@@ -14,7 +14,7 @@ const ModalLancamentoParcelas = ({ isOpen, onClose, valorTotal, despesa, onSucce
     const [tipoParcelamento, setTipoParcelamento] = useState('mensal');
     const [parcelas_old, setParcelas_old] = useState([]); // Estado para armazenar as parcelas
     const [disabledSalvar, setDisabledSalvar] = useState(false); // Estado para controlar o modal de parcelas
-    const [boleto, setBoleto] = useState([]); // Estado para controlar o modal de parcelas
+    const [boleto, setBoleto] = useState(null); // Estado para controlar o modal de parcelas
     const [toast, setToast] = useState({ message: '', type: '' });
 
     useEffect(() => {

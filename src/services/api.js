@@ -1474,6 +1474,7 @@ export const getVendasPorClientePeriodo = async (filters = {}) => {
       dataFim,
       clienteNome,
       produtoNome,
+      produtoId,
       modoExibicao,
     } = filters;
 
@@ -1495,6 +1496,7 @@ export const getVendasPorClientePeriodo = async (filters = {}) => {
     if (dataFim) params.dataFim = dataFim;
     if (clienteNome) params.clienteNome = clienteNome;
     if (produtoNome) params.produtoNome = produtoNome;
+    if (produtoId) params.produtoId = produtoId;
     if (modoExibicao) params.agrupamento = modoExibicao;
 
     const response = await api.get('/relatorio-vendas/clienteperiodo', { params });

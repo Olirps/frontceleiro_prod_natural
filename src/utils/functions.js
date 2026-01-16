@@ -107,7 +107,7 @@ const converterMoedaParaNumero = (valor) => {
   let numeroLimpo = valor.replace(/R\$\s?|\./g, "").replace(",", ".");
 
   // Converte para número decimal
-  return (numeroLimpo);
+  return (Number(numeroLimpo));
 };
 
 const formatarMoedaBRL = (valor) => {

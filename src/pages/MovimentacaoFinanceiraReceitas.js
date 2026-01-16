@@ -19,6 +19,8 @@ import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import { usePermissionModal } from "../hooks/usePermissionModal";
 import Pagination from '../utils/Pagination';
+import PaymentModal from '../components/PaymentModal';
+
 
 
 function MovimentacaoFinanceiraReceitas() {
@@ -30,6 +32,7 @@ function MovimentacaoFinanceiraReceitas() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDespesa, setIsDespesa] = useState(false);
   const [isModalLancaParcelasOpen, setIsModalLancaParcelasOpen] = useState(false);
   const [isModalUnificaLancamentosOpen, setIsModalUnificaLancamentosOpen] = useState(false);
   const [isModalPagamentoUnificadoOpen, setIsModalPagamentoUnificadoOpen] = useState(false);
@@ -41,6 +44,9 @@ function MovimentacaoFinanceiraReceitas() {
   const [selectedParcela, setSelectedParcela] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
   const [executarBusca, setExecutarBusca] = useState(true);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentTotal, setPaymentTotal] = useState(0);
+
 
   //Permissoes
   const { permissions } = useAuth();
@@ -246,7 +252,7 @@ function MovimentacaoFinanceiraReceitas() {
     try {
       let valorTotalOriginal;
       if (parcelas.length > 1) {
-        valorTotalOriginal = (parcelas.reduce((total, parcela) => total + converterMoedaParaNumero(parcela.valor), 0)).toFixed(2);
+        valorTotalOriginal = (parcelas.reduce((total, parcela) => total + converterMoedaParaNumero(parcela.valor), 0));
         const valorEntradaSum = converterMoedaParaNumero(valorEntrada);
         valorTotalOriginal = Number((Number(valorTotalOriginal) + Number(valorEntradaSum)));
         const valorLancamentoLimpo = converterMoedaParaNumero(valorLancamento);
@@ -357,7 +363,7 @@ function MovimentacaoFinanceiraReceitas() {
       data_pagamento: formData.get('datapagamento'),
       valor_pago: converterMoedaParaNumero(valorPago),
       conta_id: formData.get('contabancaria'),
-      metodo_pagamento: formData.get('formaPagamento'),
+      metodo_pagamento: formData.get('formaPgtoNome'),
       data_efetiva_pg: dataEfetivaPgto,
       status: 'liquidado'
     };
@@ -380,7 +386,8 @@ function MovimentacaoFinanceiraReceitas() {
     checkPermission('pagamentosparcelas', 'insert', async () => {
       const response = await getParcelaByID(parcela.id);
       setSelectedParcela(response.data);
-      setIsModalPagarLancamentosOpen(true);
+      setPaymentTotal(parcela.valor_parcela);
+      setIsPaymentModalOpen(true);
     });
   };
 
@@ -437,6 +444,42 @@ function MovimentacaoFinanceiraReceitas() {
       setToast({ message: errorMessage, type: "error" });
     }
   };
+
+  const handleConfirmPayment = async (resultado) => {
+    try {
+      const payload = {
+        parcela_id: selectedParcela.id,
+        pagamentos: resultado.pagamentos,
+        data_pagamento_efetivo: resultado.data_pagamento_efetivo,
+        recebimentoHoje: resultado.recebimentoHoje
+      };
+
+      await pagamentoParcela(selectedParcela.id, payload); // novo endpoint
+
+      setToast({
+        message: 'Pagamento registrado com sucesso!',
+        type: 'success'
+      });
+
+      setIsPaymentModalOpen(false);
+
+      const response = await getAllMovimentacaofinanceiraDespesa({
+        tipo: 'credito'
+      });
+      setMovimentacoes(response.data);
+      setFilteredMovimentacoes(response.data);
+
+      toggleExpand(selectedParcela.financeiro_id);
+    } catch (error) {
+      console.error(error);
+      setToast({
+        message: 'Erro ao realizar pagamento',
+        type: 'error'
+      });
+    }
+  };
+
+
 
   useEffect(() => {
     if (toast.message) {
@@ -649,19 +692,24 @@ function MovimentacaoFinanceiraReceitas() {
         )
       }
       {
-        isModalPagarLancamentosOpen && (
-          <ModalPagarLancamentos
-            isOpen={isModalPagarLancamentosOpen}
-            onClose={() => setIsModalPagarLancamentosOpen(false)}
-            onSubmit={handleSavePagamento}
-            parcela={selectedParcela}
+        isPaymentModalOpen && selectedParcela && (
+          <PaymentModal
+            isOpen={isPaymentModalOpen}
+            total={paymentTotal}
+            tipo="liquidacao"
+            permitirDesconto={false}
+            permitirParcelamento={false}
+            onClose={() => setIsPaymentModalOpen(false)}
+            onConfirm={handleConfirmPayment}
           />
         )
       }
+
       {
         isModalLancamentoCompletoOpen && (
           <ModalLancamentoCompleto
             isOpen={isModalLancamentoCompletoOpen}
+            isDespesa={isDespesa}
             onClose={() => setIsModalLancamentoCompletoOpen(false)}
             lancamento={selectedLancamentoCompleto}
             onConfirmar={handleConfirmacaoParcelas}
@@ -691,7 +739,7 @@ function MovimentacaoFinanceiraReceitas() {
         )
       }
       {/* Renderização do modal de autorização */}
-      <PermissionModalUI /> 
+      <PermissionModalUI />
     </div>
   );
 }

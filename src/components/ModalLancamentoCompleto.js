@@ -1,30 +1,57 @@
 import React, { useState, useEffect } from 'react';
-import '../styles/ModalLancamentoCompleto.css';
-import ConfirmarLancarParcelas from '../components/ConfirmarLancarParcelas'; // Importando o novo modal
+import ConfirmarLancarParcelas from '../components/ConfirmarLancarParcelas';
 import { cpfCnpjMask } from './utils';
 import { useAuth } from '../context/AuthContext';
 import { usePermissionModal } from "../hooks/usePermissionModal";
 import { formatarMoedaBRL } from '../utils/functions';
+import { getParcelaByID, pagamentoParcela } from '../services/api';
+import PaymentModal from '../components/PaymentModal';
 import Toast from '../components/Toast';
 
+const StatusBadge = ({ status }) => {
+    const map = {
+        PAGO: 'bg-green-100 text-green-700',
+        ABERTO: 'bg-yellow-100 text-yellow-700',
+        ATRASADO: 'bg-red-100 text-red-700',
+    };
 
+    return (
+        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${map[status] || 'bg-gray-100 text-gray-600'}`}>
+            {status}
+        </span>
+    );
+};
 
-const ModalLancamentoCompleto = ({ isOpen, onClose, onConfirmar, lancamento, onReceita }) => {
+const ModalLancamentoCompleto = ({
+    isOpen,
+    onClose,
+    onConfirmar,
+    isDespesa,
+    lancamento,
+    onReceita,
+    onSuccess
+}) => {
+
     const [lancamentoCompleto, setLancamentoCompleto] = useState(null);
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-    const [cancelarLancto, setCancelarLancto] = useState(false); // Estado para controlar o modal de parcelas
+    const [cancelarLancto, setCancelarLancto] = useState(false);
     const [mensagem, setMensagem] = useState('');
+    const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
     const [toast, setToast] = useState({ message: '', type: '' });
-    //Permissoes
+    const [parcelaSelecionada, setParcelaSelecionada] = useState(null);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [paymentTotal, setPaymentTotal] = useState(0);
+    const [selectedParcela, setSelectedParcela] = useState(null);
+
+
     const { permissions } = useAuth();
     const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
 
     useEffect(() => {
-        if (lancamento) {
+        if (lancamento?.data) {
             setLancamentoCompleto(lancamento.data);
         }
     }, [lancamento]);
-
 
     useEffect(() => {
         if (toast.message) {
@@ -33,138 +60,264 @@ const ModalLancamentoCompleto = ({ isOpen, onClose, onConfirmar, lancamento, onR
         }
     }, [toast]);
 
-    const handleCancelar = () => {
-        checkPermission('lancamento-completo', 'delete', () => {
-            if (!lancamento.data) return;
-            setCancelarLancto(true)
-            setMensagem('Deseja realmente excluir esta despesa?')
-            setIsConfirmDialogOpen(true);
-        })
-    };
-
-    const handleConfirmCancelamento = async () => {
-        const dadosLancto = lancamento.data
-        onConfirmar(dadosLancto);
-    }
-
     if (!isOpen || !lancamentoCompleto) return null;
 
-    // Função para formatar a data no formato brasileiro
     const formatarData = (data) => {
         if (!data) return '-';
-        const date = new Date(data);
-        return date.toLocaleDateString('pt-BR');
+        return new Date(data).toLocaleDateString('pt-BR');
+    };
+
+    const formatarDataHora = (data) => {
+        if (!data) return '-';
+        return new Date(data).toLocaleString('pt-BR');
+    };
+
+    const handlePagarParcelas = async (parcela) => {
+        checkPermission('pagamentosparcelas', 'insert', async () => {
+            const response = await getParcelaByID(parcela.id);
+            setSelectedParcela(response.data);
+            setPaymentTotal(parcela.valor_parcela);
+            setIsPaymentModalOpen(true);
+        });
+    };
+
+    const handleCancelar = () => {
+        checkPermission('lancamento-completo', 'delete', () => {
+            setCancelarLancto(true);
+            setMensagem('Deseja realmente excluir este lançamento?');
+            setIsConfirmDialogOpen(true);
+        });
+    };
+
+    const handleConfirmPayment = async (resultado) => {
+        try {
+            const payload = {
+                parcela_id: selectedParcela.id,
+                pagamentos: resultado.pagamentos,
+                data_pagamento_efetivo: resultado.data_pagamento_efetivo,
+                recebimentoHoje: resultado.recebimentoHoje
+            };
+
+            await pagamentoParcela(selectedParcela.id, payload); // novo endpoint
+
+            setToast({
+                message: 'Pagamento registrado com sucesso!',
+                type: 'success'
+            });
+
+            setIsPaymentModalOpen(false);
+        } catch (error) {
+            console.error(error);
+            setToast({
+                message: 'Erro ao realizar pagamento',
+                type: 'error'
+            });
+        }
+    };
+
+    const handleConfirmCancelamento = () => {
+        onConfirmar(lancamentoCompleto);
     };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <button className="modal-close" onClick={onClose}>X</button>
-                <h2>Lançamento Completo</h2>
+        <>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                <div
+                    className="
+        bg-white w-full h-full
+        md:h-[90vh] md:max-w-5xl
+        md:rounded-xl shadow-xl
+        relative
+        flex flex-col
+      "
+                >
+                    {/* ================= HEADER (FIXO) ================= */}
+                    <div className="flex justify-between items-center border-b px-4 py-3 md:px-6 shrink-0">
+                        <h2 className="text-xl font-semibold">
+                            {isDespesa ? 'Despesa' : 'Recebível do Cliente'}
+                        </h2>
 
-                {/* Detalhes do Lançamento */}
-                {onReceita === false && (<div className="lancamento-detalhes">
-                    <h3>Detalhes do Lançamento</h3>
-                    <p><strong>Descrição:</strong> {lancamentoCompleto.descricao}</p>
-                    <p><strong>Valor:</strong> {formatarMoedaBRL(lancamentoCompleto.valor)}</p>
-                    <p><strong>Data de Vencimento:</strong> {formatarData(lancamentoCompleto.data_vencimento)}</p>
-                    <p><strong>Data de Lançamento:</strong> {formatarData(lancamentoCompleto.data_lancamento)}</p>
-                    <p><strong>Tipo:</strong> {lancamentoCompleto.tipo}</p>
-                    <p><strong>Status:</strong> {lancamentoCompleto.status}</p>
-                </div>)}
-
-                {/* Detalhes da Entidade (Fornecedor, Funcionário ou Cliente) */}
-                {lancamentoCompleto.fornecedor && (
-                    <div className="entidade-detalhes">
-                        <h3>Fornecedor</h3>
-                        <p><strong>Nome:</strong> {lancamentoCompleto.fornecedor.nome}</p>
-                        <p><strong>CNPJ:</strong> {cpfCnpjMask(lancamentoCompleto.fornecedor.cpfCnpj)}</p>
-                        <p><strong>Endereço:</strong> {lancamentoCompleto.fornecedor.logradouro}, {lancamentoCompleto.fornecedor.numero}</p>
-                        <p><strong>Município:</strong> {lancamentoCompleto.fornecedor.municipio} - {lancamentoCompleto.fornecedor.uf}</p>
+                        <button
+                            onClick={onClose}
+                            className="text-gray-400 hover:text-red-600 text-xl"
+                        >
+                            ✕
+                        </button>
                     </div>
-                )}
 
-                {lancamentoCompleto.funcionario && (
-                    <div className="entidade-detalhes">
-                        <h3>Funcionário</h3>
-                        <p><strong>Nome:</strong> {lancamentoCompleto.funcionario.cliente.nome}</p>
-                        <p><strong>CPF:</strong> {cpfCnpjMask(lancamentoCompleto.funcionario.cliente.cpfCnpj)}</p>
-                        <p><strong>Cargo:</strong> {lancamentoCompleto.funcionario.cargo}</p>
-                        <p><strong>Salário:</strong> {formatarMoedaBRL(lancamentoCompleto.funcionario.salario)}</p>
+                    {/* ================= BODY (SCROLL) ================= */}
+                    <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-6 overscroll-contain">
+
+                        {/* Cliente + Resumo */}
+                        <div className="grid grid-cols-1 sm:grid-cols-6 gap-4">
+
+                            {/* Cliente */}
+                            {!isDespesa && lancamentoCompleto.cliente && (
+                                <div className="sm:col-span-2 p-4 rounded-xl bg-blue-50 border border-blue-100">
+                                    <p className="text-xs text-blue-600 font-semibold uppercase mb-1">
+                                        Cliente
+                                    </p>
+
+                                    <p className="font-semibold text-gray-800">
+                                        {lancamentoCompleto.cliente.nome}
+                                    </p>
+
+                                    <p className="text-sm text-gray-600">
+                                        {cpfCnpjMask(lancamentoCompleto.cliente.cpfCnpj)}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Resumo financeiro */}
+                            <div className="sm:col-span-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+
+                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                        <p className="text-sm text-gray-500">Valor total</p>
+                                        <p className="text-xl font-bold text-blue-600">
+                                            {formatarMoedaBRL(
+                                                lancamentoCompleto._previousDataValues.valor
+                                            )}
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                        <p className="text-sm text-gray-500">Valor Pago</p>
+                                        <p className="text-xl font-bold text-green-600">
+                                            {formatarMoedaBRL(
+                                                lancamentoCompleto._previousDataValues.valor_pago
+                                            )}
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                        <p className="text-sm text-gray-500">Valor Restante</p>
+                                        <p className="text-xl font-bold text-red-600">
+                                            {formatarMoedaBRL(lancamentoCompleto.dataValues.valor)}
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                        <p className="text-sm text-gray-500">Data do lançamento</p>
+                                        <p className="font-medium">
+                                            {formatarData(
+                                                lancamentoCompleto.dataValues.data_lancamento
+                                            )}
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                        <p className="text-sm text-gray-500">Qtd. parcelas</p>
+                                        <p className="font-medium">
+                                            {lancamentoCompleto.parcelas.length}
+                                        </p>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ================= PARCELAS ================= */}
+                        <div>
+                            <h3 className="font-semibold mb-3">Parcelas</h3>
+
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full text-sm border rounded-lg overflow-hidden">
+                                    <thead className="bg-gray-100">
+                                        <tr>
+                                            <th className="px-4 py-2 text-left">Descrição</th>
+                                            <th className="px-4 py-2">Valor</th>
+                                            <th className="px-4 py-2">Vencimento</th>
+                                            <th className="px-4 py-2">Status</th>
+                                            {!isDespesa && <th className="px-4 py-2">Ação</th>}
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        {lancamentoCompleto.parcelas.map((parcela) => (
+                                            <tr key={parcela.id} className="border-t">
+                                                <td className="px-4 py-2">{parcela.descricao}</td>
+                                                <td className="px-4 py-2">
+                                                    {formatarMoedaBRL(parcela.valor_parcela)}
+                                                </td>
+                                                <td className="px-4 py-2">
+                                                    {formatarData(parcela.vencimento)}
+                                                </td>
+                                                <td className="px-4 py-2">
+                                                    <StatusBadge status={parcela.status} />
+                                                </td>
+
+                                                {!isDespesa && (
+                                                    <td className="px-4 py-2">
+                                                        {parcela.status !== 'liquidado' && (
+                                                            <button
+                                                                onClick={() => handlePagarParcelas(parcela)}
+                                                                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                                                            >
+                                                                Receber
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                )}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* ================= PAGAMENTOS ================= */}
+                        {lancamentoCompleto.pagamentos?.length > 0 && (
+                            <div>
+                                <h3 className="font-semibold mb-3">Pagamentos realizados</h3>
+
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full text-sm border rounded-lg overflow-hidden">
+                                        <thead className="bg-gray-100">
+                                            <tr>
+                                                <th className="px-4 py-2 text-left">Forma</th>
+                                                <th className="px-4 py-2">Valor</th>
+                                                <th className="px-4 py-2">Data</th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            {lancamentoCompleto.pagamentos.map((pagamento) => (
+                                                <tr key={pagamento.id} className="border-t">
+                                                    <td className="px-4 py-2">
+                                                        {pagamento.formaPagamento?.nome || '—'}
+                                                    </td>
+
+                                                    <td className="px-4 py-2 text-green-600 font-medium">
+                                                        {formatarMoedaBRL(pagamento.vlrPago)}
+                                                    </td>
+
+                                                    <td className="px-4 py-2">
+                                                        {formatarDataHora(pagamento.createdAt)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                )}
 
-                {lancamentoCompleto.cliente && (
-                    <div className="entidade-detalhes">
-                        <h3>Cliente</h3>
-                        <p><strong>Nome:</strong> {lancamentoCompleto.cliente.nome}</p>
-                        <p><strong>CPF/CNPJ:</strong> {cpfCnpjMask(lancamentoCompleto.cliente.cpfCnpj)}</p>
-                        <p><strong>Endereço:</strong> {lancamentoCompleto.cliente.logradouro}, {lancamentoCompleto.cliente.numero}</p>
-                        <p><strong>Município:</strong> {lancamentoCompleto.cliente.municipio_id} - {lancamentoCompleto.cliente.uf_id}</p>
-                    </div>
-                )}
-
-                {/* Detalhes das Parcelas */}
-                {/* Detalhes das Parcelas */}
-                <div className="parcelas-detalhes">
-                    <h3>Parcelas</h3>
-                    {lancamentoCompleto.parcelas.length > 0 ? (
-                        <table id='grid-padrao'>
-                            <thead>
-                                <tr>
-                                    <th>Descrição</th>
-                                    <th>Valor</th>
-                                    <th>Vencimento</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {lancamentoCompleto.parcelas.map((parcela) => (
-                                    <tr key={parcela.id}>
-                                        <td>{parcela.descricao}</td>
-                                        <td>{formatarMoedaBRL(parcela.valor_parcela)}</td>
-                                        <td>{formatarData(parcela.vencimento)}</td>
-                                        <td>{parcela.status}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <p>Nenhuma parcela encontrada.</p>
+                    {/* ================= FOOTER (FIXO) ================= */}
+                    {isDespesa && (
+                        <div className="border-t px-4 py-3 md:px-6 flex justify-end shrink-0 bg-white">
+                            <button
+                                onClick={handleCancelar}
+                                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                            >
+                                Excluir Lançamento
+                            </button>
+                        </div>
                     )}
                 </div>
-                {/* Detalhes da Nota Fiscal */}
-                {lancamentoCompleto.notaFiscal && lancamentoCompleto.notaFiscal.length > 0 && (
-                    <div className="nota-fiscal-detalhes">
-                        <h3>Notas Fiscais</h3>
-                        <table id='grid-padrao'>
-                            <thead>
-                                <tr>
-                                    <th>Número</th>
-                                    <th>Valor Total</th>
-                                    <th>Data de Emissão</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {lancamentoCompleto.notaFiscal.map((notaFiscal, index) => (
-                                    <tr key={index}>
-                                        <td>{notaFiscal.nNF}</td>
-                                        <td>{formatarMoedaBRL(notaFiscal.vNF)}</td>
-                                        <td>{formatarData(notaFiscal.dhEmi)}</td>
-                                        <td>{notaFiscal.status}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-                {onReceita === false && (<div id='button-group'>
-                    <button className="button-excluir" onClick={handleCancelar}>
-                        Excluir
-                    </button>
-                </div>)}
             </div>
+
             {toast.message && <Toast type={toast.type} message={toast.message} />}
 
             {isConfirmDialogOpen && (
@@ -173,13 +326,26 @@ const ModalLancamentoCompleto = ({ isOpen, onClose, onConfirmar, lancamento, onR
                     message={mensagem}
                     cancelarLancto={cancelarLancto}
                     onConfirmar={handleConfirmCancelamento}
-                    onConfirm={handleConfirmCancelamento}  // Abre o modal de lançamento de parcelas
+                    onConfirm={handleConfirmCancelamento}
                     onCancel={() => setIsConfirmDialogOpen(false)}
                 />
             )}
-            {/* Renderização do modal de autorização */}
+
+            {isPaymentModalOpen && selectedParcela && (
+                <PaymentModal
+                    isOpen={isPaymentModalOpen}
+                    total={paymentTotal}
+                    tipo="liquidacao"
+                    permitirDesconto={false}
+                    permitirParcelamento={false}
+                    onClose={() => setIsPaymentModalOpen(false)}
+                    onConfirm={handleConfirmPayment}
+                />
+            )}
+
             <PermissionModalUI />
-        </div>
+        </>
+
     );
 };
 
