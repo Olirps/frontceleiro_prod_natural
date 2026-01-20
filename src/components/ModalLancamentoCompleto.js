@@ -95,7 +95,8 @@ const ModalLancamentoCompleto = ({
                 parcela_id: selectedParcela.id,
                 pagamentos: resultado.pagamentos,
                 data_pagamento_efetivo: resultado.data_pagamento_efetivo,
-                recebimentoHoje: resultado.recebimentoHoje
+                recebimentoHoje: resultado.recebimentoHoje,
+                desconto: resultado.desconto || 0,
             };
 
             await pagamentoParcela(selectedParcela.id, payload); // novo endpoint

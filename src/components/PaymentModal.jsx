@@ -30,7 +30,8 @@ export default function PaymentModal({
                 data_pagamento_efetivo: dadosPagamento.data_recebimento,
                 recebimentoHoje: dadosPagamento.recebimentoHoje,
                 status: dadosPagamento.status,
-                saldo: dadosPagamento.saldo
+                saldo: dadosPagamento.saldo,
+                desconto: dadosPagamento.desconto || 0,
             });
         }
 

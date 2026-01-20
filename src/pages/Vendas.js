@@ -451,7 +451,7 @@ function Vendas() {
                 {vendas.map((venda, index) => (
                   <tr key={`${venda.id}-${index}`} className="border-t hover:bg-gray-50">
                     <td className="px-4 py-2">{venda.venda_id}</td>
-                    <td className="px-4 py-2">{venda.cliente}</td>
+                    <td className="px-4 py-2">{venda.cliente || 'Não informado'}</td>
                     <td className="px-4 py-2">
                       {venda.totalPrice === null
                         ? 'R$ 0,00'

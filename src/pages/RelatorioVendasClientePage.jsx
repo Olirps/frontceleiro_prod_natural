@@ -86,6 +86,7 @@ const RelatorioVendasClientePage = () => {
     const vendasFormatadas = vendas.map((v, index) => ({
         name: v.cliente || `Cliente ${v.cliente_id}`,
         value: parseFloat(v.total_vendido),
+        cliente_id: v.cliente_id
     }));
 
     // Exemplo de agrupamento (JS)
@@ -202,6 +203,7 @@ const RelatorioVendasClientePage = () => {
                                         if (data?.activeLabel) {
                                             const nomeCliente = data.activeLabel;
                                             handleSelecionarClienteDoGrafico(nomeCliente);
+                                            setClienteId(data.activePayload[0].payload.cliente_id || null);
                                         }
                                     }}>
                                     <CartesianGrid strokeDasharray="3 3" />
