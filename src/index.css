@@ -2,6 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Estilos para o React Select */
+.react-select-container .react-select__control {
+  @apply border border-gray-300 rounded-lg px-2 py-1 min-h-[44px];
+}
+
+.react-select-container .react-select__control--is-focused {
+  @apply border-blue-500 ring-2 ring-blue-200;
+}
+
+.react-select-container .react-select__menu {
+  @apply border border-gray-300 rounded-lg shadow-xl;
+}
+
+.react-select-container .react-select__option {
+  @apply px-4 py-2 hover:bg-blue-50;
+}
+
+.react-select-container .react-select__option--is-selected {
+  @apply bg-blue-600 text-white hover:bg-blue-700;
+}
+
+.react-select-container .react-select__multi-value {
+  @apply bg-blue-100 rounded;
+}
+
+.react-select-container .react-select__multi-value__label {
+  @apply text-blue-800;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

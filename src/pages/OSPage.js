@@ -30,6 +30,11 @@ const OSPage = () => {
     const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
     const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
     const [osToApprove, setOsToApprove] = useState(null); // Guardar a O.S. a ser aprovada
+    const [dataInicio, setDataInicio] = useState("");
+    const [totalPages, setTotalPages] = useState(1);
+    const [openActionMenu, setOpenActionMenu] = useState(null);
+
+
     //Permissoes
     const { permissions } = useAuth();
     const { checkPermission, PermissionModalUI } = usePermissionModal(permissions);
@@ -48,36 +53,77 @@ const OSPage = () => {
     useEffect(() => {
         const fetchOS = async () => {
             try {
-                const response = await getAllOS();
+                const params = {
+                    page: currentPage,
+                    limit: rowsPerPage,
+                };
+                const response = await getAllOS(params);
                 setOsList(response.data);
                 setFilteredOsList(response.data);
+                setTotalPages(response.totalPages || 1);
             } catch (error) {
                 console.error('Erro ao buscar ordens de serviço:', error);
                 setOsList([]);
+                setFilteredOsList([]);
+                setTotalPages(1);
             } finally {
                 setLoading(false);
             }
         };
         fetchOS();
-    }, []);
+    }, [currentPage, rowsPerPage]);
 
-    const handleSearch = () => {
-        const lowerDescricao = descricao.toLowerCase();
+    const handleSearch = async () => {
+        try {
+            setLoading(true);
 
-        const results = osList.filter(os =>
-            (lowerDescricao ? os.descricao.toLowerCase().includes(lowerDescricao) : true) &&
-            (status ? os.status === status : true)
-        );
+            const params = {
+                cliente: descricao || undefined,
+                data_inicio: dataInicio || undefined,
+                status: status || undefined,
+                page: 1, // Resetar para primeira página ao pesquisar
+                limit: rowsPerPage,
+            };
 
-        setFilteredOsList(results);
-        setCurrentPage(1); // Resetar para a primeira página após a busca
+            const response = await getAllOS(params);
+
+            setOsList(response.data);
+            setFilteredOsList(response.data);
+            setTotalPages(response.totalPages || 1);
+            setCurrentPage(1); // Garantir que volta para primeira página
+        } catch (error) {
+            setToast({
+                type: "error",
+                message: "Erro ao buscar Ordens de Serviço",
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleClear = () => {
+
+    const handleClear = async () => {
         setDescricao('');
         setStatus('');
-        setFilteredOsList(osList);
-        setCurrentPage(1); // Resetar para a primeira página ao limpar a busca
+        setDataInicio('');
+        setCurrentPage(1);
+
+        try {
+            setLoading(true);
+            const params = {
+                page: 1,
+                limit: rowsPerPage,
+            };
+            const response = await getAllOS(params);
+            setOsList(response.data);
+            setFilteredOsList(response.data);
+            setTotalPages(response.totalPages || 1);
+        } catch (error) {
+            console.error('Erro ao buscar ordens de serviço:', error);
+            setToast({ message: 'Erro ao carregar ordens de serviço', type: 'error' });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleCadastrarModal = () => {
@@ -107,10 +153,16 @@ const OSPage = () => {
 
             // Fechar o modal e atualizar a lista de O.S.
             setIsConfirmationModalOpen(false);
-            // Atualizar a lista de O.S. após a aprovação
-            const responseOS = await getAllOS();
+
+            // Atualizar a lista de O.S. após a aprovação com paginação
+            const params = {
+                page: currentPage,
+                limit: rowsPerPage,
+            };
+            const responseOS = await getAllOS(params);
             setOsList(responseOS.data);
             setFilteredOsList(responseOS.data);
+            setTotalPages(responseOS.totalPages || 1);
 
         } catch (err) {
             const errorMessage = err.response?.data?.error || "Erro ao aprovar O.S.";
@@ -129,9 +181,15 @@ const OSPage = () => {
             await addOS(e);
             setToast({ message: "O.S. cadastrada com sucesso!", type: "success" });
             setIsModalOpen(false);
-            const response = await getAllOS();
+
+            const params = {
+                page: currentPage,
+                limit: rowsPerPage,
+            };
+            const response = await getAllOS(params);
             setOsList(response.data);
             setFilteredOsList(response.data);
+            setTotalPages(response.totalPages || 1);
         } catch (err) {
             const errorMessage = err.response?.data?.error || "Erro ao cadastrar O.S.";
             setToast({ message: errorMessage, type: "error" });
@@ -153,9 +211,15 @@ const OSPage = () => {
             await updateOS(selectedOs.id, e);
             setToast({ message: "O.S. atualizada com sucesso!", type: "success" });
             setIsModalOpen(false);
-            const response = await getAllOS();
+
+            const params = {
+                page: currentPage,
+                limit: rowsPerPage,
+            };
+            const response = await getAllOS(params);
             setOsList(response.data);
             setFilteredOsList(response.data);
+            setTotalPages(response.totalPages || 1);
         } catch (err) {
             const errorMessage = err.response?.data?.error || "Erro ao atualizar O.S.";
             setToast({ message: errorMessage, type: "error" });
@@ -215,9 +279,14 @@ const OSPage = () => {
                 setToast({ message: "O.S. finalizada com sucesso!", type: "success" });
 
                 // Atualiza a lista de O.S. sem recarregar a página
-                const updatedOSList = await getAllOS();
+                const params = {
+                    page: currentPage,
+                    limit: rowsPerPage,
+                };
+                const updatedOSList = await getAllOS(params);
                 setOsList(updatedOSList.data);
                 setFilteredOsList(updatedOSList.data);
+                setTotalPages(updatedOSList.totalPages || 1);
 
                 // Fecha o modal de venda
                 setIsSaleModalOpen(false);
@@ -264,146 +333,231 @@ const OSPage = () => {
         setExpandedRow(expandedRow === id ? null : id); // Se a linha já estiver expandida, fecha; caso contrário, expande
     };
 
-    // Cálculo da paginação
-    const totalPages = Math.ceil(filteredOsList.length / rowsPerPage);
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const currentOsList = filteredOsList.slice(startIndex, startIndex + rowsPerPage);
+    // Usar dados paginados do servidor diretamente
+    const currentOsList = filteredOsList;
 
     return (
-        <div id="os-page-container">
-            <h1 className="title-page">Cadastro de Ordem de Serviço</h1>
-            <div id="search-container">
-                <div id="search-fields">
-                    <div>
-                        <label htmlFor="descricao">Descrição</label>
-                        <input
-                            className="input-geral"
-                            type="text"
-                            id="descricao"
-                            value={descricao}
-                            onChange={(e) => setDescricao(e.target.value)}
-                            maxLength="150"
-                        />
+        <div className="p-6">
+            <h1 className="text-2xl font-bold mb-6">Cadastro de Ordem de Serviço</h1>
+
+            {/* LOADING */}
+            {loading ? (
+                <div className="flex justify-center items-center h-32">
+                    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+            ) : (
+                <>
+                    {/* FILTROS */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                        <div>
+                            <label className="block text-sm font-medium">Cliente</label>
+                            <input
+                                type="text"
+                                value={descricao}
+                                onChange={(e) => setDescricao(e.target.value)}
+                                maxLength={150}
+                                placeholder="Nome do cliente"
+                                className="w-full border rounded px-2 py-1"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium">Data de Início</label>
+                            <input
+                                type="date"
+                                value={dataInicio}
+                                onChange={(e) => setDataInicio(e.target.value)}
+                                className="w-full border rounded px-2 py-1"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium">Status</label>
+                            <select
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value)}
+                                className="w-full border rounded px-2 py-1"
+                            >
+                                <option value="">Todos</option>
+                                <option value="1">Ativo</option>
+                                <option value="0">Inativo</option>
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label htmlFor="status">Status</label>
-                        <select
-                            id="status"
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
+
+                    {/* BOTÕES */}
+                    <div className="flex flex-wrap gap-2 mb-6">
+                        <button
+                            onClick={handleSearch}
+                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                         >
-                            <option value="">Todos</option>
-                            <option value="1">Ativo</option>
-                            <option value="0">Inativo</option>
-                        </select>
+                            Pesquisar
+                        </button>
+
+                        <button
+                            onClick={handleClear}
+                            className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
+                        >
+                            Limpar
+                        </button>
+
+                        <button
+                            onClick={handleCadastrarModal}
+                            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                        >
+                            Cadastrar O.S.
+                        </button>
                     </div>
-                </div>
-                <div>
-                    <div id="button-group">
-                        <button onClick={handleSearch} className="button">Pesquisar</button>
-                        <button onClick={handleClear} className="button">Limpar</button>
-                        <button onClick={handleCadastrarModal} className="button">Cadastrar O.S.</button>
-                    </div>
-                </div>
-            </div>
-            <div id="separator-bar"></div>
-            <div id="results-container">
-                {loading ? (
-                    <div className="spinner-container">
-                        <div className="spinner"></div>
-                    </div>
-                ) : filteredOsList.length === 0 ? (
-                    <p className="empty-message">Nenhuma O.S. encontrada.</p>
-                ) : (
-                    <>
-                        <div id="grid-padrao-container">
-                            <table id="grid-padrao">
-                                <thead>
+
+                    {/* TABELA */}
+                    {filteredOsList.length === 0 ? (
+                        <p className="text-gray-500">Nenhuma O.S. encontrada.</p>
+                    ) : (
+                        <div className="overflow-x-auto mb-4">
+                            <table className="min-w-full border divide-y divide-gray-200">
+                                <thead className="bg-gray-100">
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Cliente</th>
-                                        <th>Veículo</th>
-                                        <th>Status</th>
-                                        <th>Data Início</th>
-                                        <th>Data Término</th>
-                                        <th>Ações</th>
+                                        <th className="p-2 text-left text-sm font-medium">#</th>
+                                        <th className="p-2 text-left text-sm font-medium">ID</th>
+                                        <th className="p-2 text-left text-sm font-medium">Cliente</th>
+                                        <th className="p-2 text-left text-sm font-medium">Veículo</th>
+                                        <th className="p-2 text-left text-sm font-medium">Status</th>
+                                        <th className="p-2 text-left text-sm font-medium">Início</th>
+                                        <th className="p-2 text-left text-sm font-medium">Término</th>
+                                        <th className="p-2 text-left text-sm font-medium">Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+
+                                <tbody className="divide-y divide-gray-100">
                                     {currentOsList.map((os) => (
                                         <React.Fragment key={os.id}>
-                                            <tr>
-                                                <td>
+                                            <tr className={expandedRow === os.id ? "bg-blue-50" : ""}>
+                                                <td className="p-2">
                                                     <button
                                                         onClick={() => toggleExpand(os.id)}
-                                                        className="expand-button"
-                                                        title={expandedRow === os.id ? "Recolher" : "Expandir"}
+                                                        className="text-xs"
                                                     >
                                                         {expandedRow === os.id ? "▼" : "▶"}
                                                     </button>
-                                                    {os.id}
                                                 </td>
-                                                <td>{os.cliente_nome}</td>
-                                                <td>{os.veiculo}</td>
-                                                <td>{os.status_nome}</td>
-                                                <td>{formatarData(os.data_criacao)}</td>
-                                                <td>{os.data_conclusao ? formatarData(os.data_conclusao) : ''}</td>
-                                                <td>
-                                                    <div id="button-group">
-                                                        {os.status_nome === "Aguardando Aprovação" ? (
+
+                                                <td className="p-2">{os.id}</td>
+                                                <td className="p-2">{os.cliente_nome}</td>
+                                                <td className="p-2">{os.veiculo || "-"}</td>
+                                                <td className="p-2">{os.status_nome}</td>
+                                                <td className="p-2">{formatarData(os.data_criacao)}</td>
+                                                <td className="p-2">
+                                                    {os.data_conclusao
+                                                        ? formatarData(os.data_conclusao)
+                                                        : "-"}
+                                                </td>
+
+                                                <td className="p-2 text-sm">
+                                                    <div className="flex items-center gap-2">
+
+                                                        {/* BOTÃO PRINCIPAL (contextual) */}
+                                                        {os.status_nome === "Aguardando Aprovação" && (
                                                             <button
                                                                 onClick={() => handleApproveClick(os.id)}
-                                                                className="button"
-                                                                title="Aprovar"
+                                                                className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium hover:bg-green-200 transition"
                                                             >
-                                                                ✅
+                                                                Aprovar
                                                             </button>
-                                                        ) : os.status_nome === "Em Andamento" ? (
+                                                        )}
+
+                                                        {os.status_nome === "Em Andamento" && (
                                                             <button
-                                                                onClick={() => handleFinishClick(os.id)} // You'll need to implement this handler
-                                                                className="button"
-                                                                title="Finalizar"
+                                                                onClick={() => handleFinishClick(os.id)}
+                                                                className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium hover:bg-indigo-200 transition"
                                                             >
-                                                                🎯
+                                                                Finalizar
                                                             </button>
-                                                        ) : ''}
-                                                        {os.status_nome != "Concluída" ?
-                                                            (<button
-                                                                onClick={() => handleEditClick(os)}
-                                                                className="button"
-                                                                title="Editar"
+                                                        )}
+
+                                                        {/* DESKTOP: ações secundárias visíveis */}
+                                                        <div className="hidden md:flex gap-2">
+                                                            {os.status_nome !== "Concluída" ? (
+                                                                <button
+                                                                    onClick={() => handleEditClick(os)}
+                                                                    className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs hover:bg-blue-200"
+                                                                >
+                                                                    Editar
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => handleSearchClick(os.id)}
+                                                                    className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs hover:bg-gray-200"
+                                                                >
+                                                                    Visualizar
+                                                                </button>
+                                                            )}
+
+                                                            <button
+                                                                onClick={() => handlePrintClick(os.id)}
+                                                                className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs hover:bg-gray-200"
                                                             >
-                                                                ✏️
-                                                            </button>) : <button
-                                                                onClick={() => handleSearchClick(os.id)} // Implemente este handler
-                                                                className="button"
-                                                                title="Pesquisar"
+                                                                Imprimir
+                                                            </button>
+                                                        </div>
+
+                                                        {/* MOBILE: menu compacto */}
+                                                        <div className="relative md:hidden">
+                                                            <button
+                                                                onClick={() =>
+                                                                    setOpenActionMenu(openActionMenu === os.id ? null : os.id)
+                                                                }
+                                                                className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs"
                                                             >
-                                                                🔍
-                                                            </button>}
-                                                        <button
-                                                            onClick={() => handlePrintClick(os.id)} // You'll need to implement this handler
-                                                            className="button"
-                                                            title="Impressão"
-                                                        >
-                                                            🖨️
-                                                        </button>
+                                                                ⋯
+                                                            </button>
+
+                                                            {openActionMenu === os.id && (
+                                                                <div className="absolute right-0 mt-1 w-32 bg-white border rounded shadow z-10">
+                                                                    {os.status_nome !== "Concluída" ? (
+                                                                        <button
+                                                                            onClick={() => handleEditClick(os)}
+                                                                            className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+                                                                        >
+                                                                            Editar
+                                                                        </button>
+                                                                    ) : (
+                                                                        <button
+                                                                            onClick={() => handleSearchClick(os.id)}
+                                                                            className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+                                                                        >
+                                                                            Visualizar
+                                                                        </button>
+                                                                    )}
+
+                                                                    <button
+                                                                        onClick={() => handlePrintClick(os.id)}
+                                                                        className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+                                                                    >
+                                                                        Imprimir
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </td>
+
                                             </tr>
+
+                                            {/* EXPANSÃO */}
                                             {expandedRow === os.id && (
-                                                <tr>
-                                                    <td colSpan="7">
-                                                        <div className="workflow-history">
-                                                            <h4>Histórico de Status:</h4>
-                                                            <ul>
-                                                                {workFlow.map((status, index) => (
-                                                                    <li key={index}>
-                                                                        {status.status_nome} - {formatarDataHora(status.data_mudanca)}
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
+                                                <tr className="bg-gray-50 text-sm">
+                                                    <td colSpan={8} className="p-3">
+                                                        <h4 className="font-semibold mb-2">
+                                                            Histórico de Status
+                                                        </h4>
+                                                        <ul className="list-disc pl-4 space-y-1">
+                                                            {workFlow.map((item, index) => (
+                                                                <li key={index}>
+                                                                    {item.status_nome} –{" "}
+                                                                    {formatarDataHora(item.data_mudanca)}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
                                                     </td>
                                                 </tr>
                                             )}
@@ -412,17 +566,24 @@ const OSPage = () => {
                                 </tbody>
                             </table>
                         </div>
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={setCurrentPage}
-                            onRowsChange={setRowsPerPage}
-                            rowsPerPage={rowsPerPage}
-                        />
-                    </>
-                )}
-            </div>
+                    )}
+
+                    {/* PAGINAÇÃO */}
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={(page) => setCurrentPage(page)}
+                        onRowsChange={(rows) => {
+                            setRowsPerPage(rows);
+                            setCurrentPage(1);
+                        }}
+                        rowsPerPage={rowsPerPage}
+                    />
+                </>
+            )}
+
             {toast.message && <Toast type={toast.type} message={toast.message} />}
+
             {isModalOpen && (
                 <ModalCadastroOS
                     isOpen={isModalOpen}
@@ -432,6 +593,7 @@ const OSPage = () => {
                     edit={isEdit}
                 />
             )}
+
             {isSaleModalOpen && (
                 <SaleModal
                     isOpen={isSaleModalOpen}
@@ -441,17 +603,23 @@ const OSPage = () => {
                     edit={isEdit}
                 />
             )}
-            {/* Modal de Confirmação */}
+
             <ConfirmDialog
                 isOpen={isConfirmationModalOpen}
                 onClose={handleCancel}
-                onConfirm={() => handleApprove(osToApprove, { status: "Aprovada", data_aprovacao: new Date() })}
+                onConfirm={() =>
+                    handleApprove(osToApprove, {
+                        status: "Aprovada",
+                        data_aprovacao: new Date(),
+                    })
+                }
                 onCancel={() => setIsConfirmationModalOpen(false)}
                 message="Você tem certeza que deseja aprovar esta O.S.?"
             />
-            {/* Renderização do modal de autorização */}
+
             <PermissionModalUI />
         </div>
+
     );
 };
 

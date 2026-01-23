@@ -55,7 +55,7 @@ function ModalFuncionario({ isOpen, isNew, onClose, onSubmit, funcionario, edit 
       setUfs(result.data || []);
     };
     if (isOpen && edit) {
-      checkPermission(permissions, 'funcionarios', 'edit', () => {
+      checkPermission('funcionarios', 'edit', () => {
         setPermiteEditar(true);
       });
 

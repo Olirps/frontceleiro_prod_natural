@@ -19,6 +19,7 @@ const EstoquePage = () => {
   const [produtoSelected, setProdutoSelected] = useState(false);
   const [produtoDescricao, setProdutoDescricao] = useState('');
   const [produtoID, setProdutoID] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
 
 
@@ -42,6 +43,7 @@ const EstoquePage = () => {
     try {
       const res = await getProdutos({ nome: termo });
       setProdutosFiltrados(res.data || []);
+      setHighlightedIndex(-1);
       if (!res.data.length) {
         setToast({ message: 'Nenhum produto encontrado.', type: 'warning' });
       }
@@ -50,6 +52,45 @@ const EstoquePage = () => {
       setToast({ message: msg, type: 'error' });
     }
   }, 500);
+
+  const selecionarProduto = (produto) => {
+    setProdutoSelected(true);
+    setProdutoDescricao(produto.xProd);
+    setProdutoBusca(produto.xProd);
+    setTermoBusca(produto.xProd);
+    setProdutoID(produto.id);
+    setProdutosFiltrados([]);
+    setHighlightedIndex(-1);
+  };
+
+  const handleKeyDown = (e) => {
+    if (produtosFiltrados.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex((prev) => 
+          prev < produtosFiltrados.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (highlightedIndex >= 0 && highlightedIndex < produtosFiltrados.length) {
+          selecionarProduto(produtosFiltrados[highlightedIndex]);
+        }
+        break;
+      case 'Escape':
+        setProdutosFiltrados([]);
+        setHighlightedIndex(-1);
+        break;
+      default:
+        break;
+    }
+  };
 
   const fetchEstoque = async () => {
     setLoading(true);
@@ -85,184 +126,227 @@ const EstoquePage = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Estoque</h1>
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
 
-      {/* Toast */}
+      {/* HEADER */}
+      <header className="flex items-center justify-between">
+        <h1 className="text-xl md:text-2xl font-bold">Estoque</h1>
+      </header>
+
+      {/* TOAST */}
       {toast.message && (
         <Toast
           message={toast.message}
           type={toast.type}
-          onClose={() => setToast({ message: '', type: '' })}
+          onClose={() => setToast({ message: "", type: "" })}
         />
       )}
 
-      {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <select
-          value={tipoVisao}
-          onChange={(e) => {
-            setTipoVisao(e.target.value);
-            setPaginaAtual(1);
-          }}
-          className="border rounded px-3 py-2"
-        >
-          <option value="atual">Atual</option>
-          <option value="detalhada">Detalhada</option>
-          <option value="fiscal">Fiscal</option>
-          <option value="fiscal_resumido">Fiscal Sintética</option>
-        </select>
+      {/* FILTROS */}
+      <section className="bg-white rounded-xl border p-4 space-y-4">
 
-        <div>
-          <label className="block text-sm font-medium">Produto</label>
-          <input type="text" value={produtoBusca} onChange={e => setProdutoBusca(e.target.value)} placeholder="Descrição do produto"
-            className="w-full border border-gray-300 rounded px-3 py-2 mt-1" />
-          {produtosFiltrados.length > 0 && (
-            <ul className="absolute z-10 w-full bg-white border border-gray-200 max-h-48 overflow-y-auto shadow-lg mt-1 rounded">
-              {produtosFiltrados.map(produto => (
-                <li key={produto.id} onClick={() => {
-                  setProdutoSelected(true);
-                  setProdutoDescricao(produto.xProd);
-                  setProdutoBusca(produto.xProd);
-                  setTermoBusca(produto.xProd);
-                  setProdutoID(produto.id);
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+          {/* TIPO VISÃO */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Visão</label>
+            <select
+              value={tipoVisao}
+              onChange={(e) => {
+                setTipoVisao(e.target.value);
+                setPaginaAtual(1);
+              }}
+              className="w-full border rounded-lg px-3 py-2"
+            >
+              <option value="atual">Atual</option>
+              <option value="detalhada">Detalhada</option>
+              <option value="fiscal">Fiscal</option>
+              <option value="fiscal_resumido">Fiscal Sintética</option>
+            </select>
+          </div>
+
+          {/* AUTOCOMPLETE PRODUTO */}
+          <div className="relative md:col-span-2">
+            <label className="block text-sm font-medium mb-1">Produto</label>
+
+            <input
+              type="text"
+              value={produtoBusca}
+              onChange={(e) => {
+                const valor = e.target.value;
+                setProdutoBusca(valor);
+                // Se limpar o campo, resetar seleção para permitir nova busca
+                if (valor.trim() === '') {
+                  setProdutoSelected(false);
+                  setProdutoID('');
+                  setTermoBusca('');
+                  setProdutoDescricao('');
                   setProdutosFiltrados([]);
-                }} className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                  {produto.xProd}
-                </li>
-              ))}
-            </ul>
-          )}
+                  setHighlightedIndex(-1);
+                }
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder="Digite o nome do produto"
+              className="w-full border rounded-lg px-3 py-2"
+            />
+
+            {produtosFiltrados.length > 0 && (
+              <ul className="absolute z-20 w-full bg-white border rounded-lg shadow-md max-h-56 overflow-auto mt-1">
+                {produtosFiltrados.map((produto, index) => (
+                  <li
+                    key={produto.id}
+                    onClick={() => selecionarProduto(produto)}
+                    className={`px-4 py-2 cursor-pointer ${
+                      index === highlightedIndex ? 'bg-blue-100' : 'hover:bg-gray-100'
+                    }`}
+                  >
+                    {produto.xProd}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* BOTÃO FILTRAR */}
+          <div className="flex items-end">
+            <button
+              onClick={() => {
+                setPaginaAtual(1);
+                fetchEstoque();
+              }}
+              className="w-full bg-blue-600 text-white rounded-lg py-2 font-semibold hover:bg-blue-700"
+            >
+              Filtrar
+            </button>
+          </div>
+
         </div>
+      </section>
 
-        <button
-          onClick={() => {
-            setPaginaAtual(1);
-            fetchEstoque();
-          }}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Filtrar
-        </button>
-      </div>
+      {/* ESTADOS */}
+      {loading && <p className="text-center">Carregando estoque...</p>}
+      {erro && <p className="text-center text-red-500">{erro}</p>}
+      {!loading && estoque.length === 0 && (
+        <p className="text-center text-gray-500">Nenhum registro encontrado.</p>
+      )}
 
-      {/* Mensagens */}
-      {loading && <p>Carregando estoque...</p>}
-      {erro && <p className="text-red-500">{erro}</p>}
-      {!loading && estoque.length === 0 && <p>Nenhum registro encontrado.</p>}
-
-      {/* Tabela */}
+      {/* TABELA */}
       {!loading && estoque.length > 0 && (
-        <div className="overflow-x-auto shadow rounded mt-4">
-          <table className="min-w-full bg-white border border-gray-200">
-            <thead className="bg-gray-100">
-              {tipoVisao === 'atual' && (
-                <tr>
-                  <th className="p-2 border">ID</th>
-                  <th className="p-2 border">Produto</th>
-                  <th className="p-2 border">Código Interno</th>
-                  <th className="p-2 border">Código de Barras</th>
-                  <th className="p-2 border">Estoque Atual</th>
-                  <th className="p-2 border">Estoque Mínimo</th>
-                </tr>
-              )}
-              {tipoVisao === 'detalhada' && (
-                <tr>
-                  <th className="p-2 border">ID</th>
-                  <th className="p-2 border">Produto</th>
-                  <th className="p-2 border">Venda</th>
-                  <th className="p-2 border">Tipo Movimentação</th>
-                  <th className="p-2 border">Quantidade</th>
-                  <th className="p-2 border">Data Movimentação</th>
-                </tr>
-              )}
-              {tipoVisao === 'fiscal' && (
-                <tr>
-                  <th className="p-2 border">ID</th>
-                  <th className="p-2 border">Produto</th>
-                  <th className="p-2 border">Nota Fiscal (Saida)</th>
-                  <th className="p-2 border">Qtd Venda</th>
-                  <th className="p-2 border">Vlr Unitário</th>
-                  <th className="p-2 border">Vlr Venda</th>
-                  <th className="p-2 border">Qtd Movimentada</th>
-                  <th className="p-2 border">Data Movimentacao</th>
-                  <th className="p-2 border">Tipo Movimentacao</th>
-                </tr>
-              )}
-              {tipoVisao === 'fiscal_resumido' && (
-                <tr>
-                  <th className="p-2 border">ID</th>
-                  <th className="p-2 border">Produto</th>
-                  <th className="p-2 border">Qtd Entrada</th>
-                  <th className="p-2 border">Qtd Saida</th>
-                  <th className="p-2 border">Saldo Atual</th>
-                </tr>
-              )}
-            </thead>
-            <tbody>
-              {estoque.map((item, index) => {
-                const produto = tipoVisao === 'atual' ? item : item;
-                if (tipoVisao === 'atual') {
-                  return (
-                    <tr key={`${produto.id}-${index}`} className="border-b hover:bg-gray-50">
-                      <td className="p-2 border">{produto.id || '-'}</td>
-                      <td className="p-2 border">{produto.xProd}</td>
-                      <td className="p-2 border">{produto.cod_interno}</td>
-                      <td className="p-2 border">{produto.cEAN || '-'}</td>
-                      <td className="p-2 border text-right">{produto.estoque_atual ?? '-'}</td>
-                      <td className="p-2 border text-right">{produto.qtdMinima ?? '-'}</td>
-                    </tr>
-                  );
-                } else if (tipoVisao === 'detalhada') {
-                  return (
-                    <tr key={`${produto.id}-${index}`} className="border-b hover:bg-gray-50">
-                      <td className="p-2 border">{produto.produto?.id || '-'}</td>
-                      <td className="p-2 border">{produto.produto?.xProd || '-'}</td>
-                      <td className="p-2 border">{produto.venda_id ?? '-'}</td>
-                      <td className="p-2 border">{produto.tipo_movimentacao ?? '-'}</td>
-                      <td className="p-2 border text-right">{produto.quantidade ?? '-'}</td>
-                      <td className="p-2 border">
-                        {new Date(produto.data_movimentacao).toLocaleDateString('pt-BR')}
-                      </td>
-                    </tr>
-                  );
-                } else if (tipoVisao === 'fiscal') {
-                  return (
-                    <tr key={`${produto.id}-${index}`} className="border-b hover:bg-gray-50">
-                      <td className="p-2 border">{produto.produto_id || '-'}</td>
-                      <td className="p-2 border">{produto.xProd || '-'}</td>
-                      <td className="p-2 border">{produto.numero_nf ?? '-'}</td>
-                      <td className="p-2 border">{produto.qtd_vendida ?? '-'}</td>
-                      <td className="p-2 border text-right">{produto.valor_unitario ?? '0,00'}</td>
-                      <td className="p-2 border text-right">{produto.valor_venda ?? '0,00'}</td>
-                      <td className="p-2 border text-right">{produto.qtd_movimentada ?? '0'}</td>
-                      <td className="p-2 border">
-                        {new Date(produto.data_movimentacao).toLocaleDateString('pt-BR')}
-                      </td>
-                      <td className="p-2 border text-right">{produto.tipo_movimentacao ?? '-'}</td>
+        <div className="overflow-x-auto bg-white border rounded-xl shadow">
 
-                    </tr>
-                  );
-                }
-                else if (tipoVisao === 'fiscal_resumido') {
-                  return (
-                    <tr key={`${produto.id}-${index}`} className="border-b hover:bg-gray-50">
-                      <td className="p-2 border">{produto.produto_id || '-'}</td>
-                      <td className="p-2 border">{produto.xProd || '-'}</td>
-                      <td className="p-2 border">{produto.qtd_entrada ?? '0'}</td>
-                      <td className="p-2 border">{produto.qtd_saida ?? '-'}</td>
-                      <td className="p-2 border text-right">{produto.saldo ?? '0'}</td>
-                    </tr>
-                  );
-                }
-                return null;
-              })}
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-100 text-gray-700">
+              <tr>
+                {tipoVisao === "atual" && (
+                  <>
+                    <th className="p-3 text-left">ID</th>
+                    <th className="p-3 text-left">Produto</th>
+                    <th className="p-3 text-left">Cód. Interno</th>
+                    <th className="p-3 text-left">EAN</th>
+                    <th className="p-3 text-right">Estoque</th>
+                    <th className="p-3 text-right">Mínimo</th>
+                  </>
+                )}
+
+                {tipoVisao === "detalhada" && (
+                  <>
+                    <th className="p-3">ID</th>
+                    <th className="p-3">Produto</th>
+                    <th className="p-3">Venda</th>
+                    <th className="p-3">Tipo</th>
+                    <th className="p-3 text-right">Qtd</th>
+                    <th className="p-3">Data</th>
+                  </>
+                )}
+
+                {tipoVisao === "fiscal" && (
+                  <>
+                    <th className="p-3">ID</th>
+                    <th className="p-3">Produto</th>
+                    <th className="p-3">NF</th>
+                    <th className="p-3 text-right">Qtd</th>
+                    <th className="p-3 text-right">Vlr Unit</th>
+                    <th className="p-3 text-right">Vlr Venda</th>
+                    <th className="p-3 text-right">Mov.</th>
+                    <th className="p-3">Data</th>
+                    <th className="p-3">Tipo</th>
+                  </>
+                )}
+
+                {tipoVisao === "fiscal_resumido" && (
+                  <>
+                    <th className="p-3">ID</th>
+                    <th className="p-3">Produto</th>
+                    <th className="p-3 text-right">Entrada</th>
+                    <th className="p-3 text-right">Saída</th>
+                    <th className="p-3 text-right">Saldo</th>
+                  </>
+                )}
+              </tr>
+            </thead>
+
+            <tbody>
+              {estoque.map((item, index) => (
+                <tr key={index} className="border-t hover:bg-gray-50">
+
+                  {tipoVisao === "atual" && (
+                    <>
+                      <td className="p-3">{item.id}</td>
+                      <td className="p-3">{item.xProd}</td>
+                      <td className="p-3">{item.cod_interno ?? "-"}</td>
+                      <td className="p-3">{item.cEAN || "-"}</td>
+                      <td className="p-3 text-right">{item.estoque_atual ?? "-"}</td>
+                      <td className="p-3 text-right">{item.qtdMinima ?? "-"}</td>
+                    </>
+                  )}
+
+                  {tipoVisao === "detalhada" && (
+                    <>
+                      <td className="p-3">{item.produto?.id ?? "-"}</td>
+                      <td className="p-3">{item.produto?.xProd ?? "-"}</td>
+                      <td className="p-3">{item.venda_id ?? "-"}</td>
+                      <td className="p-3">{item.tipo_movimentacao}</td>
+                      <td className="p-3 text-right">{item.quantidade}</td>
+                      <td className="p-3">
+                        {new Date(item.data_movimentacao).toLocaleDateString("pt-BR")}
+                      </td>
+                    </>
+                  )}
+
+                  {tipoVisao === "fiscal" && (
+                    <>
+                      <td className="p-3">{item.produto_id}</td>
+                      <td className="p-3">{item.xProd}</td>
+                      <td className="p-3">{item.numero_nf}</td>
+                      <td className="p-3 text-right">{item.qtd_vendida}</td>
+                      <td className="p-3 text-right">{item.valor_unitario}</td>
+                      <td className="p-3 text-right">{item.valor_venda}</td>
+                      <td className="p-3 text-right">{item.qtd_movimentada}</td>
+                      <td className="p-3">
+                        {new Date(item.data_movimentacao).toLocaleDateString("pt-BR")}
+                      </td>
+                      <td className="p-3">{item.tipo_movimentacao}</td>
+                    </>
+                  )}
+
+                  {tipoVisao === "fiscal_resumido" && (
+                    <>
+                      <td className="p-3">{item.produto_id}</td>
+                      <td className="p-3">{item.xProd}</td>
+                      <td className="p-3 text-right">{item.qtd_entrada}</td>
+                      <td className="p-3 text-right">{item.qtd_saida}</td>
+                      <td className="p-3 text-right">{item.saldo}</td>
+                    </>
+                  )}
+
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* Paginação */}
+      {/* PAGINAÇÃO */}
       <Pagination
         currentPage={paginaAtual}
         totalPages={totalPaginas}
@@ -271,7 +355,9 @@ const EstoquePage = () => {
         rowsPerPage={linhasPorPagina}
         rowsPerPageOptions={[50, 100, 200]}
       />
+
     </div>
+
   );
 };
 

@@ -1397,9 +1397,9 @@ export const registraPagamento = async (ptgo) => {
 export const getAllOS = async (filtro = {}) => {
   try {
     const response = await api.get('/osservice/', { params: filtro });
-    return response;
+    return response.data;
   } catch (error) {
-    console.error('Erro ao buscar status com filtro:', error);
+    console.error('Erro ao buscar ordens de serviço:', error);
     throw error;
   }
 };
